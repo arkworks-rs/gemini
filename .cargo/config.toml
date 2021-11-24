@@ -1,0 +1,3 @@
+[build]
+rustflags = "-C target-cpu=native -C target-feature=+bmi2,+adx"
+rustdocflags = "--html-in-header doc/katex-header.html"

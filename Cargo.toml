@@ -1,0 +1,102 @@
+[package]
+authors = ["Jonathan Bootle <jbootle77@gmail.com>", "Alessandro Chiesa <alexch@berkeley.edu>", "Yuncong Hu <huyuncongh@gmail.com>", "Michele Orrù <michele.orru@berkeley.edu>", "arkworks contributors"]
+categories = ["cryptography"]
+description = "A library for the LTAPS preprocessing zkSNARK"
+edition = "2018"
+include = ["Cargo.toml", "src", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
+keywords = ["cryptography", "polynomial commitments", "zkSNARK"]
+license = "MIT/Apache-2.0"
+name = "gemini"
+version = "0.3.0"
+
+[[bench]]
+harness = false
+name = "coreops_bench"
+
+[[bench]]
+harness = false
+name = "proofs_bench"
+
+[[bench]]
+harness = false
+name = "commit_bench"
+
+[[bench]]
+harness = false
+name = "msm_bench"
+
+[dependencies]
+ark-bls12-381 = "0.3.0"
+ark-ec = "0.3.0"
+ark-ff = "0.3.0"
+ark-poly = "0.3.0"
+ark-relations = "0.3.0"
+ark-serialize = "0.3.0"
+ark-std ="0.3.0"
+blake3 = "0.3.7"
+digest = "0.9.0"
+log = "0.4.14"
+memmap = "0.7.0"
+merlin = "3.0.0"
+rand = "0.7"
+rand_core = "0.5"
+# crossbeam-channel = "0.5.1"
+rand_chacha = { version = "0.3.0", default-features = false }
+derivative = { version = "2", features = ["use_core"] }
+env_logger = "0.8.3"
+hashbrown = "0.11.2"
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+procinfo = "0.4.2"
+
+
+# de-comment if willing to work on Field::mul_add.
+# [patch.crates-io]
+# ark-ec = {path="../algebra/ec"}
+# ark-ff = {path="../algebra/ff"}
+# ark-serialize = {path="../algebra/serialize"}
+# ark-serialize-derive = {path="../algebra/serialize-derive"}
+# ark-poly = {path ="../algebra/poly"}
+
+[dependencies.rayon]
+optional = true
+version = "1.5"
+
+[dev-dependencies]
+curve25519-dalek = "*"
+
+[dev-dependencies.ark-bls12-381]
+default-features = false
+features = ["curve"]
+version = "^0.3.0"
+
+# de-comment when this library does not depend on a specific EC.
+# [dev-dependencies.ark-test-curves]
+# default-features = false
+# features = ["bls12_381_scalar_field", "bls12_381_curve"]
+# version = "^0.3.0"
+
+[dev-dependencies.criterion]
+features = ["html_reports"]
+version = "0.3.4"
+
+[features]
+default = ["asm", "parallel", "std"]
+# the "asm" flag doesn't buy much on the top of rustflags="-C target-cpu=native".
+# I measure ~1second of improvement over ark of size 2^22.g
+asm = ["ark-ff/asm"]
+print-trace = ["ark-std/print-trace"]
+parallel = [ "std", "ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel", "ark-ec/parallel", "rayon"]
+std = ["ark-ff/std", "ark-ec/std", "ark-poly/std", "ark-std/std", "ark-relations/std", "ark-serialize/std"]
+
+
+[profile.dev]
+opt-level = 3
+overflow-checks = false
+
+[profile.release]
+debug=true
+
+
+[package.metadata.docs.rs]
+rustdoc-args = ["--html-in-header", "doc/katex-header.html"]
