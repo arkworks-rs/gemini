@@ -1,3 +1,4 @@
+//! Stream utilities for the scalar-product protocol.
 use crate::{misc::ceil_div, stream::Streamer};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
@@ -18,6 +19,7 @@ where
     F: Field,
     S::Item: Borrow<F>,
 {
+    /// Initialize a new polynomial tree.
     pub fn new(coefficients: S, challenges: &'a [F]) -> Self {
         Self {
             coefficients,
@@ -25,6 +27,7 @@ where
         }
     }
 
+    /// Outputs the depth of the polynomial tree.
     #[inline]
     pub fn depth(&self) -> usize {
         self.challenges.len()
@@ -53,6 +56,7 @@ where
         self.coefficients.len()
     }
 }
+/// Iterator of the polynomial tree.
 pub struct FoldedPolynomialTreeIter<'a, F, I> {
     challenges: &'a [F],
     iterator: I,
@@ -131,8 +135,10 @@ where
     }
 }
 
+/// Stream implementation of foleded polynomial.
 #[derive(Clone, Copy)]
 pub struct FoldedPolynomialStream<'a, F, S>(FoldedPolynomialTree<'a, F, S>, usize);
+/// Iterator implementation of foleded polynomial.
 pub struct FoldedPolynomialStreamIter<'a, F, I> {
     challenges: &'a [F],
     iterator: I,
@@ -145,6 +151,7 @@ where
     F: Field,
     S::Item: Borrow<F>,
 {
+    /// Initialize a new folded polynomial stream.
     pub fn new(coefficients: S, challenges: &'a [F]) -> Self {
         let tree = FoldedPolynomialTree::new(coefficients, challenges);
         let len = challenges.len();

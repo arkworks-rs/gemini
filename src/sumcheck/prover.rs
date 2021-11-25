@@ -20,13 +20,19 @@ impl<F: Field> ProverMsg<F> {
     }
 }
 
+/// Prover trait interface for both time-efficient and space-efficient prover.
 pub trait Prover<F>
 where
     F: Field,
 {
+    /// Function for producing next prover message.
     fn next_message(&mut self) -> Option<ProverMsg<F>>;
+    /// Function for performing folding of polynomials using the challenge.
     fn fold(&mut self, challenge: F);
+    /// Function for outputing the number of rounds.
     fn rounds(&self) -> usize;
+    /// Function for outputing the current round.
     fn round(&self) -> usize;
+    /// Function for producing the folding results in the last round of the protocol.
     fn final_foldings(&self) -> Option<[F; 2]>;
 }

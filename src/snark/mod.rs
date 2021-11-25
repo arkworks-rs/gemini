@@ -2,6 +2,7 @@ mod elastic_prover;
 mod time_prover;
 mod verifier;
 
+/// Utilities for producing streams in SNARK protocol.
 pub mod streams;
 #[cfg(test)]
 mod tests;

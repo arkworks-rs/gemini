@@ -68,6 +68,7 @@ where
     SG: Streamer,
     SG::Item: Borrow<F>,
 {
+    /// Initialize a new witness stream.
     pub fn new(f: SF, g: SG, twist: F) -> Self {
         Self { f, g, twist }
     }

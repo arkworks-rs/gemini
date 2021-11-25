@@ -12,6 +12,7 @@ use crate::stream::Streamer;
 
 use super::{bounded_ln_without_floats, MAX_MSM_BUFFER};
 
+/// Streaming multi-scalar multiplication algorithm.
 pub fn msm<G, F, I, J>(bases_stream: J, scalars_stream: I) -> G::Projective
 where
     G: AffineCurve,
@@ -34,6 +35,7 @@ where
     msm_internal(bases, scalars, scalars_stream.len())
 }
 
+/// Steaming multi-scalar multiplication algorithm with hard-coded chunk size.
 pub fn msm_chunks<G, F, I, J>(bases_stream: J, scalars_stream: I) -> G::Projective
 where
     G: AffineCurve<ScalarField = F>,
@@ -134,13 +136,14 @@ where
 use hashbrown::HashMap;
 //use ark_std::collections::HashMap;
 
-
+/// Hash map struct for Pippenger algorithm.
 pub struct HashMapPippenger<G: AffineCurve> {
     pub buffer: HashMap<G, G::ScalarField>,
     pub result: G::Projective,
 }
 
 impl<G: AffineCurve> HashMapPippenger<G> {
+    /// Producce a new hash map with the maximum msm buffer size.
     pub fn new() -> Self {
         Self {
             buffer: HashMap::with_capacity(MAX_MSM_BUFFER),
@@ -148,6 +151,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
         }
     }
 
+    /// Add a new (base, scalar) pair into the hash map.
     #[inline(always)]
     pub fn add<B, S>(&mut self, base: B, scalar: S)
     where
@@ -175,6 +179,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
         }
     }
 
+    /// Update the final result with (base, scalar) pairs in the hash map.
     #[inline(always)]
     pub fn finalize(mut self) -> G::Projective {
         if !self.buffer.is_empty() {
@@ -194,6 +199,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
     }
 }
 
+/// Struct for the chunked Pippenger algorithm.
 pub struct ChunkedPippenger<G: AffineCurve> {
     pub scalars_buffer: Vec<<G::ScalarField as PrimeField>::BigInt>,
     pub bases_buffer: Vec<G>,
@@ -202,6 +208,7 @@ pub struct ChunkedPippenger<G: AffineCurve> {
 }
 
 impl<G: AffineCurve> ChunkedPippenger<G> {
+    /// Initialize a chunked Pippenger instance with default parameters.
     pub fn new() -> Self {
         Self {
             scalars_buffer: Vec::with_capacity(MAX_MSM_BUFFER),
@@ -210,6 +217,7 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
             buf_size: MAX_MSM_BUFFER,
         }
     }
+    /// Initialize a chunked Pippenger instance with the given buffer size.
     pub fn with_size(buf_size: usize) -> Self {
         Self {
             scalars_buffer: Vec::with_capacity(buf_size),
@@ -219,6 +227,7 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
         }
     }
 
+    /// Add a new (base, scalar) pair into the instance.
     #[inline(always)]
     pub fn add<B, S>(&mut self, base: B, scalar: S)
     where
@@ -238,6 +247,7 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
         }
     }
 
+    /// Output the final Pippenger algorithm result.
     #[inline(always)]
     pub fn finalize(mut self) -> G::Projective {
         if !self.scalars_buffer.is_empty() {

@@ -1,4 +1,4 @@
-//! Verifier.
+//! Scalar-product proof implementation.
 use std::borrow::Borrow;
 
 use ark_ff::Field;
@@ -25,6 +25,10 @@ pub struct Sumcheck<F: Field> {
 }
 
 impl<F: Field> Sumcheck<F> {
+    /// Prove function for the scalar product.
+    /// The input contains a randomness generator and a prover struct.
+    /// The prover struct can be either time-efficient or space-efficient
+    /// depending on the configuration.
     pub fn prove<P: Prover<F>>(transcript: &mut Transcript, mut prover: P) -> Self {
         let rounds = prover.rounds();
         let mut messages = Vec::with_capacity(rounds);
@@ -54,6 +58,7 @@ impl<F: Field> Sumcheck<F> {
         }
     }
 
+    /// Prove function for a batch of scalar product instances.
     pub fn prove_batch<const N: usize>(
         transcript: &mut Transcript,
         mut provers: [&mut dyn Prover<F>; N],

@@ -2,17 +2,19 @@
 use ark_ec::PairingEngine;
 use ark_ff::{Field, One, Zero};
 
-use crate::snark::Proof;
 use crate::circuit::R1CS;
 use crate::kzg::time::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
+use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
 use crate::tensorcheck::TensorCheckProof;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
+    /// Function for creating SNARK proof using the time-efficient prover.
+    /// The input contains the R1CS instance and committer key of polynomial commitments.
     pub fn new_time(r1cs: &R1CS<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
     where
         E: PairingEngine,

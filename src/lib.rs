@@ -18,13 +18,13 @@ pub(crate) const PROTOCOL_NAME: &[u8] = b"GEMINI-v0";
 pub mod circuit;
 mod misc;
 
-/// SNARK for R1CS.
-pub mod snark;
+/// KZG polynomial commitment, space- and time-efficient.
+pub mod kzg;
 /// Preprocessing SNARK for R1CS.
 #[allow(dead_code)]
 mod psnark;
-/// KZG polynomial commitment, space- and time-efficient.
-pub mod kzg;
+/// SNARK for R1CS.
+pub mod snark;
 /// Utilities for the streaming model.
 pub mod stream;
 /// The sumcheck IP protocol for twisted scalar product.
@@ -49,4 +49,6 @@ impl fmt::Display for VerificationError {
     }
 }
 
+/// Result of the verification.
+/// The result may contain error information when the verification fails.
 pub type VerificationResult = ark_std::result::Result<(), VerificationError>;

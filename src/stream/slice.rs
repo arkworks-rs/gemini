@@ -1,3 +1,4 @@
+//! Stream implementation for Rust slice.
 use ark_std::iter::Rev;
 
 use super::Streamer;
@@ -17,10 +18,13 @@ impl<'a, T> Streamer for &'a [T] {
     }
 }
 
+/// Reversed stream for Rust slice.
+/// It outputs elements in the slice in reversed order.
 #[derive(Clone, Copy)]
 pub struct Reversed<'a, T>(&'a [T]);
 
 impl<'a, T> Reversed<'a, T> {
+    /// Initialize a new stream for the slice.
     pub fn new(slice: &'a [T]) -> Self {
         Self(slice)
     }

@@ -102,7 +102,6 @@ pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> V
     matrix.iter().map(|row| inner_prod_fn(row)).collect()
 }
 
-
 /// Given as input `elements`, an array of field elements
 /// \\(\rho_0, \dots, \rho_{n-1}\\)
 /// compute the tensor product

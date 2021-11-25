@@ -19,17 +19,20 @@ impl<T: Copy> DummyStreamer<T> {
     }
 }
 
+/// Dummy stream for the diagonal matrix.
 #[derive(Clone, Copy)]
 pub struct DiagonalMatrixStreamer<T> {
     e: T,
     len: usize,
 }
 
+/// Iterator for the diagonal matrix.
 pub struct DiagonalMatrixIter<T> {
     e: T,
     len: usize,
 }
 
+/// A dummy stream with only a single element.
 #[derive(Clone, Copy)]
 pub struct SingleEntryStream<T> {
     e: T,
@@ -106,6 +109,7 @@ impl<T: Copy> Streamer for DummyStreamer<T> {
 
 type DummyR1CStream<F> = R1CStream<DiagonalMatrixStreamer<F>, DummyStreamer<F>, DummyStreamer<F>>;
 
+/// Output a stream for the dummy R1CS instance.
 pub fn dumym_r1cs_relation<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> DummyR1CStream<F> {
     let e = F::rand(rng);
     let inv_e = e.inverse().expect("Buy a lottery ticket and retry");

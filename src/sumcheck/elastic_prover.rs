@@ -6,6 +6,7 @@ use crate::{stream::Streamer, SPACE_TIME_THRESHOLD};
 use super::prover::ProverMsg;
 use super::{Prover, SpaceProver, TimeProver};
 
+/// Specifier of the prover type (time-efficient or space-efficient).
 pub enum ElasticProver<S, T> {
     Space(S),
     Time(T),
@@ -19,6 +20,7 @@ where
     S1::Item: Borrow<F>,
     S2::Item: Borrow<F>,
 {
+    /// Initialize the elastic prover.
     pub fn new(f: S1, g: S2, twist: F) -> Self {
         Self::Space(SpaceProver::new(f, g, twist))
     }

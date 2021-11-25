@@ -27,7 +27,9 @@ where
     SG: Streamer,
     SG::Item: Borrow<E::G1Affine>,
 {
+    /// Stream of G1 elements.
     pub powers_of_g: SG,
+    /// Two G2 elements needed for the committer.
     pub powers_of_g2: [E::G2Affine; 2],
 }
 
@@ -151,7 +153,7 @@ where
         let mut pippengers: Vec<ChunkedPippenger<E::G1Affine>> = Vec::new();
         let mut folded_bases = Vec::new();
         for i in 1..n + 1 {
-            let pippenger = ChunkedPippenger::with_size(crate::kzg::msm::MAX_MSM_BUFFER/n);
+            let pippenger = ChunkedPippenger::with_size(crate::kzg::msm::MAX_MSM_BUFFER / n);
             let mut bases = self.powers_of_g.stream();
 
             let delta = self.powers_of_g.len() - ceil_div(polynomials.len(), 1 << i);

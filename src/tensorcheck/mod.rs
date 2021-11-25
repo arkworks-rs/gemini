@@ -349,6 +349,7 @@ fn test_foldings_polynomial() {
     // assert_eq!(foldings[1][0], Fr::from(100 + 101 + 102 + 103));
 }
 
+/// Macro rule for produce foldings for batched polynomial streams.
 #[macro_export]
 macro_rules! batch_polynomial_foldings {
     ($polynomials:expr, $challenges:expr) => {{

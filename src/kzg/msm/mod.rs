@@ -4,6 +4,7 @@ pub mod variable_base;
 
 pub use stream_pippenger::*;
 
+/// Maximum buffer size for the streaming multi-scalar multiplication algorithm.
 pub const MAX_MSM_BUFFER_LOG: usize = 20;
 pub(crate) const MAX_MSM_BUFFER: usize = 1 << MAX_MSM_BUFFER_LOG;
 

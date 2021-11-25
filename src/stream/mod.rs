@@ -9,7 +9,7 @@ pub mod slice;
 
 pub use slice::Reversed;
 
-// A `Streamer` provides the interface used in order to represent the streaming model in this paper.
+/// A `Streamer` provides the interface used in order to represent the streaming model in this paper.
 pub trait Streamer: Copy {
     type Item;
     type Iter: Iterator<Item = Self::Item>;
@@ -22,6 +22,7 @@ pub trait Streamer: Copy {
     }
 }
 
+/// A memory mapped buffer for field elements.
 #[derive(Clone, Copy)]
 pub struct FieldMmap<'a, F>
 where
@@ -35,6 +36,7 @@ impl<'a, F> FieldMmap<'a, F>
 where
     F: Field,
 {
+    /// Initialize a new memory map buffer.
     pub fn new(mmap: &'a Mmap) -> Self {
         Self {
             mmap,

@@ -17,6 +17,7 @@ pub struct LinCombStream<'a, F, T> {
     pub coeffs: &'a [F],
 }
 
+/// Macro rule for producing folding stream of linear combination.
 #[macro_export]
 macro_rules! lincomb_fold {
     (($($B:expr),*), $challenges:expr, $coeffs:expr) => {
@@ -27,6 +28,7 @@ macro_rules! lincomb_fold {
     }
 }
 
+/// Macro rule for producing stream of linear combination.
 #[macro_export]
 macro_rules! lincomb {
     (($($B:expr),*), $coeffs:expr) => {

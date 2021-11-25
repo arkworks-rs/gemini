@@ -5,6 +5,7 @@ use ark_ff::PrimeField;
 use crate::misc::{MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 use crate::stream::Streamer;
 
+/// Streaming struct for producing tensor product of the matrix polynomial.
 #[derive(Clone, Copy)]
 pub(crate) struct MatrixTensor<'a, F, SC>
 where
@@ -23,6 +24,9 @@ where
     SC: Streamer,
     SC::Item: Borrow<MatrixElement<F>>,
 {
+    /// Function for initializing the stream.
+    /// The input contains the stream of R1CS matrix, a vector of field elements
+    /// for producing tensor product, and the length of the result stream.
     pub fn new(matrix: SC, tensor: &'a PartialTensor<F>, len: usize) -> Self {
         MatrixTensor {
             matrix,
@@ -78,7 +82,8 @@ where
             match *e.borrow() {
                 MatrixElement::Element((mut value, index)) if !value.is_zero() => {
                     for (i, r) in self.tensor.iter().enumerate() {
-                        let selection_index = (index >> (i * TENSOR_EXPANSION_LOG)) & TENSOR_EXPANSION;
+                        let selection_index =
+                            (index >> (i * TENSOR_EXPANSION_LOG)) & TENSOR_EXPANSION;
                         if selection_index != 0 {
                             value *= r[selection_index - 1];
                         }

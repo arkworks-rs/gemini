@@ -4,7 +4,7 @@ use merlin::Transcript;
 use crate::sumcheck::prover::ProverMsg;
 use crate::transcript::GeminiTranscript;
 
-/// The sumcheck protocol reduces a claim \\( \langle f, g \rangle = u\\)
+/// The sumcheck verifier protocol reduces a claim \\( \langle f, g \rangle = u\\)
 /// to a `Subclaim` that:
 /// \\(f(\rho_0, \rho_{n-1}) \cdot g(\rho_0, \dots, \rho_{n-1})> = t\\).
 pub struct Subclaim<F: Field> {
