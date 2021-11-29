@@ -50,7 +50,7 @@ fn test_ark_consistency() {
         nonzero: num_constraints,
     };
     let ck_stream = CommitterKeyStream::from(&ck);
-    let space_proof = Proof::new_space(r1cs_stream, ck_stream);
+    let space_proof = Proof::new_elastic(r1cs_stream, ck_stream);
 
     assert_eq!(
         time_proof.witness_commitment,

@@ -51,5 +51,5 @@ fn main() {
         powers_of_g2: [g2, g2],
     };
     println!("Proving an instance of log size  {}", instance_logsize);
-    Proof::new_space(r1cs_stream, ck);
+    Proof::new_elastic(r1cs_stream, ck);
 }
