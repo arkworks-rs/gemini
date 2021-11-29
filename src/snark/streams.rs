@@ -149,8 +149,8 @@ fn test_matrix_tensor_len() {
 
     let rng = &mut test_rng();
     let r = F::rand(rng);
-    let n = 4;
-    let one_tensor = [F::one(), F::one()];
+    let n = 8;
+    let one_tensor = [F::one(); 3];
 
     let matrix = DiagonalMatrixStreamer::new(r, n);
     let expanded_one_tensor = expand_tensor(&one_tensor);
@@ -158,7 +158,10 @@ fn test_matrix_tensor_len() {
 
     assert_eq!(matrix_tensor.len(), matrix_tensor.stream().count());
 
-    let n = 1 << 10;
+    let log_n = 10;
+    let n = 1 << log_n;
+    let one_tensor = vec![F::one(); log_n];
+    let expanded_one_tensor = expand_tensor(&one_tensor);
     let circuit = random_circuit(rng, n, n);
     let r1cs = generate_relation(circuit);
     let matrix = matrix_into_row_major_slice(&r1cs.a, n);
