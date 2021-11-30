@@ -2,6 +2,7 @@ use std::env;
 
 use ark_ec::bls12::Bls12;
 use ark_ec::{AffineCurve, PairingEngine};
+use ark_std::rand::Rng;
 use ark_std::test_rng;
 use gemini::snark::Proof;
 use gemini::kzg::space::CommitterKeyStream;
@@ -31,17 +32,9 @@ pub fn memory_traces() {
     }
 }
 
-fn main() {
-    let rng = &mut test_rng();
-    let args = env::args().collect::<Vec<_>>();
-    let instance_logsize = if args.len() > 1 {
-        args[1].parse::<usize>().expect("Invalid argument")
-    } else {
-        R1CS_INST_LOGSIZE
-    };
-    env_logger::init();
+
+fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let instance_size = 1 << instance_logsize;
-    memory_traces();
 
     let g1 = G1::prime_subgroup_generator();
     let g2 = G2::prime_subgroup_generator();
@@ -52,4 +45,33 @@ fn main() {
     };
     println!("Proving an instance of log size  {}", instance_logsize);
     Proof::new_elastic(r1cs_stream, ck);
+}
+
+
+fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
+    let rng = &mut test_rng();
+    let num_constraints = 1 << instance_logsize;
+    let num_variables = 1 << instance_logsize;
+
+    let circuit = gemini::circuit::random_circuit(rng, num_constraints, num_variables);
+    let r1cs = gemini::circuit::generate_relation(circuit);
+    let ck = gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(num_constraints + num_variables, 5, rng);
+
+    println!("Proving an instance of log size  {}", instance_logsize);
+    Proof::new_time(&r1cs, &ck);
+
+}
+
+fn main() {
+    let rng = &mut test_rng();
+    let args = env::args().collect::<Vec<_>>();
+    let instance_logsize = if args.len() > 1 {
+        args[1].parse::<usize>().expect("Invalid argument")
+    } else {
+        R1CS_INST_LOGSIZE
+    };
+    env_logger::init();
+    memory_traces();
+
+    time_snark_main(rng, instance_logsize)
 }

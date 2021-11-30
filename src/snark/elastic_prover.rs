@@ -173,7 +173,7 @@ impl<E: PairingEngine> Proof<E> {
         SZ::Item: Borrow<E::Fr>,
         SG::Item: Borrow<E::G1Affine>,
     {
-        let algebraic_proof_time = start_timer!(|| "ARK::Prove");
+        let snark_time = start_timer!(|| module_path!());
 
         debug!(
             "features:{};space-time-threshold:{};tensor-expansion:{};msm-buffer:{}",
@@ -254,7 +254,7 @@ impl<E: PairingEngine> Proof<E> {
         );
         end_timer!(tensorcheck_time);
 
-        end_timer!(algebraic_proof_time);
+        end_timer!(snark_time);
         Proof {
             witness_commitment,
             zc_alpha,
