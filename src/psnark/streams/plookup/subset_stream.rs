@@ -54,40 +54,27 @@ where
 {
     type Item = F;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let next_element = self.base_iterator.next()?;
-        Some(self.gamma + next_element.borrow())
+        Some(self.gamma + self.base_iterator.next()?.borrow())
     }
 }
 
 #[test]
-fn check_subset_stream() {
+fn test_subset_stream() {
     use ark_bls12_381::Fr;
     use ark_std::UniformRand;
 
-    for _ in 0..100 {
-        let rng = &mut ark_std::test_rng();
-        let size = 1000;
-        let mut a = Vec::new();
-        for _ in 0..size {
-            a.push(Fr::rand(rng));
-        }
+    let rng = &mut ark_std::test_rng();
+    let size = 1000;
+    let test_vector = (0..size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
 
-        let z = Fr::rand(rng);
+    let z = Fr::rand(rng);
+    let expected = (0..size).map(|i|
+        test_vector[i] + z
+    ).collect::<Vec<_>>();
 
-        let mut ans = Vec::new();
-        for i in 0..size {
-            ans.push(a[size - 1 - i] + z);
-        }
-        // ans[size - 1] = ((Fr::one() + Z) + a[0] + Z * a[size - 1]);
-        // ans.push(Fr::zero());
-
-        a.reverse();
-        let st = LookupSubsetStreamer::new(a.as_slice(), z);
-        let mut it = st.stream();
-        for ans_i in ans {
-            let res = it.next();
-            assert_eq!(res.unwrap(), ans_i);
-        }
-    }
+    let st = LookupSubsetStreamer::new(test_vector.as_slice(), z);
+    let got = st.stream().collect::<Vec<_>>();
+    assert_eq!(got, expected);
 }

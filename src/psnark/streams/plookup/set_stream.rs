@@ -96,33 +96,23 @@ where
 }
 
 #[test]
-fn check_set_stream() {
+fn test_set_stream() {
     use ark_bls12_381::Fr;
     use ark_ff::One;
     use ark_std::UniformRand;
 
-    for _ in 0..100 {
-        let rng = &mut ark_std::test_rng();
-        let size = 1000;
-        let mut a = Vec::new();
-        for _ in 0..size {
-            a.push(Fr::rand(rng));
-        }
+    let rng = &mut ark_std::test_rng();
+    let size = 1000;
+    let test_vector = (0..size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
 
-        let y = Fr::rand(rng);
-        let z = Fr::rand(rng);
+    let y = Fr::rand(rng);
+    let z = Fr::rand(rng);
 
-        let mut ans = Vec::new();
-        for i in 0..size - 1 {
-            ans.push(y * (Fr::one() + z) + a[size - 1 - i] + z * a[size - 1 - (i + 1)]);
-        }
-        ans.push(y * (Fr::one() + z) + a[0] + z * a[size - 1]);
-        // ans.push(Fr::zero());
+    let expected = (0..size).map(|i|
+        y * (Fr::one() + z) + test_vector[i] + z * test_vector[(i + 1) % size]
+    ).collect::<Vec<_>>();
 
-        a.reverse();
-        let st = LookupSetStreamer::new(a.as_slice(), y, z);
-        for (i, res) in st.stream().enumerate() {
-            assert_eq!(res, ans[i]);
-        }
-    }
+    let st = LookupSetStreamer::new(test_vector.as_slice(), y, z);
+    let got = st.stream().collect::<Vec<_>>();
+    assert_eq!(got, expected);
 }
