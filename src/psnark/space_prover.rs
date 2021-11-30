@@ -9,7 +9,7 @@ use crate::psnark::proof::Proof;
 use crate::psnark::streams::memcheck::memcheck_streams;
 use crate::psnark::streams::plookup::plookup_streams;
 
-use crate::circuit::R1CStream;
+use crate::circuit::R1csStream;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer,
     ValStream,
@@ -26,7 +26,7 @@ use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
     pub fn new_space<SM, SG, SZ, SW>(
-        r1cs: R1CStream<SM, SZ, SW>,
+        r1cs: R1csStream<SM, SZ, SW>,
         ck: CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where

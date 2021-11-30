@@ -3,7 +3,7 @@
 use ark_ff::{PrimeField, Zero};
 use ark_std::{iter, rand::RngCore};
 
-use crate::{circuit::R1CStream, misc::MatrixElement, stream::Streamer};
+use crate::{circuit::R1csStream, misc::MatrixElement, stream::Streamer};
 
 /// A DummyStream is the stream that returns the same element `e`, `len` times.
 #[derive(Clone, Copy)]
@@ -107,13 +107,13 @@ impl<T: Copy> Streamer for DummyStreamer<T> {
     }
 }
 
-type DummyR1CStream<F> = R1CStream<DiagonalMatrixStreamer<F>, DummyStreamer<F>, DummyStreamer<F>>;
+type DummyR1CStream<F> = R1csStream<DiagonalMatrixStreamer<F>, DummyStreamer<F>, DummyStreamer<F>>;
 
 /// Output a stream for the dummy R1CS instance.
 pub fn dumym_r1cs_relation<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> DummyR1CStream<F> {
     let e = F::rand(rng);
     let inv_e = e.inverse().expect("Buy a lottery ticket and retry");
-    R1CStream {
+    R1csStream {
         a_rowm: DiagonalMatrixStreamer::new(inv_e, n),
         b_rowm: DiagonalMatrixStreamer::new(inv_e, n),
         c_rowm: DiagonalMatrixStreamer::new(inv_e, n),

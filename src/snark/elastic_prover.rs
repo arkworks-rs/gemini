@@ -6,7 +6,7 @@ use ark_std::One;
 use log::debug;
 use merlin::Transcript;
 
-use crate::circuit::R1CStream;
+use crate::circuit::R1csStream;
 use crate::kzg::space::CommitterKeyStream;
 use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
@@ -157,7 +157,7 @@ impl<E: PairingEngine> Proof<E> {
     /// Function for creating SNARK proof using the space-efficient prover.
     /// The input contains streams of R1CS instance and committer key.
     pub fn new_elastic<SM, SG, SZ, SW>(
-        r1cs: R1CStream<SM, SZ, SW>,
+        r1cs: R1csStream<SM, SZ, SW>,
         ck: CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where

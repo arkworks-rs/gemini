@@ -18,7 +18,7 @@ pub struct Circuit<F: Field> {
     num_variables: usize,
 }
 
-pub struct R1CStream<SM, SZ, SW> {
+pub struct R1csStream<SM, SZ, SW> {
     pub a_rowm: SM,
     pub b_rowm: SM,
     pub c_rowm: SM,

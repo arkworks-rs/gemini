@@ -2,7 +2,7 @@ use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
 
 use crate::snark::Proof;
-use crate::circuit::{generate_relation, random_circuit, R1CStream};
+use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::kzg::space::CommitterKeyStream;
 use crate::kzg::time::CommitterKey;
 use crate::misc::matrix_into_row_major_slice;
@@ -35,7 +35,7 @@ fn test_ark_consistency() {
     let b_colm = matrix_into_col_major_slice(&r1cs.b, n);
     let c_colm = matrix_into_col_major_slice(&r1cs.c, n);
 
-    let r1cs_stream = R1CStream {
+    let r1cs_stream = R1csStream {
         z: Reversed::new(r1cs.z.as_slice()),
         a_rowm: a_rowm.as_slice(),
         b_rowm: b_rowm.as_slice(),
