@@ -1,13 +1,11 @@
-use std::env;
-
 use ark_ec::bls12::Bls12;
 use ark_ec::{AffineCurve, PairingEngine};
 use ark_std::rand::Rng;
 use ark_std::test_rng;
+use clap::Parser;
 use gemini::snark::Proof;
 use gemini::kzg::space::CommitterKeyStream;
 use gemini::stream::dummy::{dumym_r1cs_relation, DummyStreamer};
-const R1CS_INST_LOGSIZE: usize = 30;
 
 type PE = Bls12<ark_bls12_381::Parameters>;
 type G1 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G1Affine;
@@ -33,6 +31,19 @@ pub fn memory_traces() {
 }
 
 
+/// Simple option handling for instance size and prover mode.
+#[derive(Parser, Debug)]
+#[clap(name="snark")]
+struct SnarkConfig {
+    /// Size of the instance to be run (logarithmic)
+    #[clap(short, long)]
+    instance_logsize: usize,
+
+    #[clap(long)]
+    time_prover: bool,
+}
+
+
 fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let instance_size = 1 << instance_logsize;
 
@@ -49,7 +60,6 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
 
 
 fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
-    let rng = &mut test_rng();
     let num_constraints = 1 << instance_logsize;
     let num_variables = 1 << instance_logsize;
 
@@ -64,14 +74,13 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
 
 fn main() {
     let rng = &mut test_rng();
-    let args = env::args().collect::<Vec<_>>();
-    let instance_logsize = if args.len() > 1 {
-        args[1].parse::<usize>().expect("Invalid argument")
-    } else {
-        R1CS_INST_LOGSIZE
-    };
+    let snark_config = SnarkConfig::parse();
     env_logger::init();
     memory_traces();
 
-    time_snark_main(rng, instance_logsize)
+    if snark_config.time_prover {
+        time_snark_main(rng, snark_config.instance_logsize)
+    } else {
+        elastic_snark_main(rng, snark_config.instance_logsize)
+    }
 }
