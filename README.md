@@ -19,3 +19,9 @@ Space footprint for the prover can be tweaked playing with the following constan
 - `MAX_MSM_BUFFER_LOG` (set to 20) the size of the buffers over which Gemini performs multi-scalar multiplication;
 - `SPACE_TIME_THRESHOLD` (set to 22) the threshold for converting the space-prover into the time-prover.
 It will run a separate thread measuring stack+heap consumption.
+
+For more information, check out the documentation with: 
+
+```
+cargo rustdoc --open
+```
