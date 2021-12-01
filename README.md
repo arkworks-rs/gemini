@@ -5,13 +5,14 @@
 Gemini is elastic proof system system, FFT-free, blazingly fast and space-conscious.
 However, this code is **not** meant for production use and has not been audited (yet).
 
-To benchmark an instance of *logarithmic* size `$SIZE`, run the following:
+To benchmark an instance of *logarithmic* size `INSTANCE_LOGSIZE`, run the following:
 
 ```
-cargo run --features asm,print-trace,parallel --example snark $SIZE
+cargo run --features asm,print-trace,parallel --example snark -- -i <INSTANCE_LOGSIZE>
 ```
 You monitor the memory used setting the environment variable `RUST_LOG=debug`.
-We tested so far ranges `$SIZE` up to 35.
+We tested so far ranges from 18 up to 35.
+It is also possible to run a purely-linear time prover with the additional option `--time-prover`.
 
 Space footprint for the prover can be tweaked playing with the following constants:
 - `TENSOR_EXPANSION_LOG` (set to 16) which sets the space budget for expanding the tensor products;
