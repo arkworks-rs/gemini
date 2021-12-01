@@ -1,4 +1,5 @@
-//! An impementation of a time-efficient version of Kate et al's polynomial commitment with optimization from [\[BDFG20\]](https://eprint.iacr.org/2020/081.pdf).
+//! An impementation of a time-efficient version of Kate et al's polynomial commitment,
+//! with optimization from [\[BDFG20\]](https://eprint.iacr.org/2020/081.pdf).
 use std::borrow::Borrow;
 
 use ark_ec::msm::FixedBaseMSM;
@@ -15,8 +16,12 @@ use crate::misc::{linear_combination, powers};
 
 use super::vanishing_polynomial;
 
-/// The SRS for the polynomial commitment scheme consists of the consecutive powers of g.
-/// It also implements functions for `setup`, `commit` and `open`.
+/// The SRS for the polynomial commitment scheme for a max
+///
+/// The SRS consists of the `max_degree` powers of \\(\tau\\) in \\(\GG_1\\)
+/// plus the `max_eval_degree` powers over \\(\GG_2\\),
+/// where `max_degree` is the max polynomial degree to commit to,
+/// and `max_eval_degree` is the max number of different points to open simultaneously.
 pub struct CommitterKey<E: PairingEngine> {
     pub(crate) powers_of_g: Vec<E::G1Affine>,
     pub(crate) powers_of_g2: Vec<E::G2Affine>,
@@ -37,7 +42,11 @@ impl<E: PairingEngine> From<&CommitterKey<E>> for VerifierKey<E> {
 
 impl<E: PairingEngine> CommitterKey<E> {
     /// The setup algorithm for the commitment scheme.
-    /// Given a degree bound, an evaluation point bound and a cryptographically-secure random number generator, it will construct the committer key and the verifier key for committing polynomials up to degree `max_degree` and supporting the number of evaluation points up to `max_eval_points`.
+    ///
+    /// Given a degree bound `max_degree`,
+    /// an evaluation point bound `max_eval_points`,
+    /// and a cryptographically-secure random number generator `rng`,
+    /// construct the committer key.
     pub fn new(max_degree: usize, max_eval_points: usize, rng: &mut impl RngCore) -> Self {
         // Compute the consecutive powers of an element.
         let tau = E::Fr::rand(rng);
@@ -64,18 +73,18 @@ impl<E: PairingEngine> CommitterKey<E> {
         }
     }
 
-    /// Return the supported number of evaluation points.
+    /// Return the bound on evaluation points.
     #[inline]
     pub fn max_eval_points(&self) -> usize {
         self.powers_of_g2.len() - 1
     }
 
-    /// The commitment procedures, that takes as input a committer key and the coefficients of polynomial, and produces the desired commitment.
+    /// Given a polynomial `polynomial` of degree less than `max_degree`, return a commitment to `polynomial`.
     pub fn commit(&self, polynomial: &[E::Fr]) -> Commitment<E> {
         Commitment(msm::<E>(&self.powers_of_g, polynomial))
     }
 
-    /// The batched commitment procedure, that takes as input a committer key and the coefficients of a set of polynomials, and produces the desired commitments for each polynomial.
+    /// Given an iterator over `polynomials`, expressed as vectors of coefficients, return a vector of commitmetns to all of them.
     pub fn batch_commit<J>(&self, polynomials: J) -> Vec<Commitment<E>>
     where
         J: IntoIterator,
@@ -87,13 +96,19 @@ impl<E: PairingEngine> CommitterKey<E> {
             .collect::<Vec<_>>()
     }
 
-    /// Evaluate a single polynomial at the point `alpha`, and provide an evaluation proof along with the evaluation.
-    pub fn open(&self, polynomial: &[E::Fr], alpha: &E::Fr) -> (E::Fr, EvaluationProof<E>) {
+    /// Given a polynomial `polynomial` and an evaluation point `evaluation_point`,
+    /// return the evaluation of `polynomial in `evaluation_point`,
+    /// together with an evaluation proof.
+    pub fn open(
+        &self,
+        polynomial: &[E::Fr],
+        evalualtion_point: &E::Fr,
+    ) -> (E::Fr, EvaluationProof<E>) {
         let mut quotient = Vec::new();
 
         let mut previous = E::Fr::zero();
         for &c in polynomial.iter().rev() {
-            let coefficient = c + previous * alpha;
+            let coefficient = c + previous * evalualtion_point;
             quotient.insert(0, coefficient);
             previous = coefficient;
         }

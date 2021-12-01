@@ -2,11 +2,11 @@ pub mod proof;
 pub mod prover;
 pub mod streams;
 
-/// Elastic prover implementation.
+/// The elastic prover implementation
 pub mod elastic_prover;
-/// Space-efficient prover implementation.
+/// The logarithmic-space (quasilinear-time) prover implementation.
 pub mod space_prover;
-/// Time-efficient prover implementation.
+/// The linear-time (linear-space) prover implementation.
 pub mod time_prover;
 
 mod subclaim;

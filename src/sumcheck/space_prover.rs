@@ -1,5 +1,3 @@
-//! The space-efficient implementation for the proving algorithm
-//! in the scalar-product sub-protocol.
 // #[cfg(feature = "parallel")]
 // use rayon::{
 //     iter::{IndexedParallelIterator, ParallelIterator},
@@ -35,7 +33,7 @@ where
     pub twist: F,
 }
 
-/// Space-Efficient prover state.
+/// The space-efficient prover.
 pub struct SpaceProver<F, SF, SG>
 where
     F: Field,
@@ -46,7 +44,7 @@ where
 {
     /// Randomness given by the verifier, used to fold the right-hand side.
     challenges: Vec<F>,
-    // Twisted randomness, used to fold the left-hand side of the scalar product.
+    /// Twisted randomness, used to fold the left-hand side of the scalar product.
     twisted_challenges: Vec<F>,
     /// Batched sumcheck instance.
     witness: WitnessStream<F, SF, SG>,
@@ -115,7 +113,6 @@ where
     S2: Streamer,
     S2::Item: Borrow<F>,
 {
-    /// Implement the space-efficient next-message function.
     fn next_message(&mut self) -> Option<ProverMsg<F>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         assert_eq!(
@@ -250,7 +247,6 @@ where
         self.twist.square_in_place();
     }
 
-    /// Return the number of rounds in the protocol.
     #[inline]
     fn rounds(&self) -> usize {
         self.tot_rounds

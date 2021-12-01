@@ -154,8 +154,9 @@ where
 }
 
 impl<E: PairingEngine> Proof<E> {
-    /// Function for creating SNARK proof using the space-efficient prover.
-    /// The input contains streams of R1CS instance and committer key.
+    /// Given as input the _streaming_ R1CS instance `r1cs`
+    /// and the _streaming_ committer key `ck`,
+    /// return a new SNARK using the elastic prover.
     pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: R1csStream<SM, SZ, SW>,
         ck: CommitterKeyStream<E, SG>,

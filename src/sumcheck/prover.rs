@@ -25,14 +25,15 @@ pub trait Prover<F>
 where
     F: Field,
 {
-    /// Function for producing next prover message.
+    /// Return the next prover message (if any).
     fn next_message(&mut self) -> Option<ProverMsg<F>>;
-    /// Function for performing folding of polynomials using the challenge.
+    /// Peform even/odd folding of the instance using the challenge `challenge`.
     fn fold(&mut self, challenge: F);
-    /// Function for outputing the number of rounds.
+    // Return the total number of rouds in the protocol.
     fn rounds(&self) -> usize;
-    /// Function for outputing the current round.
+    /// Current round number.
     fn round(&self) -> usize;
-    /// Function for producing the folding results in the last round of the protocol.
+    /// Return the fully-folded isntances if at the final round,
+    /// otherwise return None.
     fn final_foldings(&self) -> Option<[F; 2]>;
 }

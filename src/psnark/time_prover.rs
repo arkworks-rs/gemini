@@ -1,3 +1,4 @@
+/// Time-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
 use ark_std::One;
 
@@ -9,7 +10,7 @@ use crate::transcript::GeminiTranscript;
 
 use crate::PROTOCOL_NAME;
 
-use super::proof::Proof;
+use super::Proof;
 
 #[inline]
 fn lookup<T: Copy>(v: &[T], index: &[usize]) -> Vec<T> {
@@ -40,35 +41,38 @@ fn col<F>(m: &Matrix<F>) -> Vec<usize> {
         .collect()
 }
 
-pub fn prove_time<E>(r1cs: &R1CS<E::Fr>, _ck: &CommitterKey<E>) -> Proof<E>
-where
-    E: PairingEngine,
-{
-    let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
-    let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
+impl<E: PairingEngine> Proof<E> {
+    /// Given as input the R1CS instance `r1cs`
+    /// and the committer key `ck`,
+    /// return a new SNARK using the elastic prover.
+    pub fn new_time(r1cs: &R1CS<E::Fr>, _ck: &CommitterKey<E>) -> Proof<E> {
+        let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
+        let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
 
-    let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
-    // let _witness_commitment = ck.commit(&r1cs.w);
+        let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
+        // let _witness_commitment = ck.commit(&r1cs.w);
 
-    let alpha = transcript.get_challenge(b"alpha");
-    let first_proof =
-        crate::sumcheck::proof::Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
+        let alpha = transcript.get_challenge(b"alpha");
+        let first_proof =
+            crate::sumcheck::proof::Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
 
-    let num_constraints = r1cs.z.len();
-    let tensor_challenges = tensor(&first_proof.challenges);
-    let alpha_powers = powers(alpha, num_constraints);
+        let num_constraints = r1cs.z.len();
+        let tensor_challenges = tensor(&first_proof.challenges);
+        let alpha_powers = powers(alpha, num_constraints);
 
-    let r_a = hadamard(&alpha_powers, &tensor_challenges);
-    // let r_b = tensor_challenges;
-    // let r_c = alpha_powers;
+        let r_a = hadamard(&alpha_powers, &tensor_challenges);
+        // let r_b = tensor_challenges;
+        // let r_c = alpha_powers;
 
-    let col_a = col(&r1cs.a);
-    let row_a = row(&r1cs.a);
-    let val_a = val(&r1cs.a);
-    let z_a_star = lookup(&r1cs.z, &col_a);
-    let r_a_star = lookup(&r_a, &row_a);
-    let rz_a_star = hadamard(&z_a_star, &r_a_star);
-    let _second_sumcheck1 = Sumcheck::new_time(&mut transcript, &val_a, &rz_a_star, &E::Fr::one());
+        let col_a = col(&r1cs.a);
+        let row_a = row(&r1cs.a);
+        let val_a = val(&r1cs.a);
+        let z_a_star = lookup(&r1cs.z, &col_a);
+        let r_a_star = lookup(&r_a, &row_a);
+        let rz_a_star = hadamard(&z_a_star, &r_a_star);
+        let _second_sumcheck1 =
+            Sumcheck::new_time(&mut transcript, &val_a, &rz_a_star, &E::Fr::one());
 
-    todo!()
+        todo!()
+    }
 }

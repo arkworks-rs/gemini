@@ -14,8 +14,8 @@ use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
-    /// Function for creating SNARK proof using the time-efficient prover.
-    /// The input contains the R1CS instance and committer key of polynomial commitments.
+    /// Given as input the R1CS instance `r1cs` and the committer key `ck` for the polynomial commitment scheme,
+    /// produce a new SNARK proof using the time-efficient prover.
     pub fn new_time(r1cs: &R1CS<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
     where
         E: PairingEngine,

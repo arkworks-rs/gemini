@@ -112,7 +112,10 @@ where
     }
 }
 
-pub struct AlgHashIterator<F, I> where I: Iterator {
+pub struct AlgHashIterator<F, I>
+where
+    I: Iterator,
+{
     y1z: F,
     z: F,
     first: F,
@@ -146,20 +149,21 @@ where
 {
     type Item = F;
 
-
     fn next(&mut self) -> Option<Self::Item> {
         match (self.it.next(), self.previous) {
             (Some(current), Some(previous)) => {
                 let current = *current.borrow();
                 self.previous = Some(current);
                 Some(self.y1z + previous.borrow() + self.z * current)
-            },
+            }
             (None, Some(previous)) => {
                 self.previous = None;
                 Some(self.y1z + previous.borrow() + self.z * self.first)
-            },
+            }
             (None, None) => None,
-            (Some(_), None) => panic!("Something wrong with the iterator: previous position is None, current is Some(_)."),
+            (Some(_), None) => panic!(
+                "Something wrong with the iterator: previous position is None, current is Some(_)."
+            ),
         }
     }
 }
@@ -223,9 +227,6 @@ fn test_sorted_stream() {
 
     let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();
     let test_vector_stream = test_vector.iter().rev().cloned().collect::<Vec<_>>();
-    println!("{:?}", merged_indices);
-    println!("{:?}", subset_indices_stream);
-    println!("{:?}", test_vector_stream);
     let sorted_stream = LookupSortedStreamer::new(
         test_vector_stream.as_slice(),
         subset_indices_stream.as_slice(),

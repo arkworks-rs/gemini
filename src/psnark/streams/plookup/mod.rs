@@ -13,6 +13,15 @@ use super::entry_product::{entry_product_streams, ProductStream, RightRotationSt
 
 type Eps<F, S> = (RightRotationStreamer<F, S>, ProductStream<F, S>);
 
+/// Given a lookup instance of the form
+/// `subset` (denoted \\(\vec f^*\\)),
+///  `set` (denoted \\(\vec f\\) of length \\(n\\)),
+/// and the `index` (denoted \\(I\\), whose entries are decreasing in `0..n`)
+/// Return streams for the _entry product_ of the following terms:
+/// - set: streaming for the vector \\((\f_i +  )\)
+/// - subset: streaming for the vector \\(f_i^* + z\\)
+/// - sorted: constructs \\(\vec w\\)
+///   the merged vectors of \\((f^*, f)\\) and streams the vector \\(y(1+z) + w_i + z \cdot w_{i+1 \pmod{n}}\\)
 pub fn plookup_streams<SET, SUB, IND, F>(
     subset: SUB,
     set: SET,
@@ -64,7 +73,7 @@ fn test_plookup_relation() {
         F::from(15u64),
         F::from(42u64),
     ];
-    let indices = [0, 1, 3, 5];
+    let indices = [5, 3, 1, 0];
     let set_stream = &set[..];
     let subset_stream = &subset[..];
     let indices_stream = &indices[..];

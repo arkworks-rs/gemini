@@ -3,7 +3,7 @@ mod time_prover;
 mod verifier;
 
 /// Utilities for producing streams in SNARK protocol.
-pub mod streams;
+mod streams;
 #[cfg(test)]
 mod tests;
 
@@ -14,7 +14,7 @@ use crate::sumcheck::prover::ProverMsg;
 use crate::kzg::Commitment;
 use crate::tensorcheck::TensorCheckProof;
 
-/// A SNARK proof, composed of all prover's messages sent throughout the protocol.
+/// The SNARK proof, composed of all prover's messages sent throughout the protocol.
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,

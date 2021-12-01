@@ -6,7 +6,7 @@ use crate::transcript::GeminiTranscript;
 
 /// The sumcheck verifier protocol reduces a claim \\( \langle f, g \rangle = u\\)
 /// to a `Subclaim` that:
-/// \\(f(\rho_0, \rho_{n-1}) \cdot g(\rho_0, \dots, \rho_{n-1})> = t\\).
+/// \\(f(\rho_0, \rho_{n-1}) \cdot g(\rho_0, \dots, \rho_{n-1}) = t\\).
 pub struct Subclaim<F: Field> {
     /// the verifier's challenges \\(\rho_0, \dots, \rho_{n-1}\\)
     pub challenges: Vec<F>,

@@ -1,3 +1,10 @@
+//!
+//! The streaming model is essentially implemented as a wrapper around an iterator,
+//! with one additional method for obtaining the length.
+//!
+//! Streams must be [Copy][std::marker::Copy].
+//! This is necessary in order to compose streams and return them from subroutines,
+//! as well as starting multiple streams of the same object at once.
 use std::marker::PhantomData;
 
 use ark_ff::Field;
@@ -5,24 +12,30 @@ use memmap::Mmap;
 
 // DummyStream
 pub mod dummy;
-pub mod slice;
+mod slice;
 
 pub use slice::Reversed;
 
-/// A `Streamer` provides the interface used in order to represent the streaming model in this paper.
+/// The trait representing a streamable object.
 pub trait Streamer: Copy {
     type Item;
     type Iter: Iterator<Item = Self::Item>;
 
+    /// Return a new stream for the given object.
     fn stream(&self) -> Self::Iter;
+
+    /// Return the length of the stream.
+    /// Careful: different objects might have different indications of what _length_ means;
+    /// this might not be the actual size in terms of elements.
     fn len(&self) -> usize;
 
+    /// Return `true` if the stream is empty, else `false`.
     fn is_empty(&self) -> bool {
         self.len() == 0
     }
 }
 
-/// A memory mapped buffer for field elements.
+/// A memory-mapped buffer for field elements.
 #[derive(Clone, Copy)]
 pub struct FieldMmap<'a, F>
 where

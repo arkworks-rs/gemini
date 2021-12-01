@@ -17,7 +17,9 @@ pub struct LinCombStream<'a, F, T> {
     pub coeffs: &'a [F],
 }
 
-/// Macro rule for producing folding stream of linear combination.
+/// Foldings of a lienear combination of polynomials.
+///
+/// Given as input a sequence of polynomials, take a linear combination of them using `coeffs`, and produce the foldings using `challenges`.
 #[macro_export]
 macro_rules! lincomb_fold {
     (($($B:expr),*), $challenges:expr, $coeffs:expr) => {
@@ -28,7 +30,7 @@ macro_rules! lincomb_fold {
     }
 }
 
-/// Macro rule for producing stream of linear combination.
+/// Stream for the linear combination of some vectors, given the coefficients.
 #[macro_export]
 macro_rules! lincomb {
     (($($B:expr),*), $coeffs:expr) => {
@@ -36,6 +38,7 @@ macro_rules! lincomb {
     }
 }
 
+/// Macro generating the stream for the linear combination of an arbitrary number of elements.
 macro_rules! impl_lincomb_iter {
     ($($B:ident),*) => (
 

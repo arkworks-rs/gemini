@@ -22,14 +22,15 @@ mod misc;
 pub mod kzg;
 /// Preprocessing SNARK for R1CS.
 #[allow(dead_code)]
-mod psnark;
+pub mod psnark;
 /// SNARK for R1CS.
 pub mod snark;
-/// Utilities for the streaming model.
+/// Data structures for the streaming model.
 pub mod stream;
 /// The sumcheck IP protocol for twisted scalar product.
 pub mod sumcheck;
-/// Polynomial IOP for evaluating univariate polynomials at a tensor point.
+/// The tensorcheck IOP protocol for proving multivariate evaluations
+/// \\(f(\rho_0, \dots, \rho_{n-1})\\).
 pub mod tensorcheck;
 //// Fiat-Shamit utilities.
 mod transcript;
@@ -37,7 +38,7 @@ mod transcript;
 const SPACE_TIME_THRESHOLD: usize = 22;
 // const SUMCHECK_BUF_SIZE: usize = 1 << 20;
 
-/// An error identifying a failure in the proof verification.
+/// Error identifying a failure in the proof verification.
 #[derive(Debug, Clone)]
 pub struct VerificationError;
 
@@ -49,6 +50,5 @@ impl fmt::Display for VerificationError {
     }
 }
 
-/// Result of the verification.
-/// The result may contain error information when the verification fails.
+/// Verification result.
 pub type VerificationResult = ark_std::result::Result<(), VerificationError>;

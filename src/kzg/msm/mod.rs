@@ -1,4 +1,4 @@
-//! Utilities and tests for multi-scalar multiplicaiton.
+//! Utilities and tests for multi-scalar multiplication.
 pub mod stream_pippenger;
 pub mod variable_base;
 

@@ -1,13 +1,13 @@
-//! Space-efficient algebraic holographic prover for R1CS.
+//! Space-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
-use crate::psnark::proof::Proof;
 use crate::psnark::streams::memcheck::memcheck_streams;
 use crate::psnark::streams::plookup::plookup_streams;
+use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
 use crate::kzg::space::CommitterKeyStream;
@@ -25,7 +25,10 @@ use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
-    pub fn new_space<SM, SG, SZ, SW>(
+    /// Given as input the _streaming_ R1CS instance `r1cs`
+    /// and the _streaming_ committer key `ck`,
+    /// return a new _preprocessing_ SNARK using the elastic prover.
+    pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: R1csStream<SM, SZ, SW>,
         ck: CommitterKeyStream<E, SG>,
     ) -> Proof<E>
