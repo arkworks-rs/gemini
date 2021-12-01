@@ -6,32 +6,17 @@ use ark_std::borrow::Borrow;
 pub struct LookupSortedStreamer<F, S, SA> {
     base_streamer: S,
     addr_streamer: SA,
-    beta: F,
-    gamma: F,
-}
-
-pub struct LookupSortedIterator<F, I, IA> {
-    base_iter: I,
-    addr_iter: IA,
-    y1z: F,
-    zeta: F,
-    previous: F,
-    first: F,
-    cnt: usize,
-    len: usize,
-    //
-    cur_ele: F,
-    cur_i: usize,
-    cur_j: usize,
+    y: F,
+    z: F,
 }
 
 impl<F, S, SA> LookupSortedStreamer<F, S, SA> {
-    pub fn new(base_streamer: S, addr_streamer: SA, beta: F, gamma: F) -> Self {
+    pub fn new(base_streamer: S, addr_streamer: SA, y: F, z: F) -> Self {
         Self {
             base_streamer,
             addr_streamer,
-            beta,
-            gamma,
+            y,
+            z,
         }
     }
 }
@@ -41,31 +26,21 @@ where
     F: Field,
     S: Streamer,
     SA: Streamer,
-    S::Item: Borrow<F>,
+    S::Item: Borrow<F> + Clone,
     SA::Item: Borrow<usize>,
 {
     type Item = F;
 
-    type Iter = LookupSortedIterator<F, S::Iter, SA::Iter>;
+    type Iter = AlgHashIterator<F, SortedIterator<S::Item, S::Iter, SA::Iter>>;
 
     fn stream(&self) -> Self::Iter {
         let base_iter = self.base_streamer.stream();
         let addr_iter = self.addr_streamer.stream();
-        let y1z = self.beta * (F::one() + self.gamma);
-        let zeta = self.gamma;
-        Self::Iter {
-            base_iter,
-            addr_iter,
-            previous: F::zero(),
-            first: F::zero(),
-            y1z,
-            zeta,
-            cnt: 0,
-            len: self.len(),
-            cur_ele: F::zero(),
-            cur_i: self.base_streamer.len() - 1,
-            cur_j: 0,
-        }
+        AlgHashIterator::new(
+            SortedIterator::new(base_iter, addr_iter, self.base_streamer.len()),
+            self.y,
+            self.z,
+        )
     }
 
     fn len(&self) -> usize {
@@ -73,120 +48,191 @@ where
     }
 }
 
-impl<F, I, IA> Iterator for LookupSortedIterator<F, I, IA>
+pub struct SortedIterator<T, I, J>
+where
+    I: Iterator<Item = T>,
+    J: Iterator,
+    J::Item: Borrow<usize>,
+{
+    current_it: usize,
+    cache: Option<T>,
+    it: I,
+    current_address: Option<J::Item>,
+    addresses: J,
+}
+
+impl<T, I, J> SortedIterator<T, I, J>
+where
+    I: Iterator<Item = T>,
+    J: Iterator,
+    J::Item: Borrow<usize>,
+{
+    fn new(it: I, mut addresses: J, len: usize) -> Self {
+        let current_it = len;
+        let cache = None;
+        let current_address = addresses.next();
+        Self {
+            current_it,
+            cache,
+            it,
+            current_address,
+            addresses,
+        }
+    }
+}
+
+impl<T, I, J> Iterator for SortedIterator<T, I, J>
+where
+    T: Clone,
+    I: Iterator<Item = T>,
+    J: Iterator,
+    J::Item: Borrow<usize>,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        // if we have an element from the previous iteration, return it.
+        match &self.current_address {
+            None => self.it.next(),
+            Some(current_address) => {
+                let current_address = *current_address.borrow();
+                if self.current_it > current_address {
+                    self.current_it -= 1;
+                    self.cache = self.it.next();
+                    self.cache.clone()
+                } else if self.current_it == current_address {
+                    self.current_address = self.addresses.next();
+                    self.cache.clone()
+                } else {
+                    // self.current_it < self.current_address
+                    panic!("address index is not decreasing. Perhaps wrong sorting?")
+                }
+            }
+        }
+    }
+}
+
+pub struct AlgHashIterator<F, I> where I: Iterator {
+    y1z: F,
+    z: F,
+    first: F,
+    previous: Option<F>,
+    it: I,
+}
+
+impl<F, I> AlgHashIterator<F, I>
 where
     F: Field,
     I: Iterator,
-    IA: Iterator,
+    I::Item: Borrow<F> + Clone,
+{
+    fn new(mut it: I, y: F, z: F) -> Self {
+        let next = *it.next().unwrap().borrow();
+        Self {
+            z,
+            y1z: y * (F::one() + z),
+            it,
+            first: next,
+            previous: Some(next),
+        }
+    }
+}
+
+impl<F, I> Iterator for AlgHashIterator<F, I>
+where
+    F: Field,
+    I: Iterator,
     I::Item: Borrow<F>,
-    IA::Item: Borrow<usize>,
 {
     type Item = F;
 
+
     fn next(&mut self) -> Option<Self::Item> {
-        if self.cnt == 0 {
-            let next_base = self.base_iter.next()?;
-            let next_addr = self.addr_iter.next()?;
-
-            self.cur_ele = *next_base.borrow();
-            self.cur_j = *next_addr.borrow();
-
-            self.first = self.cur_ele;
-            let tmp: F;
-            if self.cur_j == self.cur_i {
-                tmp = self.cur_ele;
-                let nxt = self.addr_iter.next();
-                match nxt {
-                    Some(p) => self.cur_j = *p.borrow(),
-                    None => self.cur_j = self.len + 1,
-                }
-            } else {
-                self.cur_i -= 1;
-                self.cur_ele = *(self.base_iter.next()?).borrow();
-                tmp = self.cur_ele;
-            }
-
-            self.cnt += 1;
-            self.previous = tmp;
-            return Some(self.y1z + self.first + self.zeta * tmp);
-        } else if self.cnt == self.len - 1 {
-            self.cnt += 1;
-            return Some(self.y1z + self.previous + self.zeta * self.first);
-        }
-
-        if self.cnt < self.len {
-            let tmp: F;
-            if self.cur_j == self.cur_i {
-                tmp = self.cur_ele;
-                let nxt = self.addr_iter.next();
-                match nxt {
-                    Some(p) => self.cur_j = *p.borrow(),
-                    None => self.cur_j = self.len + 1,
-                }
-            } else {
-                self.cur_i -= 1;
-                self.cur_ele = *(self.base_iter.next()?).borrow();
-                tmp = self.cur_ele;
-            }
-
-            self.cnt += 1;
-            let previous = self.previous;
-            self.previous = tmp;
-
-            Some(self.y1z + previous + self.zeta * tmp)
-        } else {
-            None
+        match (self.it.next(), self.previous) {
+            (Some(current), Some(previous)) => {
+                let current = *current.borrow();
+                self.previous = Some(current);
+                Some(self.y1z + previous.borrow() + self.z * current)
+            },
+            (None, Some(previous)) => {
+                self.previous = None;
+                Some(self.y1z + previous.borrow() + self.z * self.first)
+            },
+            (None, None) => None,
+            (Some(_), None) => panic!("Something wrong with the iterator: previous position is None, current is Some(_)."),
         }
     }
+}
+
+#[test]
+fn test_sorted_iterator() {
+    let base = vec!["1", "2", "3", "4"];
+    let addresses = vec![2usize, 2, 2, 1, 0, 0, 0];
+    let expected = vec!["4", "3", "3", "3", "3", "2", "2", "1", "1", "1", "1"];
+    let sorted_iterator =
+        SortedIterator::new(base.iter().rev(), addresses.iter().cloned(), base.len())
+            .cloned()
+            .collect::<Vec<_>>();
+    assert_eq!(sorted_iterator, expected);
+
+    let base = vec!["1", "2", "3", "4", "5", "6"];
+    let addresses = vec![4, 3, 3, 2, 1, 1, 1, 1, 0, 0];
+    let expected = vec![
+        "6", "5", "5", "4", "4", "4", "3", "3", "2", "2", "2", "2", "2", "1", "1", "1",
+    ];
+    let sorted_iterator =
+        SortedIterator::new(base.iter().rev(), addresses.iter().cloned(), base.len())
+            .cloned()
+            .collect::<Vec<_>>();
+    assert_eq!(sorted_iterator, expected);
 }
 
 #[test]
 fn test_sorted_stream() {
     use ark_bls12_381::Fr;
     use ark_ff::One;
+    use ark_std::rand::Rng;
     use ark_std::UniformRand;
 
-    for _ in 0..100 {
-        let rng = &mut ark_std::test_rng();
-        let set_size = 1000;
-        let subset_size = 2000;
-        let mut a = Vec::new();
-        for _ in 0..set_size {
-            a.push(Fr::rand(rng));
-        }
+    let rng = &mut ark_std::test_rng();
+    let set_size = 5;
+    let subset_size = 10;
+    let test_vector = (0..set_size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
 
-        let mut b = Vec::new();
-        let mut w = Vec::new();
-        let mut cnt = 0;
-        w.push(a[cnt]);
-        for _ in 0..subset_size {
-            let mut bit = usize::rand(rng) % 2;
-            while bit == 0 && cnt < set_size - 1 {
-                cnt += 1;
-                w.push(a[cnt]);
-                bit = usize::rand(rng) % 2;
-            }
-            b.push(cnt);
-            w.push(a[cnt]);
-        }
+    // assume the subset indices are sorted.
+    let mut subset_indices = (0..subset_size)
+        .map(|_| rng.gen_range(0..set_size))
+        .collect::<Vec<_>>();
+    subset_indices.sort();
+    // create the array for merged indices and the sorted vector `w `
+    let mut merged_indices = subset_indices.clone();
+    merged_indices.extend(0..set_size);
+    merged_indices.sort();
+    merged_indices.reverse();
+    let w = merged_indices
+        .iter()
+        .map(|&i| test_vector[i])
+        .collect::<Vec<_>>();
 
-        let y = Fr::rand(rng);
-        let z = Fr::rand(rng);
-        let mut ans = Vec::new();
-        let len = set_size + subset_size;
-        for i in 0..len - 1 {
-            ans.push(y * (Fr::one() + z) + w[len - 1 - i] + z * w[len - 1 - i - 1]);
-        }
-        ans.push(y * (Fr::one() + z) + w[0] + z * w[len - 1]);
-        // ans.push(Fr::zero());
+    let y = Fr::rand(rng);
+    let z = Fr::rand(rng);
+    let len = set_size + subset_size;
+    let ans = (0..len)
+        .map(|i| y * (Fr::one() + z) + w[i] + z * w[(i + 1) % len])
+        .collect::<Vec<_>>();
 
-        a.reverse();
-        b.reverse();
-        let st = LookupSortedStreamer::new(a.as_slice(), b.as_slice(), y, z);
-        let mut it = st.stream();
-        for i in 0..set_size + subset_size {
-            let res = it.next();
-            assert_eq!(res.unwrap(), ans[i]);
-        }
-    }
+    let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();
+    let test_vector_stream = test_vector.iter().rev().cloned().collect::<Vec<_>>();
+    println!("{:?}", merged_indices);
+    println!("{:?}", subset_indices_stream);
+    println!("{:?}", test_vector_stream);
+    let sorted_stream = LookupSortedStreamer::new(
+        test_vector_stream.as_slice(),
+        subset_indices_stream.as_slice(),
+        y,
+        z,
+    )
+    .stream()
+    .collect::<Vec<_>>();
+    assert_eq!(sorted_stream, ans);
 }

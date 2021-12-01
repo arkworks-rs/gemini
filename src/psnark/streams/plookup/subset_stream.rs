@@ -70,9 +70,7 @@ fn test_subset_stream() {
     let test_vector = (0..size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
 
     let z = Fr::rand(rng);
-    let expected = (0..size).map(|i|
-        test_vector[i] + z
-    ).collect::<Vec<_>>();
+    let expected = (0..size).map(|i| test_vector[i] + z).collect::<Vec<_>>();
 
     let st = LookupSubsetStreamer::new(test_vector.as_slice(), z);
     let got = st.stream().collect::<Vec<_>>();

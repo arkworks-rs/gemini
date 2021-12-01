@@ -22,7 +22,6 @@ impl<E: PairingEngine> Proof<E> {
     {
         let snark_time = start_timer!(|| module_path!());
 
-
         debug!(
             "features:{};space-time-threshold:{};tensor-expansion:{};msm-buffer:{}",
             crate::misc::_features_enabled(),
@@ -88,7 +87,6 @@ impl<E: PairingEngine> Proof<E> {
             &E::Fr::one(),
         );
         end_timer!(second_sumcheck_time);
-
 
         let tensor_evaluation = second_proof.final_foldings[0][0];
         transcript.append_scalar(b"tensor-eval", &tensor_evaluation);

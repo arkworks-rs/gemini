@@ -108,9 +108,9 @@ fn test_set_stream() {
     let y = Fr::rand(rng);
     let z = Fr::rand(rng);
 
-    let expected = (0..size).map(|i|
-        y * (Fr::one() + z) + test_vector[i] + z * test_vector[(i + 1) % size]
-    ).collect::<Vec<_>>();
+    let expected = (0..size)
+        .map(|i| y * (Fr::one() + z) + test_vector[i] + z * test_vector[(i + 1) % size])
+        .collect::<Vec<_>>();
 
     let st = LookupSetStreamer::new(test_vector.as_slice(), y, z);
     let got = st.stream().collect::<Vec<_>>();

@@ -1,13 +1,13 @@
 use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
 
-use crate::snark::Proof;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::kzg::space::CommitterKeyStream;
 use crate::kzg::time::CommitterKey;
 use crate::misc::matrix_into_row_major_slice;
 use crate::misc::product_matrix_vector;
 use crate::misc::{evaluate_be, matrix_into_col_major_slice};
+use crate::snark::Proof;
 use crate::stream::{Reversed, Streamer};
 
 #[test]

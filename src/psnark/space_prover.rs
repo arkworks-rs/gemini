@@ -10,13 +10,13 @@ use crate::psnark::streams::memcheck::memcheck_streams;
 use crate::psnark::streams::plookup::plookup_streams;
 
 use crate::circuit::R1csStream;
+use crate::kzg::space::CommitterKeyStream;
+use crate::lincomb;
+use crate::misc::{expand_tensor, powers, MatrixElement};
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer,
     ValStream,
 };
-use crate::kzg::space::CommitterKeyStream;
-use crate::lincomb;
-use crate::misc::{expand_tensor, powers, MatrixElement};
 use crate::stream::Streamer;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::space_prover::SpaceProver;

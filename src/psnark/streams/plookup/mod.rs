@@ -44,15 +44,26 @@ where
     )
 }
 
-
 #[test]
 fn test_plookup_relation() {
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::Zero;
 
-    let set = [F::from(10u64), F::from(12u64), F::from(13u64), F::from(14u64), F::from(15u64), F::from(42u64)];
-    let subset = [F::from(10u64), F::from(13u64), F::from(15u64), F::from(42u64)];
+    let set = [
+        F::from(10u64),
+        F::from(12u64),
+        F::from(13u64),
+        F::from(14u64),
+        F::from(15u64),
+        F::from(42u64),
+    ];
+    let subset = [
+        F::from(10u64),
+        F::from(13u64),
+        F::from(15u64),
+        F::from(42u64),
+    ];
     let indices = [0, 1, 3, 5];
     let set_stream = &set[..];
     let subset_stream = &subset[..];
@@ -62,9 +73,12 @@ fn test_plookup_relation() {
     let pl_set = LookupSetStreamer::new(set_stream, y, z);
     let pl_subset = LookupSubsetStreamer::new(subset_stream, z);
     let pl_sorted = LookupSortedStreamer::new(set_stream, indices_stream, y, z);
-    let entry_product_pl_set = pl_set.stream().fold(F::one(), |x, y| x*y);
-    let entry_product_pl_subset = pl_subset.stream().fold(F::one(), |x, y| x*y);
-    let entry_product_pl_merged = pl_sorted.stream().fold(F::one(), |x, y| x*y);
+    let entry_product_pl_set = pl_set.stream().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_subset = pl_subset.stream().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_merged = pl_sorted.stream().fold(F::one(), |x, y| x * y);
 
-    assert_eq!(entry_product_pl_merged, entry_product_pl_set * entry_product_pl_subset * (F::one() + z).pow(&[set.len() as u64]));
+    assert_eq!(
+        entry_product_pl_merged,
+        entry_product_pl_set * entry_product_pl_subset * (F::one() + z).pow(&[set.len() as u64])
+    );
 }

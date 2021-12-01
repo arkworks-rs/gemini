@@ -161,7 +161,6 @@ where
     }
 }
 
-
 #[test]
 fn test_tensor() {
     use crate::misc::{expand_tensor, powers};
