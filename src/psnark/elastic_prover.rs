@@ -60,7 +60,7 @@ impl<E: PairingEngine> Proof<E> {
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_sumcheck = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(first_sumcheck_time);
-        let first_sumcheck_messages = first_sumcheck.messages;
+        let first_sumcheck_messages = first_sumcheck.prover_messages();
 
         let len = first_sumcheck.challenges.len();
         let r_b_short = &first_sumcheck.challenges;
@@ -124,7 +124,7 @@ impl<E: PairingEngine> Proof<E> {
             [&mut ip_val_rz_a, &mut ip_val_rz_b, &mut ip_val_rz_c],
         );
         end_timer!(second_sumcheck_time);
-        let second_sumcheck_messages = second_sumcheck.messages;
+        let second_sumcheck_messages = second_sumcheck.prover_messages();
 
         let mut ip_r_z_star_a = SpaceProver::new(r_a_star, z_a_star, one);
         let mut ip_r_z_star_b = SpaceProver::new(r_a_star, z_a_star, one);
@@ -136,7 +136,7 @@ impl<E: PairingEngine> Proof<E> {
             [&mut ip_r_z_star_a, &mut ip_r_z_star_b, &mut ip_r_z_star_c],
         );
         end_timer!(third_sumcheck_time);
-        let third_sumcheck_messages = third_sumcheck.messages;
+        let third_sumcheck_messages = third_sumcheck.prover_messages();
 
         // PLOOKUP PROTOCOL
         let y = transcript.get_challenge(b"y");
@@ -247,7 +247,7 @@ impl<E: PairingEngine> Proof<E> {
                 &mut memcheck_audit_sumcheck_c,
             ],
         );
-        let ep_sumcheck_messages = ep_sumcheck.messages;
+        let ep_sumcheck_messages = ep_sumcheck.prover_messages();
 
         end_timer!(entry_product_time);
 
