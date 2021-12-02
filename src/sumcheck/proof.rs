@@ -6,7 +6,7 @@ use merlin::Transcript;
 
 use crate::stream::Streamer;
 
-use super::prover::ProverMsg;
+use super::prover::{ProverMsgs, RoundMsg};
 use super::Prover;
 use crate::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
 use crate::transcript::GeminiTranscript;
@@ -15,7 +15,7 @@ use crate::transcript::GeminiTranscript;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Sumcheck<F: Field> {
     /// The non-oracle messages sent througout the protocol.
-    pub messages: Vec<ProverMsg<F>>,
+    pub messages: Vec<RoundMsg<F>>,
     /// The challenges sent thropughout the protocol.
     pub challenges: Vec<F>,
     /// The number of rounds in the protocol.
@@ -49,6 +49,9 @@ impl<F: Field> Sumcheck<F> {
 
         let rounds = prover.rounds();
         let final_foldings = vec![prover.final_foldings().unwrap()];
+        // Add the final foldings to the transcript
+        transcript.append_scalar(b"final-folding", &final_foldings[0][0]);
+        transcript.append_scalar(b"final-folding", &final_foldings[0][1]);
 
         Sumcheck {
             messages,
@@ -89,7 +92,12 @@ impl<F: Field> Sumcheck<F> {
         }
         let final_foldings = provers
             .iter()
-            .map(|p| p.final_foldings().unwrap())
+            .map(|p| {
+                let final_folding = p.final_foldings().unwrap();
+                transcript.append_scalar(b"final-folding-lhs", &final_folding[0]);
+                transcript.append_scalar(b"final-folding-rhs", &final_folding[1]);
+                final_folding
+            })
             .collect::<Vec<_>>();
         Sumcheck {
             messages,
@@ -129,5 +137,10 @@ impl<F: Field> Sumcheck<F> {
     {
         let prover = ElasticProver::new(f, g, twist);
         Self::prove(transcript, prover)
+    }
+
+    /// Return the prover's messages.
+    pub fn prover_messages(&self) -> ProverMsgs<F> {
+        ProverMsgs(self.messages.clone(), self.final_foldings.clone())
     }
 }

@@ -1,3 +1,6 @@
+//! The sumcheck IP protocol for twisted scalar product.
+//!
+//!
 pub mod proof;
 pub mod prover;
 pub mod streams;

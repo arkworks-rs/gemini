@@ -1,9 +1,11 @@
-//! Prover algorithm for scalar product sub-argument.
+//!
+//!
+
 use ark_ff::Field;
 use ark_std::log2;
 
 use crate::misc::fold_polynomial;
-use crate::sumcheck::prover::{Prover, ProverMsg};
+use crate::sumcheck::prover::{Prover, RoundMsg};
 
 /// The witness for the Twisted Scalar product relation.
 #[derive(Clone)]
@@ -77,7 +79,7 @@ where
     }
 
     /// Time-efficient, next-message function.
-    fn next_message(&mut self) -> Option<ProverMsg<F>> {
+    fn next_message(&mut self) -> Option<RoundMsg<F>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         // debug!("Round: {}", self.round);
 
@@ -111,7 +113,7 @@ where
         // Increment the round counter
         self.round += 1;
 
-        Some(ProverMsg(a, b))
+        Some(RoundMsg(a, b))
     }
 
     /// The number of rounds this prover is supposed to run on.

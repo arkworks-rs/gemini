@@ -9,7 +9,7 @@ mod tests;
 
 use ark_ec::PairingEngine;
 
-use crate::sumcheck::prover::ProverMsg;
+use crate::sumcheck::prover::ProverMsgs;
 
 use crate::kzg::Commitment;
 use crate::tensorcheck::TensorCheckProof;
@@ -18,9 +18,7 @@ use crate::tensorcheck::TensorCheckProof;
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,
-    first_sumcheck_msgs: Vec<ProverMsg<E::Fr>>,
-    ra_a_z: E::Fr,
-    second_sumcheck_msgs: Vec<ProverMsg<E::Fr>>,
-    tensor_evaluation: E::Fr,
+    first_sumcheck_msgs: ProverMsgs<E::Fr>,
+    second_sumcheck_msgs: ProverMsgs<E::Fr>,
     tensor_check_proof: TensorCheckProof<E>,
 }

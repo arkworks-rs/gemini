@@ -24,10 +24,9 @@ impl<E: PairingEngine> Proof<E> {
         let first_sumcheck_msgs = &self.first_sumcheck_msgs;
 
         // Verify the first sumcheck
-        let asserted_sum_1 = self.zc_alpha;
-        transcript.append_scalar(b"zc(alpha)", &asserted_sum_1);
+        transcript.append_scalar(b"zc(alpha)", &self.zc_alpha);
 
-        let subclaim_1 = Subclaim::new(&mut transcript, &first_sumcheck_msgs, asserted_sum_1);
+        let subclaim_1 = Subclaim::new(&mut transcript, &first_sumcheck_msgs, self.zc_alpha)?;
 
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
@@ -37,15 +36,12 @@ impl<E: PairingEngine> Proof<E> {
         let alpha_powers = powers(alpha, num_constraints);
         let hadamard_randomness = hadamard(&tensor_challenges, &alpha_powers);
 
-        let second_sumcheck_msgs = &self.second_sumcheck_msgs;
-
         // Verify the second sumcheck
-        let asserted_sum_2 = self.ra_a_z
-            + subclaim_1.reduced_claim * self.ra_a_z.inverse().unwrap() * eta
-            + asserted_sum_1 * eta2;
+        let asserted_sum_2 = subclaim_1.final_foldings[0][0]
+            + subclaim_1.final_foldings[0][1] * eta
+            + self.zc_alpha * eta2;
 
-        let subclaim_2 = Subclaim::new(&mut transcript, &second_sumcheck_msgs, asserted_sum_2);
-        transcript.append_scalar(b"tensor-eval", &self.tensor_evaluation);
+        let subclaim_2 = Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
 
         // Consistency check
         let gamma = transcript.get_challenge::<E::Fr>(b"batch_challenge");
@@ -98,10 +94,7 @@ impl<E: PairingEngine> Proof<E> {
             .verify(
                 &mut transcript,
                 vk,
-                &[vec![
-                    self.tensor_evaluation,
-                    subclaim_2.reduced_claim * self.tensor_evaluation.inverse().unwrap(),
-                ]],
+                &[subclaim_2.final_foldings[0].to_vec()],
                 &[self.witness_commitment],
                 &direct_base_polynomials_evaluations,
                 &[subclaim_2.challenges],

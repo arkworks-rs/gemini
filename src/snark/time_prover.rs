@@ -47,6 +47,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_proof = Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
+        let first_sumcheck_msgs = first_proof.prover_messages();
         end_timer!(first_sumcheck_time);
 
         // XXXX change me
@@ -55,7 +56,6 @@ impl<E: PairingEngine> Proof<E> {
         let c_challenges = powers(alpha, num_constraints);
         let a_challenges = hadamard(&b_challenges, &c_challenges);
 
-        let ra_a_z = first_proof.final_foldings[0][0];
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
 
@@ -83,13 +83,11 @@ impl<E: PairingEngine> Proof<E> {
         let second_proof = Sumcheck::new_time(
             &mut transcript,
             &abc_tensored,
-            &r1cs.z, // XXX. this can be borrowed?
+            &r1cs.z,
             &E::Fr::one(),
         );
+        let second_sumcheck_msgs = second_proof.prover_messages();
         end_timer!(second_sumcheck_time);
-
-        let tensor_evaluation = second_proof.final_foldings[0][0];
-        transcript.append_scalar(b"tensor-eval", &tensor_evaluation);
 
         // derive the points needed from the challenges
         let tc_base_polynomials = [&r1cs.w];
@@ -111,10 +109,8 @@ impl<E: PairingEngine> Proof<E> {
         Proof {
             witness_commitment,
             zc_alpha,
-            first_sumcheck_msgs: first_proof.messages,
-            ra_a_z,
-            second_sumcheck_msgs: second_proof.messages,
-            tensor_evaluation,
+            first_sumcheck_msgs,
+            second_sumcheck_msgs,
             tensor_check_proof,
         }
     }

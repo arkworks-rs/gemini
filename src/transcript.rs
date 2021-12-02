@@ -5,12 +5,12 @@ use ark_ec::{group::Group, PairingEngine};
 use ark_ff::{to_bytes, Field};
 
 use crate::kzg::Commitment;
-use crate::sumcheck::prover::ProverMsg;
+use crate::sumcheck::prover::RoundMsg;
 
 /// A Transcript with some shorthands for feeding scalars, group elements, and obtaining challenges as field elements.
 pub trait GeminiTranscript {
     /// Append a Prover message, with the given label.
-    fn append_prover_message<F: Field>(&mut self, label: &'static [u8], msg: &ProverMsg<F>);
+    fn append_prover_message<F: Field>(&mut self, label: &'static [u8], msg: &RoundMsg<F>);
 
     /// Append a `Field` instance  with the given lebel.
     fn append_scalar<F: Field>(&mut self, label: &'static [u8], scalar: &F);
@@ -30,7 +30,7 @@ pub trait GeminiTranscript {
 }
 
 impl GeminiTranscript for Transcript {
-    fn append_prover_message<F: Field>(&mut self, label: &'static [u8], msg: &ProverMsg<F>) {
+    fn append_prover_message<F: Field>(&mut self, label: &'static [u8], msg: &RoundMsg<F>) {
         self.append_message(label, &to_bytes!(msg.0, msg.1).unwrap())
     }
 

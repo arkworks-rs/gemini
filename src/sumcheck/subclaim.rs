@@ -1,22 +1,86 @@
 use ark_ff::Field;
 use merlin::Transcript;
 
-use crate::sumcheck::prover::ProverMsg;
+use crate::misc::scalar_prod;
 use crate::transcript::GeminiTranscript;
+use crate::{sumcheck::prover::ProverMsgs, VerificationError};
+
+use super::prover::RoundMsg;
 
 /// The sumcheck verifier protocol reduces a claim \\( \langle f, g \rangle = u\\)
-/// to a `Subclaim` that:
-/// \\(f(\rho_0, \rho_{n-1}) \cdot g(\rho_0, \dots, \rho_{n-1}) = t\\).
+/// to:
+/// \\(
+/// f(\rho_0, \dots, \rho_{n-1}) \cdot g(\rho_0, \dots, \rho_{n-1}) = t_0 \cdot t_1.
+/// \\)
 pub struct Subclaim<F: Field> {
     /// the verifier's challenges \\(\rho_0, \dots, \rho_{n-1}\\)
     pub challenges: Vec<F>,
-    /// the subclaim \\(t\\).
-    pub reduced_claim: F,
+    /// the subclaim \\(t_0, t_1\\).
+    pub final_foldings: Vec<[F; 2]>,
 }
 
 impl<F: Field> Subclaim<F> {
-    /// Generate a new `Subclaim` from the non-oracle messages from the prover.
-    pub fn new(transcript: &mut Transcript, messages: &[ProverMsg<F>], asserted_sum: F) -> Self {
+    /// Generate a new [`Subclaim`](gemini::sumcheck::Subclaim)
+    /// from the non-oracle messages from the prover.
+    pub fn new(
+        transcript: &mut Transcript,
+        prover_messages: &ProverMsgs<F>,
+        asserted_sum: F,
+    ) -> Result<Self, VerificationError> {
+        let ProverMsgs(messages, final_foldings) = prover_messages;
+        let (challenges, reduced_claim) = Self::reduce(transcript, &messages, asserted_sum);
+
+        // Add the final foldings to the transcript
+        transcript.append_scalar(b"final-folding", &final_foldings[0][0]);
+        transcript.append_scalar(b"final-folding", &final_foldings[0][1]);
+
+        if final_foldings[0][0] * final_foldings[0][1] == reduced_claim {
+            Ok(Self {
+                challenges,
+                final_foldings: final_foldings.to_vec(),
+            })
+        } else {
+            Err(VerificationError)
+        }
+    }
+
+    pub fn new_batch(
+        transcript: &mut Transcript,
+        prover_messages: &ProverMsgs<F>,
+        asserted_sums: &[F],
+    ) -> Result<Self, VerificationError> {
+        let ProverMsgs(messages, final_foldings) = prover_messages;
+        let coefficients = (0..asserted_sums.len())
+            .map(|_| transcript.get_challenge::<F>(b"batch-sumcheck"))
+            .collect::<Vec<_>>();
+        let asserted_sum = scalar_prod(&coefficients, asserted_sums);
+        let (challenges, reduced_claim) = Self::reduce(transcript, &messages, asserted_sum);
+
+        let expected_reduced_claim: F = final_foldings
+            .iter()
+            .zip(coefficients.iter())
+            .map(|(final_folding, coefficient)| {
+                transcript.append_scalar(b"final-folding-lhs", &final_folding[0]);
+                transcript.append_scalar(b"final-folding-rhs", &final_folding[1]);
+                final_folding[0] * final_folding[1] * coefficient
+            })
+            .sum();
+
+        if expected_reduced_claim == reduced_claim {
+            Ok(Self {
+                challenges,
+                final_foldings: final_foldings.to_vec(),
+            })
+        } else {
+            Err(VerificationError)
+        }
+    }
+
+    fn reduce(
+        transcript: &mut Transcript,
+        messages: &[RoundMsg<F>],
+        asserted_sum: F,
+    ) -> (Vec<F>, F) {
         let mut reduced_claim = asserted_sum;
         let mut challenges = Vec::with_capacity(messages.len());
         // reduce to a subclaim using the prover's messages.
@@ -26,14 +90,11 @@ impl<F: Field> Subclaim<F> {
             let r = transcript.get_challenge::<F>(b"challenge");
             challenges.push(r);
 
-            let ProverMsg(a, b) = message;
+            let RoundMsg(a, b) = message;
             let c = reduced_claim - a;
             // evaluate (a + bx + cx2) at r
             reduced_claim = *a + r * b + c * r.square();
         }
-        Self {
-            challenges,
-            reduced_claim,
-        }
+        (challenges, reduced_claim)
     }
 }

@@ -1,3 +1,5 @@
+//! The tensorcheck IOP protocol for proving multivariate evaluations
+//! \\(f(\rho_0, \dots, \rho_{n-1})\\).
 //!
 //! Let \\(f(x) \in \FF[x]\\) be a polynomial of degree \\(2^n \\)
 //! represented as the a vector of its coefficients.
@@ -21,11 +23,16 @@
 //! for each \\(j \in \{0, \dots, n\}\\):
 //! \\[
 //! f^{(j)}(\beta^2) =
-//!     \frac{f(\beta) - f(-\beta)}{2} + \rho_j
+//!     \frac{f(\beta) - f(-\git beta)}{2} + \rho_j
 //!     \frac{f(\beta) - f(-\beta)}{2\beta}
 //! \\]
 //!
-//! If we consider the map \\(\FF[x_0, \dots, x_{n-1}] \to \FF\[x\]: f(x_0, \dots, x_n) \mapsto f(x, x^2, \dots, x^{2^{n-1}})\\) we are effectively
+//! If we consider the map
+//! \\(
+//! \FF[x_0, \dots, x_{n-1}] \to \FF\[x\]:
+//! f(x_0, \dots, x_n) \mapsto f(x, x^2, \dots, x^{2^{n-1}})
+//! \\)
+//! we are effectively
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
 use merlin::Transcript;

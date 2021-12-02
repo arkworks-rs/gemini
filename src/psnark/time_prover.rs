@@ -44,7 +44,7 @@ fn col<F>(m: &Matrix<F>) -> Vec<usize> {
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
-    /// return a new SNARK using the elastic prover.
+    /// return a new _preprocessing_ SNARK using the elastic prover.
     pub fn new_time(r1cs: &R1CS<E::Fr>, _ck: &CommitterKey<E>) -> Proof<E> {
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
         let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);

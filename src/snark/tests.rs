@@ -11,7 +11,7 @@ use crate::snark::Proof;
 use crate::stream::{Reversed, Streamer};
 
 #[test]
-fn test_ark_consistency() {
+fn test_snark_consistency() {
     let rng = &mut test_rng();
     let num_constraints = 8;
     let num_variables = 8;
@@ -61,24 +61,10 @@ fn test_ark_consistency() {
         time_proof.first_sumcheck_msgs,
         space_proof.first_sumcheck_msgs
     );
-
-    assert_eq!(time_proof.ra_a_z, space_proof.ra_a_z);
-
-    assert_eq!(
-        time_proof.second_sumcheck_msgs,
-        space_proof.second_sumcheck_msgs
-    );
-
-    assert_eq!(time_proof.tensor_evaluation, space_proof.tensor_evaluation);
-
-    assert_eq!(
-        time_proof.tensor_check_proof.evaluation_proof.0,
-        space_proof.tensor_check_proof.evaluation_proof.0,
-    )
 }
 
 #[test]
-fn test_ark_verify() {
+fn test_snark_correctness() {
     let rng = &mut test_rng();
     let num_constraints = 20;
     let num_variables = 20;
@@ -89,7 +75,6 @@ fn test_ark_verify() {
     let vk = (&ck).into();
 
     let time_proof = Proof::new_time(&r1cs, &ck);
-
     assert!(time_proof.verify(&r1cs, &vk).is_ok())
 }
 

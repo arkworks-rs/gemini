@@ -3,7 +3,7 @@ use ark_std::borrow::Borrow;
 
 use crate::{stream::Streamer, SPACE_TIME_THRESHOLD};
 
-use super::prover::ProverMsg;
+use super::prover::RoundMsg;
 use super::{Prover, SpaceProver, TimeProver};
 
 /// Specifier of the prover type (time-efficient or space-efficient).
@@ -34,7 +34,7 @@ where
     S1::Item: Borrow<F>,
     S2::Item: Borrow<F>,
 {
-    fn next_message(&mut self) -> Option<ProverMsg<F>> {
+    fn next_message(&mut self) -> Option<RoundMsg<F>> {
         match self {
             Self::Space(p) => p.next_message(),
             Self::Time(p) => p.next_message(),

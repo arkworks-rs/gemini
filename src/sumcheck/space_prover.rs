@@ -11,7 +11,7 @@ use ark_std::log2;
 
 use super::{prover::Prover, time_prover::TimeProver};
 use crate::stream::Streamer;
-use crate::sumcheck::prover::ProverMsg;
+use crate::sumcheck::prover::RoundMsg;
 use crate::sumcheck::streams::FoldedPolynomialStream;
 // use crate::{misc::ceil_div, SUMCHECK_BUF_SIZE};
 
@@ -113,7 +113,7 @@ where
     S2: Streamer,
     S2::Item: Borrow<F>,
 {
-    fn next_message(&mut self) -> Option<ProverMsg<F>> {
+    fn next_message(&mut self) -> Option<RoundMsg<F>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         assert_eq!(
             self.challenges.len(),
@@ -235,7 +235,7 @@ where
 
         // Increment the round counter.
         self.round += 1;
-        Some(ProverMsg(a, b))
+        Some(RoundMsg(a, b))
     }
 
     /// Fold the current instance with the randomness r.

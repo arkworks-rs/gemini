@@ -204,7 +204,7 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(first_sumcheck_time);
 
         // after sumcheck, generate a new challenge
-        let ra_a_z = first_proof.final_foldings[0][0];
+        let first_sumcheck_msgs = first_proof.prover_messages();
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         // run the second sumcheck
         let mut a_tensors: Vec<E::Fr> = Vec::new();
@@ -240,8 +240,7 @@ impl<E: PairingEngine> Proof<E> {
         let second_proof = Sumcheck::new_elastic(&mut transcript, lhs, r1cs.z, E::Fr::one());
         end_timer!(second_sumcheck_time);
 
-        let tensor_evaluation = second_proof.final_foldings[0][0];
-        transcript.append_scalar(b"tensor-eval", &tensor_evaluation);
+        let second_sumcheck_msgs = second_proof.prover_messages();
         let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
@@ -259,10 +258,8 @@ impl<E: PairingEngine> Proof<E> {
         Proof {
             witness_commitment,
             zc_alpha,
-            first_sumcheck_msgs: first_proof.messages,
-            ra_a_z,
-            second_sumcheck_msgs: second_proof.messages,
-            tensor_evaluation,
+            first_sumcheck_msgs,
+            second_sumcheck_msgs,
             tensor_check_proof,
         }
     }

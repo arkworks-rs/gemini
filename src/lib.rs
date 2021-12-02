@@ -27,12 +27,9 @@ pub mod psnark;
 pub mod snark;
 /// Data structures for the streaming model.
 pub mod stream;
-/// The sumcheck IP protocol for twisted scalar product.
 pub mod sumcheck;
-/// The tensorcheck IOP protocol for proving multivariate evaluations
-/// \\(f(\rho_0, \dots, \rho_{n-1})\\).
+
 pub mod tensorcheck;
-//// Fiat-Shamit utilities.
 mod transcript;
 
 const SPACE_TIME_THRESHOLD: usize = 22;

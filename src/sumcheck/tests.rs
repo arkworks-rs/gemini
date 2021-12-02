@@ -201,7 +201,7 @@ fn test_folding_consistency() {
 }
 
 #[test]
-fn test_correctness() {
+fn test_sumcheck_correctness() {
     let rng = &mut ark_std::test_rng();
     let d = 1 << (10);
 
@@ -218,10 +218,8 @@ fn test_correctness() {
     let mut prover_transcript = Transcript::new(crate::PROTOCOL_NAME);
     let mut verifier_transcript = Transcript::new(crate::PROTOCOL_NAME);
 
-    let proof = Sumcheck::new_time(&mut prover_transcript, &f, &g, &twist);
-    let subclaim = Subclaim::new(&mut verifier_transcript, &proof.messages, asserted_sum);
-    assert_eq!(
-        subclaim.reduced_claim,
-        proof.final_foldings[0][0] * proof.final_foldings[0][1]
-    )
+    let sumcheck = Sumcheck::new_time(&mut prover_transcript, &f, &g, &twist);
+    let prover_messages = sumcheck.prover_messages();
+    let subclaim = Subclaim::new(&mut verifier_transcript, &prover_messages, asserted_sum);
+    assert!(subclaim.is_ok())
 }

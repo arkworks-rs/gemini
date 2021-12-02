@@ -5,18 +5,22 @@ use ark_std::iter::Sum;
 
 /// Each message from the prover in a sumcheck protocol is a pair of FF-elements.
 #[derive(CanonicalSerialize, CanonicalDeserialize, Copy, Clone, Debug, PartialEq, Eq)]
-pub struct ProverMsg<F: Field>(pub(crate) F, pub(crate) F);
+pub struct RoundMsg<F: Field>(pub(crate) F, pub(crate) F);
 
-impl<F: Field> Sum for ProverMsg<F> {
+/// Messages sent by the prover throughout the protocol.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProverMsgs<F: Field>(pub(crate) Vec<RoundMsg<F>>, pub(crate) Vec<[F; 2]>);
+
+impl<F: Field> Sum for RoundMsg<F> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|fst, snd| ProverMsg(fst.0 + snd.0, fst.1 + snd.1))
-            .unwrap_or_else(|| ProverMsg(F::zero(), F::zero()))
+        iter.reduce(|fst, snd| RoundMsg(fst.0 + snd.0, fst.1 + snd.1))
+            .unwrap_or_else(|| RoundMsg(F::zero(), F::zero()))
     }
 }
 
-impl<F: Field> ProverMsg<F> {
+impl<F: Field> RoundMsg<F> {
     pub(crate) fn mul(self, rhs: &F) -> Self {
-        ProverMsg(self.0 * rhs, self.1 * rhs)
+        RoundMsg(self.0 * rhs, self.1 * rhs)
     }
 }
 
@@ -26,7 +30,7 @@ where
     F: Field,
 {
     /// Return the next prover message (if any).
-    fn next_message(&mut self) -> Option<ProverMsg<F>>;
+    fn next_message(&mut self) -> Option<RoundMsg<F>>;
     /// Peform even/odd folding of the instance using the challenge `challenge`.
     fn fold(&mut self, challenge: F);
     // Return the total number of rouds in the protocol.
