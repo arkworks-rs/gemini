@@ -52,6 +52,9 @@ macro_rules! impl_lincomb_iter {
                 $B::Item: ark_std::borrow::Borrow<F>,
             )*
         {
+            /// A new [`Streamer`](crate::stream::Streamer) that
+            /// computes on-the-fly the linear combination of the input streams
+            /// with the coefficients.
             pub fn new(t: ($($B,)*), coeffs: &'a [F]) -> Self {
                 Self {t, coeffs}
             }

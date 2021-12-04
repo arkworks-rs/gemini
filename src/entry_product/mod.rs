@@ -154,14 +154,14 @@ fn test_entry_product_relation() {
 
 #[test]
 fn test_entry_product_consistency() {
+    use crate::stream::dummy::DummyStreamer;
     use ark_bls12_381::Bls12_381;
     use ark_bls12_381::Fr as F;
     use ark_std::UniformRand;
-    use crate::stream::dummy::DummyStreamer;
 
     let rng = &mut ark_std::test_rng();
     let n = 1000usize;
-    let r =F::rand(rng);
+    let r = F::rand(rng);
     let v = std::iter::repeat(r).take(n).collect::<Vec<_>>();
     let v_stream = DummyStreamer::new(r, n);
     let product = v.iter().product::<F>();

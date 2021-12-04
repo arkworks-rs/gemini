@@ -19,9 +19,9 @@ pub struct Sumcheck<F: Field> {
     /// The challenges sent thropughout the protocol.
     pub challenges: Vec<F>,
     /// The number of rounds in the protocol.
-    pub rounds: usize,
+    rounds: usize,
     // Folded statements
-    pub final_foldings: Vec<[F; 2]>,
+    final_foldings: Vec<[F; 2]>,
 }
 
 impl<F: Field> Sumcheck<F> {

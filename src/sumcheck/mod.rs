@@ -9,7 +9,7 @@
 //! \\]
 //!
 //! for some random challenges \\(\rho_0, \dots, \rho_{n-1}\\) sent by the verifier
-//! and some \\(t_0, t_1 \in \FF\\) such that \\(t_0 t_1 = u\\).
+//! and some \\(t_0, t_1 \in \FF\\).
 pub mod proof;
 pub mod prover;
 pub mod streams;

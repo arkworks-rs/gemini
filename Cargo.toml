@@ -1,13 +1,19 @@
 [package]
-authors = ["Jonathan Bootle <jbootle77@gmail.com>", "Alessandro Chiesa <alexch@berkeley.edu>", "Yuncong Hu <huyuncongh@gmail.com>", "Michele Orrù <michele.orru@berkeley.edu>", "arkworks contributors"]
+name = "ark-gemini"
+version = "0.0.1"
+license = "MIT"
+authors = [
+    "Jonathan Bootle <jbootle77@gmail.com>",
+    "Alessandro Chiesa <alexch@berkeley.edu>",
+    "Yuncong Hu <huyuncongh@gmail.com>",
+    "Michele Orrù <michele.orru@berkeley.edu>",
+    "arkworks contributors"
+]
 categories = ["cryptography"]
-description = "A library for the LTAPS preprocessing zkSNARK"
-edition = "2018"
-include = ["Cargo.toml", "src", "README.md", "LICENSE-APACHE", "LICENSE-MIT"]
-keywords = ["cryptography", "polynomial commitments", "zkSNARK"]
-license = "MIT/Apache-2.0"
-name = "gemini"
-version = "0.3.0"
+description = "A library for the elastic arguments of knowledge."
+keywords = ["cryptography", "polynomial commitments", "SNARK"]
+edition = "2021"
+
 
 [[bench]]
 harness = false
@@ -90,14 +96,12 @@ print-trace = ["ark-std/print-trace"]
 parallel = [ "std", "ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel", "ark-ec/parallel", "rayon"]
 std = ["ark-ff/std", "ark-ec/std", "ark-poly/std", "ark-std/std", "ark-relations/std", "ark-serialize/std"]
 
-
 [profile.dev]
 opt-level = 3
 overflow-checks = false
 
 [profile.release]
 debug=true
-
 
 [package.metadata.docs.rs]
 rustdoc-args = ["--html-in-header", "doc/katex-header.html"]

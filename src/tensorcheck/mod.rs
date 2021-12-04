@@ -4,29 +4,32 @@
 //! Let \\(f(x) \in \FF\[x\]\\) be a polynomial of degree \\(2^n \\)
 //! represented as the a vector of its coefficients.
 //! The tensor check allows to prove the scalar product:
+//!
 //! \\[
 //! \langle f, \otimes_j (1, \rho_j) \rangle = t
 //! \\]
+//!
 //! for some target \\(t\\).
 //! The argument exploits even/odd folding of the polynomial.
 //! That is, consider the polynomials \\(f_e, f_o \in \FF\[x\]\\)
 //! of degree \\(2^{n-1}\\):
+//!
 //! \\[
 //! f(x) = f_e(x^2) + x f_o(x^2).
 //! \\]
+//!
 //! Send as an oracle message
 //! \\( f'(x) = f_e(x) + \rho_0 f_o(x) \\).
-//! It proceeds recursively until the polynomial is of degree 1.
-//!
 //! The verifier checks that each folded polynomial is computed correcly by
-//!  testing on a random point \\(\beta\\) that,
-//! for each \\(j \in \{0, \dots, n\}\\):
+//!  testing on a random point \\(\beta\\):
+//!
 //! \\[
-//! f^{(j)}(\beta^2) =
+//! f'(\beta^2) =
 //!     \frac{f(\beta) + f(-\beta)}{2} + \rho_j
 //!     \frac{f(\beta) - f(-\beta)}{2\beta}
 //! \\]
 //!
+//! It proceeds recursively until the polynomial is of degree 1.
 //! If we consider the map
 //! \\(
 //! \FF[x_0, \dots, x_{n-1}] \to \FF\[x\]:
@@ -62,7 +65,11 @@ pub mod tests;
 
 const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 
-/// The streaming algorithm evaluating folded polynomials in the tensor check.
+/// Evaluate a folded polynomial tree at the point `x`.
+///
+/// Make a single pass over the [`FoldedPolynomialTree`](crate::sumcheck::streams::FoldedPolynomialTree)
+/// and return a vector storing \\(f^{(j)}(x)\\) at the \\(j-1\\)-th position.
+/// Foldings are in the interval \\(1, \dots, n-1\\).
 pub fn evaluate_folding<F, S>(polynomials: FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
 where
     F: Field,
