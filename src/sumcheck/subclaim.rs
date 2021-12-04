@@ -7,14 +7,7 @@ use crate::{sumcheck::prover::ProverMsgs, VerificationError};
 
 use super::prover::RoundMsg;
 
-/// The sumcheck verifier protocol reduces a claim \\( \langle f, g \rangle = u\\)
-/// to two sub-claims:
-/// \\[
-/// \langle f, \otimes_j (1, \rho_j) \rangle = t_0 \\
-/// \langle g, \otimes_j (1, \rho_j) \rangle = t_1.
-/// \\]
-/// for some random challenges \\(\rho_0, \dots, \rho_{n-1}\\) sent by the verifier
-/// and some \\(t_0, t_1 \in \FF\\).
+/// The subclaim of the sumcheck.
 pub struct Subclaim<F: Field> {
     /// The verifier's challenges \\(\rho_0, \dots, \rho_{n-1}\\)
     pub challenges: Vec<F>,

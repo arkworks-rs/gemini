@@ -23,7 +23,7 @@
 //! for each \\(j \in \{0, \dots, n\}\\):
 //! \\[
 //! f^{(j)}(\beta^2) =
-//!     \frac{f(\beta) - f(-\git beta)}{2} + \rho_j
+//!     \frac{f(\beta) + f(-\beta)}{2} + \rho_j
 //!     \frac{f(\beta) - f(-\beta)}{2\beta}
 //! \\]
 //!
