@@ -1,3 +1,5 @@
+//! A *non-preprocessing* SNARK for R1CS.
+//!
 mod elastic_prover;
 mod time_prover;
 mod verifier;

@@ -80,12 +80,8 @@ impl<E: PairingEngine> Proof<E> {
         }
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_time(
-            &mut transcript,
-            &abc_tensored,
-            &r1cs.z,
-            &E::Fr::one(),
-        );
+        let second_proof =
+            Sumcheck::new_time(&mut transcript, &abc_tensored, &r1cs.z, &E::Fr::one());
         let second_sumcheck_msgs = second_proof.prover_messages();
         end_timer!(second_sumcheck_time);
 

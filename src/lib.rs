@@ -1,4 +1,29 @@
 //! Elastic arguments for R1CS.
+//!
+//! This library provides essentually two arugments:
+//! - [`snark::Proof`], for non-preprocessing SNARKs.
+//!     It provides a non-interactive succinct argument of knowledge for R1CS
+//!     without indexer, and where the verifier complexity is linear in the circuit size.
+//! - [`psnark::Proof`] for preprocessing SNARKs.
+//!     It provides a non-interactive succinct argument of knowledge for R1CS
+//!     where the verifier complexity is logarithmic in the circuit size.
+//!
+//! Choice of the [`PairingEngine`](ark_ec::PairingEngine), the pairing-friendly elliptic curve,
+//! is entirely up to the implementor.
+//! All arguments are internally using the [`kzg`](crate::kzg) commitment scheme,
+//! however one nothing would present in the future from supporting a univariate
+//! or multivariate commitment scheme.
+//!
+//! Additionally, some sub-protocols are exported so that
+//! their space- and time- efficient impelementation might be used also elsewhere.
+//! - [`tensorcheck::TensorCheckProof`],
+//!     an argument for claims of the form \\(\langle f, \otimes_j (1, \rho_j) \rangle = t\\).
+//!     This can be used for proving batches of multivariate evaluations claims using
+//!     univariate polynomial commitments.
+//! - [`sumcheck::proof::Sumcheck`],
+//!    the multivariate sumcheck implementation, implemented in 3 flavours: linear-time, log-space, and elastic.
+//!
+
 #![feature(iter_advance_by)]
 #![feature(associated_type_bounds)]
 // #![deny(unused_import_braces, //unused_qualifications,
@@ -18,16 +43,16 @@ pub(crate) const PROTOCOL_NAME: &[u8] = b"GEMINI-v0";
 pub mod circuit;
 mod misc;
 
-/// KZG polynomial commitment, space- and time-efficient.
 pub mod kzg;
 /// Preprocessing SNARK for R1CS.
 #[allow(dead_code)]
 pub mod psnark;
-/// SNARK for R1CS.
 pub mod snark;
 /// Data structures for the streaming model.
 pub mod stream;
 pub mod sumcheck;
+
+pub mod entry_product;
 
 pub mod tensorcheck;
 mod transcript;

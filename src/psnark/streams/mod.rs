@@ -16,6 +16,5 @@ pub use lookup_stream::LookupStreamer;
 
 pub use val_stream::ValStream;
 
-pub mod entry_product;
 pub mod memcheck;
 pub mod plookup;

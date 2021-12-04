@@ -55,6 +55,8 @@ where
     F: Field,
 {
     type Item = F;
+
+    #[inline]
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         let previous = self.current;
         if let Some(e) = self.stream.next() {

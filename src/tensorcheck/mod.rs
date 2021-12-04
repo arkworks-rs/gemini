@@ -1,7 +1,7 @@
 //! The tensorcheck IOP protocol for proving multivariate evaluations
 //! \\(f(\rho_0, \dots, \rho_{n-1})\\).
 //!
-//! Let \\(f(x) \in \FF[x]\\) be a polynomial of degree \\(2^n \\)
+//! Let \\(f(x) \in \FF\[x\]\\) be a polynomial of degree \\(2^n \\)
 //! represented as the a vector of its coefficients.
 //! The tensor check allows to prove the scalar product:
 //! \\[
@@ -9,7 +9,7 @@
 //! \\]
 //! for some target \\(t\\).
 //! The argument exploits even/odd folding of the polynomial.
-//! That is, consider the polynomials \\(f_e, f_o \in \FF[x]\\)
+//! That is, consider the polynomials \\(f_e, f_o \in \FF\[x\]\\)
 //! of degree \\(2^{n-1}\\):
 //! \\[
 //! f(x) = f_e(x^2) + x f_o(x^2).

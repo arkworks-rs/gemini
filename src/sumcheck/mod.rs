@@ -1,6 +1,8 @@
 //! The sumcheck IP protocol for twisted scalar product.
 //!
-//!
+//! ```
+//! let subclaim = Subclaim::new(transcript, prover_mes)
+//! ````
 pub mod proof;
 pub mod prover;
 pub mod streams;

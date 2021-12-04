@@ -41,7 +41,8 @@ impl<E: PairingEngine> Proof<E> {
             + subclaim_1.final_foldings[0][1] * eta
             + self.zc_alpha * eta2;
 
-        let subclaim_2 = Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
+        let subclaim_2 =
+            Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
 
         // Consistency check
         let gamma = transcript.get_challenge::<E::Fr>(b"batch_challenge");

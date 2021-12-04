@@ -9,7 +9,7 @@ pub use subset_stream::LookupSubsetStreamer;
 
 use crate::stream::Streamer;
 
-use super::entry_product::{entry_product_streams, ProductStream, RightRotationStreamer};
+use crate::entry_product::streams::{entry_product_streams, ProductStream, RightRotationStreamer};
 
 type Eps<F, S> = (RightRotationStreamer<F, S>, ProductStream<F, S>);
 

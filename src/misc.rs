@@ -173,6 +173,7 @@ where
 }
 
 /// Return the hadamard product of `lhs` and `rhs`.
+/// Panics if the length of `lhs` is different from `rhs`.
 #[inline]
 pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
     assert_eq!(lhs.len(), rhs.len());
