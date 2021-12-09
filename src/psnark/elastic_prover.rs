@@ -162,49 +162,49 @@ impl<E: PairingEngine> Proof<E> {
             (pl_sorted_sh_c, pl_sorted_acc_c),
         ) = plookup_streams(r_c, r_c_star, row_c, y, z);
 
-        let (
-            (memcheck_init_sh_a, memcheck_init_acc_a),
-            (memcheck_read_sh_a, memcheck_read_acc_a),
-            (memcheck_write_sh_a, memcheck_write_acc_a),
-            (memcheck_audit_sh_a, memcheck_audit_acc_a),
-        ) = memcheck_streams(r1cs.z_a, z_a_star, col_a, y, z);
-        let (
-            (memcheck_init_sh_b, memcheck_init_acc_b),
-            (memcheck_read_sh_b, memcheck_read_acc_b),
-            (memcheck_write_sh_b, memcheck_write_acc_b),
-            (memcheck_audit_sh_b, memcheck_audit_acc_b),
-        ) = memcheck_streams(r1cs.z_b, z_b_star, col_b, y, z);
-        let (
-            (memcheck_init_sh_c, memcheck_init_acc_c),
-            (memcheck_read_sh_c, memcheck_read_acc_c),
-            (memcheck_write_sh_c, memcheck_write_acc_c),
-            (memcheck_audit_sh_c, memcheck_audit_acc_c),
-        ) = memcheck_streams(r1cs.z_c, z_c_star, col_c, y, z);
+        // let (
+        //     (memcheck_init_sh_a, memcheck_init_acc_a),
+        //     (memcheck_read_sh_a, memcheck_read_acc_a),
+        //     (memcheck_write_sh_a, memcheck_write_acc_a),
+        //     (memcheck_audit_sh_a, memcheck_audit_acc_a),
+        // ) = memcheck_streams(r1cs.z_a, z_a_star, col_a, y, z);
+        // let (
+        //     (memcheck_init_sh_b, memcheck_init_acc_b),
+        //     (memcheck_read_sh_b, memcheck_read_acc_b),
+        //     (memcheck_write_sh_b, memcheck_write_acc_b),
+        //     (memcheck_audit_sh_b, memcheck_audit_acc_b),
+        // ) = memcheck_streams(r1cs.z_b, z_b_star, col_b, y, z);
+        // let (
+        //     (memcheck_init_sh_c, memcheck_init_acc_c),
+        //     (memcheck_read_sh_c, memcheck_read_acc_c),
+        //     (memcheck_write_sh_c, memcheck_write_acc_c),
+        //     (memcheck_audit_sh_c, memcheck_audit_acc_c),
+        // ) = memcheck_streams(r1cs.z_c, z_c_star, col_c, y, z);
 
-        let mut memcheck_init_sumcheck_a =
-            SpaceProver::new(memcheck_init_sh_a, memcheck_init_acc_a, one);
-        let mut memcheck_read_sumcheck_a =
-            SpaceProver::new(memcheck_read_sh_a, memcheck_read_acc_a, one);
-        let mut memcheck_write_sumcheck_a =
-            SpaceProver::new(memcheck_write_sh_a, memcheck_write_acc_a, one);
-        let mut memcheck_audit_sumcheck_a =
-            SpaceProver::new(memcheck_audit_sh_a, memcheck_audit_acc_a, one);
-        let mut memcheck_init_sumcheck_b =
-            SpaceProver::new(memcheck_init_sh_b, memcheck_init_acc_b, one);
-        let mut memcheck_read_sumcheck_b =
-            SpaceProver::new(memcheck_read_sh_b, memcheck_read_acc_b, one);
-        let mut memcheck_write_sumcheck_b =
-            SpaceProver::new(memcheck_write_sh_b, memcheck_write_acc_b, one);
-        let mut memcheck_audit_sumcheck_b =
-            SpaceProver::new(memcheck_audit_sh_b, memcheck_audit_acc_b, one);
-        let mut memcheck_init_sumcheck_c =
-            SpaceProver::new(memcheck_init_sh_c, memcheck_init_acc_c, one);
-        let mut memcheck_read_sumcheck_c =
-            SpaceProver::new(memcheck_read_sh_c, memcheck_read_acc_c, one);
-        let mut memcheck_write_sumcheck_c =
-            SpaceProver::new(memcheck_write_sh_c, memcheck_write_acc_c, one);
-        let mut memcheck_audit_sumcheck_c =
-            SpaceProver::new(memcheck_audit_sh_c, memcheck_audit_acc_c, one);
+        // let mut memcheck_init_sumcheck_a =
+        //     SpaceProver::new(memcheck_init_sh_a, memcheck_init_acc_a, one);
+        // let mut memcheck_read_sumcheck_a =
+        //     SpaceProver::new(memcheck_read_sh_a, memcheck_read_acc_a, one);
+        // let mut memcheck_write_sumcheck_a =
+        //     SpaceProver::new(memcheck_write_sh_a, memcheck_write_acc_a, one);
+        // let mut memcheck_audit_sumcheck_a =
+        //     SpaceProver::new(memcheck_audit_sh_a, memcheck_audit_acc_a, one);
+        // let mut memcheck_init_sumcheck_b =
+        //     SpaceProver::new(memcheck_init_sh_b, memcheck_init_acc_b, one);
+        // let mut memcheck_read_sumcheck_b =
+        //     SpaceProver::new(memcheck_read_sh_b, memcheck_read_acc_b, one);
+        // let mut memcheck_write_sumcheck_b =
+        //     SpaceProver::new(memcheck_write_sh_b, memcheck_write_acc_b, one);
+        // let mut memcheck_audit_sumcheck_b =
+        //     SpaceProver::new(memcheck_audit_sh_b, memcheck_audit_acc_b, one);
+        // let mut memcheck_init_sumcheck_c =
+        //     SpaceProver::new(memcheck_init_sh_c, memcheck_init_acc_c, one);
+        // let mut memcheck_read_sumcheck_c =
+        //     SpaceProver::new(memcheck_read_sh_c, memcheck_read_acc_c, one);
+        // let mut memcheck_write_sumcheck_c =
+        //     SpaceProver::new(memcheck_write_sh_c, memcheck_write_acc_c, one);
+        // let mut memcheck_audit_sumcheck_c =
+        //     SpaceProver::new(memcheck_audit_sh_c, memcheck_audit_acc_c, one);
         let mut ep_set_sumcheck_a = SpaceProver::new(pl_set_sh_a, pl_set_acc_a, one);
         let mut ep_subset_sumcheck_a = SpaceProver::new(pl_subset_sh_a, pl_subset_acc_a, one);
         let mut ep_sorted_sumcheck_a = SpaceProver::new(pl_sorted_sh_a, pl_sorted_acc_a, one);
@@ -230,21 +230,21 @@ impl<E: PairingEngine> Proof<E> {
                 &mut ep_set_sumcheck_c,
                 &mut ep_subset_sumcheck_c,
                 &mut ep_sorted_sumcheck_c,
-                // memcheck A
-                &mut memcheck_init_sumcheck_a,
-                &mut memcheck_read_sumcheck_a,
-                &mut memcheck_write_sumcheck_a,
-                &mut memcheck_audit_sumcheck_a,
-                // memcheck B
-                &mut memcheck_init_sumcheck_b,
-                &mut memcheck_read_sumcheck_b,
-                &mut memcheck_write_sumcheck_b,
-                &mut memcheck_audit_sumcheck_b,
-                // memcheck C
-                &mut memcheck_init_sumcheck_c,
-                &mut memcheck_read_sumcheck_c,
-                &mut memcheck_write_sumcheck_c,
-                &mut memcheck_audit_sumcheck_c,
+                // // memcheck A
+                // &mut memcheck_init_sumcheck_a,
+                // &mut memcheck_read_sumcheck_a,
+                // &mut memcheck_write_sumcheck_a,
+                // &mut memcheck_audit_sumcheck_a,
+                // // memcheck B
+                // &mut memcheck_init_sumcheck_b,
+                // &mut memcheck_read_sumcheck_b,
+                // &mut memcheck_write_sumcheck_b,
+                // &mut memcheck_audit_sumcheck_b,
+                // // memcheck C
+                // &mut memcheck_init_sumcheck_c,
+                // &mut memcheck_read_sumcheck_c,
+                // &mut memcheck_write_sumcheck_c,
+                // &mut memcheck_audit_sumcheck_c,
             ],
         );
         let ep_sumcheck_messages = ep_sumcheck.prover_messages();
@@ -270,30 +270,30 @@ impl<E: PairingEngine> Proof<E> {
 
         let ep_folds = crate::lincomb_fold!(
             (
-                memcheck_init_sh_a,
-                memcheck_init_sh_b,
-                memcheck_init_sh_c,
-                memcheck_init_acc_a,
-                memcheck_init_acc_b,
-                memcheck_init_acc_c,
-                memcheck_read_sh_a,
-                memcheck_read_sh_b,
-                memcheck_read_sh_c,
-                memcheck_read_acc_a,
-                memcheck_read_acc_b,
-                memcheck_read_acc_c,
-                memcheck_write_sh_a,
-                memcheck_write_sh_b,
-                memcheck_write_sh_c,
-                memcheck_write_acc_a,
-                memcheck_write_acc_b,
-                memcheck_write_acc_c,
-                memcheck_audit_sh_a,
-                memcheck_audit_sh_b,
-                memcheck_audit_sh_c,
-                memcheck_audit_acc_a,
-                memcheck_audit_acc_b,
-                memcheck_audit_acc_c,
+                // memcheck_init_sh_a,
+                // memcheck_init_sh_b,
+                // memcheck_init_sh_c,
+                // memcheck_init_acc_a,
+                // memcheck_init_acc_b,
+                // memcheck_init_acc_c,
+                // memcheck_read_sh_a,
+                // memcheck_read_sh_b,
+                // memcheck_read_sh_c,
+                // memcheck_read_acc_a,
+                // memcheck_read_acc_b,
+                // memcheck_read_acc_c,
+                // memcheck_write_sh_a,
+                // memcheck_write_sh_b,
+                // memcheck_write_sh_c,
+                // memcheck_write_acc_a,
+                // memcheck_write_acc_b,
+                // memcheck_write_acc_c,
+                // memcheck_audit_sh_a,
+                // memcheck_audit_sh_b,
+                // memcheck_audit_sh_c,
+                // memcheck_audit_acc_a,
+                // memcheck_audit_acc_b,
+                // memcheck_audit_acc_c,
                 pl_sorted_sh_a,
                 pl_sorted_sh_b,
                 pl_sorted_sh_c,

@@ -1,5 +1,7 @@
+//! Elastic preprocessing SNARK for R1CS.
 //!
-//
+//!
+//!
 //!
 //!
 mod elastic_prover;

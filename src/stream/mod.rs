@@ -78,6 +78,7 @@ where
     }
 }
 
+
 // #[test]
 // fn write_ck<G: AffineCurve>() {
 //     let length = std::mem::size_of::G
