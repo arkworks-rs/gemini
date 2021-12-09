@@ -10,7 +10,7 @@ use ark_std::borrow::Borrow;
 #[derive(Clone, Copy)]
 pub struct FoldedPolynomialTree<'a, F, S> {
     challenges: &'a [F],
-    coefficients: S,
+    coefficients: &'a S,
 }
 
 impl<'a, F, S> FoldedPolynomialTree<'a, F, S>
@@ -20,7 +20,7 @@ where
     S::Item: Borrow<F>,
 {
     /// Initialize a new polynomial tree.
-    pub fn new(coefficients: S, challenges: &'a [F]) -> Self {
+    pub fn new(coefficients: &'a S, challenges: &'a [F]) -> Self {
         Self {
             coefficients,
             challenges,
@@ -152,7 +152,7 @@ where
     S::Item: Borrow<F>,
 {
     /// Initialize a new folded polynomial stream.
-    pub fn new(coefficients: S, challenges: &'a [F]) -> Self {
+    pub fn new(coefficients: &'a S, challenges: &'a [F]) -> Self {
         let tree = FoldedPolynomialTree::new(coefficients, challenges);
         let len = challenges.len();
         Self(tree, len)
@@ -235,7 +235,7 @@ fn test_folded_polynomial() {
 
     let coefficients = vec![F::one(), two, F::one(), F::one()];
     let challenges = vec![F::one(), two];
-    let foldstream = FoldedPolynomialTree::new(coefficients.as_slice(), challenges.as_slice());
+    let foldstream = FoldedPolynomialTree::new(&coefficients.as_slice(), challenges.as_slice());
     let fold_stream = FoldedPolynomialStream(foldstream, 2);
     assert_eq!(fold_stream.len(), 1);
     assert_eq!(
@@ -246,7 +246,7 @@ fn test_folded_polynomial() {
     let one = F::one();
     let coefficients = vec![one; 12];
     let challenges = vec![F::one(); 4];
-    let foldstream = FoldedPolynomialTree::new(coefficients.as_slice(), challenges.as_slice());
+    let foldstream = FoldedPolynomialTree::new(&coefficients.as_slice(), challenges.as_slice());
     let fold_stream = FoldedPolynomialStream(foldstream, 4).stream();
     assert_eq!(fold_stream.last(), Some(coefficients.iter().sum()));
 }
@@ -261,7 +261,7 @@ fn test_folded_polynomial_tree() {
     let coefficients = vec![F::one(), two, F::one(), F::one()];
     let challenges = vec![F::one(), two];
     let mut fold_stream =
-        FoldedPolynomialTree::new(coefficients.as_slice(), challenges.as_slice()).stream();
+        FoldedPolynomialTree::new(&coefficients.as_slice(), challenges.as_slice()).stream();
     // assert_eq!(fold_stream.next(), Some((0, F::one())));
     // assert_eq!(fold_stream.next(), Some((0, two)));
     assert_eq!(fold_stream.next(), Some((1, F::one() + two)));
@@ -274,7 +274,7 @@ fn test_folded_polynomial_tree() {
     let coefficients = vec![one; 12];
     let challenges = vec![F::one(); 4];
     let mut fold_stream =
-        FoldedPolynomialTree::new(coefficients.as_slice(), challenges.as_slice()).stream();
+        FoldedPolynomialTree::new(&coefficients.as_slice(), challenges.as_slice()).stream();
     fold_stream.advance_by(5).unwrap();
     assert_eq!(fold_stream.next(), Some((1, two)));
     assert_eq!(fold_stream.last(), Some((4, coefficients.iter().sum())));

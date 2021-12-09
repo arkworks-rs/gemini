@@ -58,7 +58,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // run the sumcheck for z_a and z_b with twist alpha
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
-        let first_sumcheck = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
+        let first_sumcheck = Sumcheck::new_space(&mut transcript, &r1cs.z_a, &r1cs.z_b, alpha);
         end_timer!(first_sumcheck_time);
         let first_sumcheck_messages = first_sumcheck.prover_messages();
 
@@ -114,9 +114,9 @@ impl<E: PairingEngine> Proof<E> {
         let rz_b_star = HadamardStreamer::new(r_b_star, z_b_star);
         let rz_c_star = HadamardStreamer::new(r_c_star, z_c_star);
 
-        let mut ip_val_rz_a = SpaceProver::new(val_a, rz_a_star, one);
-        let mut ip_val_rz_b = SpaceProver::new(val_b, rz_b_star, one);
-        let mut ip_val_rz_c = SpaceProver::new(val_c, rz_c_star, one);
+        let mut ip_val_rz_a = SpaceProver::new(&val_a, &rz_a_star, one);
+        let mut ip_val_rz_b = SpaceProver::new(&val_b, &rz_b_star, one);
+        let mut ip_val_rz_c = SpaceProver::new(&val_c, &rz_c_star, one);
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_sumcheck = Sumcheck::prove_batch(
@@ -126,9 +126,9 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(second_sumcheck_time);
         let second_sumcheck_messages = second_sumcheck.prover_messages();
 
-        let mut ip_r_z_star_a = SpaceProver::new(r_a_star, z_a_star, one);
-        let mut ip_r_z_star_b = SpaceProver::new(r_a_star, z_a_star, one);
-        let mut ip_r_z_star_c = SpaceProver::new(r_c_star, z_c_star, one);
+        let mut ip_r_z_star_a = SpaceProver::new(&r_a_star, &z_a_star, one);
+        let mut ip_r_z_star_b = SpaceProver::new(&r_a_star, &z_a_star, one);
+        let mut ip_r_z_star_c = SpaceProver::new(&r_c_star, &z_c_star, one);
 
         let third_sumcheck_time = start_timer!(|| "Third sumcheck");
         let third_sumcheck = Sumcheck::prove_batch(
@@ -205,15 +205,15 @@ impl<E: PairingEngine> Proof<E> {
         //     SpaceProver::new(memcheck_write_sh_c, memcheck_write_acc_c, one);
         // let mut memcheck_audit_sumcheck_c =
         //     SpaceProver::new(memcheck_audit_sh_c, memcheck_audit_acc_c, one);
-        let mut ep_set_sumcheck_a = SpaceProver::new(pl_set_sh_a, pl_set_acc_a, one);
-        let mut ep_subset_sumcheck_a = SpaceProver::new(pl_subset_sh_a, pl_subset_acc_a, one);
-        let mut ep_sorted_sumcheck_a = SpaceProver::new(pl_sorted_sh_a, pl_sorted_acc_a, one);
-        let mut ep_set_sumcheck_b = SpaceProver::new(pl_set_sh_b, pl_set_acc_b, one);
-        let mut ep_subset_sumcheck_b = SpaceProver::new(pl_subset_sh_b, pl_subset_acc_b, one);
-        let mut ep_sorted_sumcheck_b = SpaceProver::new(pl_sorted_sh_b, pl_sorted_acc_b, one);
-        let mut ep_set_sumcheck_c = SpaceProver::new(pl_set_sh_c, pl_set_acc_c, one);
-        let mut ep_subset_sumcheck_c = SpaceProver::new(pl_subset_sh_c, pl_subset_acc_c, one);
-        let mut ep_sorted_sumcheck_c = SpaceProver::new(pl_sorted_sh_c, pl_sorted_acc_c, one);
+        let mut ep_set_sumcheck_a = SpaceProver::new(&pl_set_sh_a, &pl_set_acc_a, one);
+        let mut ep_subset_sumcheck_a = SpaceProver::new(&pl_subset_sh_a, &pl_subset_acc_a, one);
+        let mut ep_sorted_sumcheck_a = SpaceProver::new(&pl_sorted_sh_a, &pl_sorted_acc_a, one);
+        let mut ep_set_sumcheck_b = SpaceProver::new(&pl_set_sh_b, &pl_set_acc_b, one);
+        let mut ep_subset_sumcheck_b = SpaceProver::new(&pl_subset_sh_b, &pl_subset_acc_b, one);
+        let mut ep_sorted_sumcheck_b = SpaceProver::new(&pl_sorted_sh_b, &pl_sorted_acc_b, one);
+        let mut ep_set_sumcheck_c = SpaceProver::new(&pl_set_sh_c, &pl_set_acc_c, one);
+        let mut ep_subset_sumcheck_c = SpaceProver::new(&pl_subset_sh_c, &pl_subset_acc_c, one);
+        let mut ep_sorted_sumcheck_c = SpaceProver::new(&pl_sorted_sh_c, &pl_sorted_acc_c, one);
 
         let ep_sumcheck = Sumcheck::prove_batch(
             &mut transcript,
@@ -268,7 +268,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let consistency_check_time = start_timer!(|| "Consistency check");
 
-        let ep_folds = crate::lincomb_fold!(
+        let ep_lincomb = crate::lincomb!(
             (
                 // memcheck_init_sh_a,
                 // memcheck_init_sh_b,
@@ -313,13 +313,14 @@ impl<E: PairingEngine> Proof<E> {
                 pl_subset_acc_b,
                 pl_subset_acc_c
             ),
-            &ep_sumcheck.challenges,
             &gammas
         );
 
-        let vals_folds = FoldedPolynomialTree::new(vals_stream, vals_challenges);
-        let rstars_folds = FoldedPolynomialTree::new(rstars_stream, rstars_challenges);
-        let zstars_folds = FoldedPolynomialTree::new(zstars_stream, zstars_challenges);
+        // XXX. check challenges here.
+        let ep_folds = FoldedPolynomialTree::new(&ep_lincomb, &ep_sumcheck.challenges);
+        let vals_folds = FoldedPolynomialTree::new(&vals_stream, vals_challenges);
+        let rstars_folds = FoldedPolynomialTree::new(&rstars_stream, rstars_challenges);
+        let zstars_folds = FoldedPolynomialTree::new(&zstars_stream, zstars_challenges);
 
         let evaluation_points = [beta.square(), beta, -beta];
         let (_reminders, ep_proof) = ck.open_folding(ep_folds, &evaluation_points, &gammas);

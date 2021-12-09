@@ -17,7 +17,7 @@ mod slice;
 pub use slice::Reversed;
 
 /// The trait representing a streamable object.
-pub trait Streamer: Copy {
+pub trait Streamer {
     type Item;
     type Iter: Iterator<Item = Self::Item>;
 

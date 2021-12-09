@@ -12,7 +12,7 @@ pub enum ElasticProver<S, T> {
     Time(T),
 }
 
-impl<F, S1, S2, T> ElasticProver<SpaceProver<F, S1, S2>, T>
+impl<'a, F, S1, S2, T> ElasticProver<SpaceProver<'a, F, S1, S2>, T>
 where
     F: Field,
     S1: Streamer,
@@ -21,12 +21,12 @@ where
     S2::Item: Borrow<F>,
 {
     /// Initialize the elastic prover.
-    pub fn new(f: S1, g: S2, twist: F) -> Self {
+    pub fn new(f: &'a S1, g: &'a S2, twist: F) -> Self {
         Self::Space(SpaceProver::new(f, g, twist))
     }
 }
 
-impl<F, S1, S2> Prover<F> for ElasticProver<SpaceProver<F, S1, S2>, TimeProver<F>>
+impl<'a, F, S1, S2> Prover<F> for ElasticProver<SpaceProver<'a, F, S1, S2>, TimeProver<F>>
 where
     F: Field,
     S1: Streamer,

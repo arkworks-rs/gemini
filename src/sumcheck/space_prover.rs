@@ -17,7 +17,7 @@ use crate::sumcheck::streams::FoldedPolynomialStream;
 
 /// This is the streaming alter-ego of `Witness`.
 /// The witness for the twisted scalar product, where the vectors are stored as streams.
-pub struct WitnessStream<F, SF, SG>
+pub struct WitnessStream<'a, F, SF, SG>
 where
     F: Field,
     SF: Streamer,
@@ -26,15 +26,15 @@ where
     SG::Item: Borrow<F>,
 {
     /// The left-hand side.
-    pub f: SF,
+    pub f: &'a SF,
     /// The right-hand side.
-    pub g: SG,
+    pub g: &'a SG,
     /// The twist.
     pub twist: F,
 }
 
 /// The space-efficient prover.
-pub struct SpaceProver<F, SF, SG>
+pub struct SpaceProver<'a, F, SF, SG>
 where
     F: Field,
     SF: Streamer,
@@ -47,7 +47,7 @@ where
     /// Twisted randomness, used to fold the left-hand side of the scalar product.
     twisted_challenges: Vec<F>,
     /// Batched sumcheck instance.
-    witness: WitnessStream<F, SF, SG>,
+    witness: WitnessStream<'a, F, SF, SG>,
     /// Round counter.
     round: usize,
     /// Total number of rounds.
@@ -58,7 +58,7 @@ where
 
 // A Stream that will produce the folded polynomial
 // given references to the initial stream and randomness.
-impl<F, SF, SG> WitnessStream<F, SF, SG>
+impl<'a, F, SF, SG> WitnessStream<'a, F, SF, SG>
 where
     F: Field,
     SF: Streamer,
@@ -67,7 +67,7 @@ where
     SG::Item: Borrow<F>,
 {
     /// Initialize a new witness stream.
-    pub fn new(f: SF, g: SG, twist: F) -> Self {
+    pub fn new(f: &'a SF, g: &'a SG, twist: F) -> Self {
         Self { f, g, twist }
     }
 
@@ -78,7 +78,7 @@ where
     }
 }
 
-impl<F, SF, SG> SpaceProver<F, SF, SG>
+impl<'a, F, SF, SG> SpaceProver<'a, F, SF, SG>
 where
     F: Field,
     SF: Streamer,
@@ -88,8 +88,8 @@ where
 {
     /// Create a new space prover.
     /// This will move the witness within the instance, but never modify the initial instance.
-    pub fn new(f: SF, g: SG, twist: F) -> Self {
-        let witness = WitnessStream { f, g, twist };
+    pub fn new(f: &'a SF, g: &'a SG, twist: F) -> Self {
+        let witness = WitnessStream::new(f, g, twist);
         let tot_rounds = witness.required_rounds();
         let challenges = Vec::with_capacity(tot_rounds);
         let twisted_challenges = Vec::with_capacity(tot_rounds);
@@ -105,7 +105,7 @@ where
     }
 }
 
-impl<F, S1, S2> Prover<F> for SpaceProver<F, S1, S2>
+impl<'a, F, S1, S2> Prover<F> for SpaceProver<'a, F, S1, S2>
 where
     F: Field,
     S1: Streamer,
@@ -265,7 +265,7 @@ where
     }
 }
 
-impl<F, S1, S2> From<&SpaceProver<F, S1, S2>> for TimeProver<F>
+impl<'a, F, S1, S2> From<&SpaceProver<'a, F, S1, S2>> for TimeProver<F>
 where
     F: Field,
     S1: Streamer,

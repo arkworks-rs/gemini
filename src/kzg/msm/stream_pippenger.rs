@@ -40,7 +40,7 @@ where
 }
 
 /// Steaming multi-scalar multiplication algorithm with hard-coded chunk size.
-pub fn msm_chunks<G, F, I, J>(bases_stream: J, scalars_stream: I) -> G::Projective
+pub fn msm_chunks<G, F, I, J>(bases_stream: &J, scalars_stream: &I) -> G::Projective
 where
     G: AffineCurve<ScalarField = F>,
     I: Streamer,
@@ -210,10 +210,10 @@ impl<G: AffineCurve> HashMapPippenger<G> {
 
 /// Struct for the chunked Pippenger algorithm.
 pub struct ChunkedPippenger<G: AffineCurve> {
-    scalars_buffer: Vec<<G::ScalarField as PrimeField>::BigInt>,
-    bases_buffer: Vec<G>,
-    result: G::Projective,
-    buf_size: usize,
+    pub scalars_buffer: Vec<<G::ScalarField as PrimeField>::BigInt>,
+    pub bases_buffer: Vec<G>,
+    pub result: G::Projective,
+    pub buf_size: usize,
 }
 
 impl<G: AffineCurve> ChunkedPippenger<G> {

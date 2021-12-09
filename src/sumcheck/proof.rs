@@ -116,7 +116,7 @@ impl<F: Field> Sumcheck<F> {
     }
 
     /// Construct a new Proof using the space prover.
-    pub fn new_space<SF1, SF2>(transcript: &mut Transcript, f: SF1, g: SF2, twist: F) -> Self
+    pub fn new_space<SF1, SF2>(transcript: &mut Transcript, f: &SF1, g: &SF2, twist: F) -> Self
     where
         SF1: Streamer,
         SF2: Streamer,
@@ -128,7 +128,7 @@ impl<F: Field> Sumcheck<F> {
     }
 
     /// Construct a new Proof using the Elastic prover
-    pub fn new_elastic<SF1, SF2>(transcript: &mut Transcript, f: SF1, g: SF2, twist: F) -> Self
+    pub fn new_elastic<SF1, SF2>(transcript: &mut Transcript, f: &SF1, g: &SF2, twist: F) -> Self
     where
         SF1: Streamer,
         SF2: Streamer,

@@ -17,24 +17,24 @@ pub struct LinCombStream<'a, F, T> {
     pub coeffs: &'a [F],
 }
 
-/// Foldings of a lienear combination of polynomials.
-///
-/// Given as input a sequence of polynomials, take a linear combination of them using `coeffs`, and produce the foldings using `challenges`.
-#[macro_export]
-macro_rules! lincomb_fold {
-    (($($B:expr),*), $challenges:expr, $coeffs:expr) => {
-        crate::sumcheck::streams::FoldedPolynomialTree::new(
-            crate::tensorcheck::streams::LinCombStream{ t: ($($B,)*), coeffs: $coeffs },
-            $challenges
-        )
-    }
-}
+// /// Foldings of a lienear combination of polynomials.
+// ///
+// /// Given as input a sequence of polynomials, take a linear combination of them using `coeffs`, and produce the foldings using `challenges`.
+// #[macro_export]
+// macro_rules! lincomb_fold {
+//     (($($B:expr),*), $challenges:expr, $coeffs:expr) => {
+//         crate::sumcheck::streams::FoldedPolynomialTree::new(
+//             crate::tensorcheck::streams::LinCombStream{ t: ($($B,)*), coeffs: $coeffs },
+//             $challenges
+//         )
+//     }
+// }
 
 /// Stream for the linear combination of some vectors, given the coefficients.
 #[macro_export]
 macro_rules! lincomb {
     (($($B:expr),*), $coeffs:expr) => {
-        crate::tensorcheck::streams::LinCombStream{ t: ($($B,)*), coeffs: $coeffs }
+        crate::tensorcheck::streams::LinCombStream { t: ($(&$B,)*), coeffs: $coeffs }
     }
 }
 
@@ -44,7 +44,7 @@ macro_rules! impl_lincomb_iter {
 
         #[allow(non_snake_case)]
         #[allow(unused_assignments)]
-        impl<'a, F, $($B),*> LinCombStream<'a, F, ($($B,)*)>
+        impl<'a, F, $($B),*> LinCombStream<'a, F, ($(&'a $B,)*)>
             where
             F: Field,
             $(
@@ -55,14 +55,14 @@ macro_rules! impl_lincomb_iter {
             /// A new [`Streamer`](crate::stream::Streamer) that
             /// computes on-the-fly the linear combination of the input streams
             /// with the coefficients.
-            pub fn new(t: ($($B,)*), coeffs: &'a [F]) -> Self {
+            pub fn new(t: ($(&'a $B,)*), coeffs: &'a [F]) -> Self {
                 Self {t, coeffs}
             }
         }
 
         #[allow(non_snake_case)]
         #[allow(unused_assignments)]
-        impl<'a, F, $($B),*> crate::stream::Streamer for LinCombStream<'a, F, ($($B,)*)>
+        impl<'a, F, $($B),*> crate::stream::Streamer for LinCombStream<'a, F, ($(&'a $B,)*)>
             where
             F: Field,
             $(
@@ -71,7 +71,7 @@ macro_rules! impl_lincomb_iter {
             )*
         {
                 type Item = F;
-                type Iter = LinCombIter<'a, F,  ($($B::Iter,)*)>;
+                type Iter = LinCombIter<'a, F, ($($B::Iter,)*)>;
 
                 fn len(&self) -> usize {
                     let ($(ref $B,)*) = self.t;

@@ -87,7 +87,7 @@ where
     /// Evaluate a single polynomial at a set of points `points`, and provide an evaluation proof along with evaluations.
     pub fn open_multi_points<SF>(
         &self,
-        polynomial: SF,
+        polynomial: &SF,
         points: &[E::Fr],
     ) -> (Vec<E::Fr>, EvaluationProof<E>)
     where
@@ -125,7 +125,7 @@ where
     }
 
     /// The commitment procedures, that takes as input a committer key and the streaming coefficients of polynomial, and produces the desired commitment.
-    pub fn commit<SF>(&self, polynomial: SF) -> Commitment<E>
+    pub fn commit<SF>(&self, polynomial: &SF) -> Commitment<E>
     where
         SF: Streamer,
         SF::Item: Borrow<E::Fr>,
@@ -133,7 +133,7 @@ where
         assert!(self.powers_of_g.len() >= polynomial.len());
 
         Commitment(
-            crate::kzg::msm::stream_pippenger::msm_chunks(self.powers_of_g, polynomial)
+            crate::kzg::msm::stream_pippenger::msm_chunks(&self.powers_of_g, polynomial)
                 .into_affine(),
         )
     }
@@ -143,7 +143,7 @@ where
     /// The function takes as input a committer key and the tree structure of all the folding polynomials, and produces the desired commitment for each polynomial.
     pub fn commit_folding<SF>(
         &self,
-        polynomials: FoldedPolynomialTree<E::Fr, SF>,
+        polynomials: &FoldedPolynomialTree<E::Fr, SF>,
     ) -> Vec<Commitment<E>>
     where
         SF: Streamer,
@@ -284,33 +284,33 @@ fn test_open_multi_points() {
     let rng = &mut test_rng();
     // f = 80*x^6 + 80*x^5 + 88*x^4 + 3*x^3 + 73*x^2 + 7*x + 24
     let polynomial = [
-        Fr::from(80),
-        Fr::from(80),
-        Fr::from(88),
-        Fr::from(3),
-        Fr::from(73),
-        Fr::from(7),
-        Fr::from(24),
+        Fr::from(80u64),
+        Fr::from(80u64),
+        Fr::from(88u64),
+        Fr::from(3u64),
+        Fr::from(73u64),
+        Fr::from(7u64),
+        Fr::from(24u64),
     ];
     let polynomial_stream = &polynomial[..];
-    let beta = Fr::from(53);
+    let beta = Fr::from(53u64);
 
     let time_ck = CommitterKey::<Bls12_381>::new(200, 3, rng);
     let space_ck = CommitterKeyStream::from(&time_ck);
 
     let (remainder, _commitment) =
-        space_ck.open_multi_points(polynomial_stream, &[beta.square(), beta, -beta]);
+        space_ck.open_multi_points(&polynomial_stream, &[beta.square(), beta, -beta]);
     let evaluation_remainder = evaluate_be(&remainder, &beta);
     assert_eq!(evaluation_remainder, Fr::from(1807299544171u64));
 
-    let (remainder, _commitment) = space_ck.open_multi_points(polynomial_stream, &[beta]);
+    let (remainder, _commitment) = space_ck.open_multi_points(&polynomial_stream, &[beta]);
     assert_eq!(remainder.len(), 1);
 
     // get a random polynomial with random coefficient,
     let polynomial = DensePolynomial::rand(100, rng).coeffs().to_vec();
     let polynomial_stream = &polynomial[..];
     let beta = Fr::rand(rng);
-    let (_, evaluation_proof_batch) = space_ck.open_multi_points(polynomial_stream, &[beta]);
+    let (_, evaluation_proof_batch) = space_ck.open_multi_points(&polynomial_stream, &[beta]);
     let (_, evaluation_proof_single) = space_ck.open(polynomial_stream, &beta);
     assert_eq!(evaluation_proof_batch, evaluation_proof_single);
 

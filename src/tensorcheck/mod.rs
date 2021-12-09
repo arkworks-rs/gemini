@@ -70,7 +70,7 @@ const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 /// Make a single pass over the [`FoldedPolynomialTree`](crate::sumcheck::streams::FoldedPolynomialTree)
 /// and return a vector storing \\(f^{(j)}(x)\\) at the \\(j-1\\)-th position.
 /// Foldings are in the interval \\(1, \dots, n-1\\).
-pub fn evaluate_folding<F, S>(polynomials: FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
+pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
 where
     F: Field,
     S: Streamer,
@@ -156,10 +156,10 @@ where
     transcribed_foldings
 }
 
-pub(crate) fn partially_foldtree<F, S>(
-    stream: S,
-    challenges: &[F],
-) -> (FoldedPolynomialTree<F, S>, Vec<Vec<F>>)
+pub(crate) fn partially_foldtree<'a, F, S>(
+    stream: &'a S,
+    challenges: &'a [F],
+) -> (FoldedPolynomialTree<'a, F, S>, Vec<Vec<F>>)
 where
     F: Field,
     S: Streamer,

@@ -22,8 +22,8 @@ use crate::{lincomb, PROTOCOL_NAME, SPACE_TIME_THRESHOLD};
 pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
     transcript: &mut Transcript,
     ck: CommitterKeyStream<E, SG>,
-    base_polynomial: SB,
-    body_polynomials: (SF1, &[F]),
+    base_polynomial: &SB,
+    body_polynomials: (&SF1, &[F]),
 ) -> TensorCheckProof<E>
 where
     F: Field,
@@ -38,7 +38,7 @@ where
     let time_ck = ck.as_committer_key(usize::min(1 << SPACE_TIME_THRESHOLD, ck.powers_of_g.len()));
     let (tensorcheck_sfoldings, tensorcheck_tfoldings) =
         partially_foldtree(body_polynomials.0, tensorcheck_challenges);
-    let mut folded_polynomials_commitments = ck.commit_folding(tensorcheck_sfoldings);
+    let mut folded_polynomials_commitments = ck.commit_folding(&tensorcheck_sfoldings);
     folded_polynomials_commitments.extend(time_ck.batch_commit(&tensorcheck_tfoldings));
 
     // add commitments to transcript
@@ -49,9 +49,9 @@ where
     let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
     let mut folded_polynomials_evaluations =
-        evaluate_folding(tensorcheck_sfoldings, eval_points[1])
+        evaluate_folding(&tensorcheck_sfoldings, eval_points[1])
             .into_iter()
-            .zip(evaluate_folding(tensorcheck_sfoldings, eval_points[2]))
+            .zip(evaluate_folding(&tensorcheck_sfoldings, eval_points[2]))
             .map(|(x, y)| [x, y])
             .collect::<Vec<_>>();
     folded_polynomials_evaluations.extend(tensorcheck_tfoldings.into_iter().map(|p| {
@@ -97,8 +97,8 @@ where
 pub fn tensorcheck<F, E, SG, SB, SF1>(
     transcript: &mut Transcript,
     ck: CommitterKeyStream<E, SG>,
-    base_polynomial: SB,
-    body_polynomials: (SF1, &[F]),
+    base_polynomial: &SB,
+    body_polynomials: (&SF1, &[F]),
 ) -> TensorCheckProof<E>
 where
     F: Field,
@@ -112,7 +112,7 @@ where
     let tensorcheck_challenges = strip_last(body_polynomials.1);
     let tensorcheck_foldings =
         FoldedPolynomialTree::new(body_polynomials.0, tensorcheck_challenges);
-    let folded_polynomials_commitments = ck.commit_folding(tensorcheck_foldings);
+    let folded_polynomials_commitments = ck.commit_folding(&tensorcheck_foldings);
 
     // add commitments to transcript
     folded_polynomials_commitments
@@ -121,9 +121,9 @@ where
     let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
     let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
-    let folded_polynomials_evaluations = evaluate_folding(tensorcheck_foldings, eval_points[1])
+    let folded_polynomials_evaluations = evaluate_folding(&tensorcheck_foldings, eval_points[1])
         .into_iter()
-        .zip(evaluate_folding(tensorcheck_foldings, eval_points[2]))
+        .zip(evaluate_folding(&tensorcheck_foldings, eval_points[2]))
         .map(|(x, y)| [x, y])
         .collect::<Vec<_>>();
     let evaluations_w = [
@@ -187,7 +187,7 @@ impl<E: PairingEngine> Proof<E> {
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
         // send the vector w
         let witness_commitment_time = start_timer!(|| "Commitment to w");
-        let witness_commitment = ck.commit(r1cs.witness);
+        let witness_commitment = ck.commit(&r1cs.witness);
         end_timer!(witness_commitment_time);
 
         // send witness, receive challenge.
@@ -200,7 +200,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // run the sumcheck for z_a and z_b with twist alpha
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
-        let first_proof = Sumcheck::new_elastic(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
+        let first_proof = Sumcheck::new_elastic(&mut transcript, &r1cs.z_a, &r1cs.z_b, alpha);
         end_timer!(first_sumcheck_time);
 
         // after sumcheck, generate a new challenge
@@ -237,7 +237,7 @@ impl<E: PairingEngine> Proof<E> {
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_elastic(&mut transcript, lhs, r1cs.z, E::Fr::one());
+        let second_proof = Sumcheck::new_elastic(&mut transcript, &lhs, &r1cs.z, E::Fr::one());
         end_timer!(second_sumcheck_time);
 
         let second_sumcheck_msgs = second_proof.prover_messages();
@@ -249,8 +249,8 @@ impl<E: PairingEngine> Proof<E> {
         let tensor_check_proof = tensorcheck(
             &mut transcript,
             ck,
-            r1cs.witness,
-            (tensorcheck_polynomials, &second_proof.challenges),
+            &r1cs.witness,
+            (&tensorcheck_polynomials, &second_proof.challenges),
         );
         end_timer!(tensorcheck_time);
 
