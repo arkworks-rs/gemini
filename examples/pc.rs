@@ -5,8 +5,8 @@ use ark_poly::{Polynomial, UVPolynomial};
 use ark_std::test_rng;
 use ark_std::UniformRand;
 
-use gemini::kzg::time::CommitterKey;
-use gemini::kzg::VerifierKey;
+use ark_gemini::kzg::CommitterKey;
+use ark_gemini::kzg::VerifierKey;
 
 fn main() {
     let mut rng = &mut test_rng();

@@ -5,7 +5,7 @@ use ark_std::test_rng;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 
-use crate::kzg::time::CommitterKey;
+use crate::kzg::CommitterKey;
 use crate::misc::{scalar_prod, tensor};
 use crate::tensorcheck::TensorCheckProof;
 use crate::transcript::GeminiTranscript;

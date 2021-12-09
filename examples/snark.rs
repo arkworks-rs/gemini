@@ -3,9 +3,9 @@ use ark_ec::{AffineCurve, PairingEngine};
 use ark_std::rand::Rng;
 use ark_std::test_rng;
 use clap::Parser;
-use gemini::kzg::space::CommitterKeyStream;
-use gemini::snark::Proof;
-use gemini::stream::dummy::{dumym_r1cs_relation, DummyStreamer};
+use ark_gemini::kzg::CommitterKeyStream;
+use ark_gemini::snark::Proof;
+use ark_gemini::stream::dummy::{dumym_r1cs_relation, DummyStreamer};
 
 type PE = Bls12<ark_bls12_381::Parameters>;
 type G1 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G1Affine;
@@ -60,9 +60,9 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let num_constraints = 1 << instance_logsize;
     let num_variables = 1 << instance_logsize;
 
-    let circuit = gemini::circuit::random_circuit(rng, num_constraints, num_variables);
-    let r1cs = gemini::circuit::generate_relation(circuit);
-    let ck = gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(
+    let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
+    let r1cs = ark_gemini::circuit::generate_relation(circuit);
+    let ck = ark_gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(
         num_constraints + num_variables,
         5,
         rng,
