@@ -27,7 +27,7 @@ impl<E: PairingEngine> Proof<E> {
             crate::misc::_features_enabled(),
             crate::SPACE_TIME_THRESHOLD,
             crate::misc::TENSOR_EXPANSION_LOG,
-            crate::kzg::msm::MAX_MSM_BUFFER_LOG,
+            crate::kzg::MAX_MSM_BUFFER_LOG,
         );
 
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);

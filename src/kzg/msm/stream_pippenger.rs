@@ -10,10 +10,14 @@ use ark_std::borrow::Borrow;
 
 use crate::stream::Streamer;
 
-use super::{bounded_ln_without_floats, MAX_MSM_BUFFER};
+use super::bounded_ln_without_floats;
 
 /// Streaming multi-scalar multiplication algorithm.
-pub fn msm<G, F, I, J>(bases_stream: J, scalars_stream: I) -> G::Projective
+pub fn msm<G, F, I, J>(
+    bases_stream: J,
+    scalars_stream: I,
+    max_msm_buffer_log: usize,
+) -> G::Projective
 where
     G: AffineCurve,
     I: Streamer,
@@ -32,7 +36,7 @@ where
     bases
         .advance_by(bases_stream.len() - scalars_stream.len())
         .expect("bases not long enough");
-    msm_internal(bases, scalars, scalars_stream.len())
+    msm_internal(bases, scalars, scalars_stream.len(), max_msm_buffer_log)
 }
 
 /// Steaming multi-scalar multiplication algorithm with hard-coded chunk size.
@@ -76,7 +80,12 @@ where
 
 /// Add a chunk of bases and scalars into the multiscalar multiplication state.
 /// XXX. Rust sometimes gets confused if I use G::ScalarField instead of F, so despite it's not really necessary I'm keeping the scalar field as a type parameter.
-pub fn msm_internal<G, F, I, J>(bases: J, scalars: I, n: usize) -> G::Projective
+pub fn msm_internal<G, F, I, J>(
+    bases: J,
+    scalars: I,
+    n: usize,
+    max_msm_buffer_log: usize,
+) -> G::Projective
 where
     G: AffineCurve,
     I: IntoIterator,
@@ -85,7 +94,7 @@ where
     J: IntoIterator,
     J::Item: Borrow<G>,
 {
-    let c = bounded_ln_without_floats(n);
+    let c = bounded_ln_without_floats(n, max_msm_buffer_log);
     let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
     // split `num_bits` into steps of `c`, but skip window 0.
     let windows = (0..num_bits).step_by(c);
@@ -144,9 +153,9 @@ pub struct HashMapPippenger<G: AffineCurve> {
 
 impl<G: AffineCurve> HashMapPippenger<G> {
     /// Producce a new hash map with the maximum msm buffer size.
-    pub fn new() -> Self {
+    pub fn new(max_msm_buffer: usize) -> Self {
         Self {
-            buffer: HashMap::with_capacity(MAX_MSM_BUFFER),
+            buffer: HashMap::with_capacity(max_msm_buffer),
             result: G::Projective::zero(),
         }
     }
@@ -164,7 +173,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
             .entry(*base.borrow())
             .or_insert(G::ScalarField::zero());
         *entry += *scalar.borrow();
-        if self.buffer.len() == MAX_MSM_BUFFER {
+        if self.buffer.len() == self.buffer.capacity() {
             let bases = self.buffer.keys().cloned().collect::<Vec<_>>();
             let scalars = self
                 .buffer
@@ -209,12 +218,12 @@ pub struct ChunkedPippenger<G: AffineCurve> {
 
 impl<G: AffineCurve> ChunkedPippenger<G> {
     /// Initialize a chunked Pippenger instance with default parameters.
-    pub fn new() -> Self {
+    pub fn new(max_msm_buffer: usize) -> Self {
         Self {
-            scalars_buffer: Vec::with_capacity(MAX_MSM_BUFFER),
-            bases_buffer: Vec::with_capacity(MAX_MSM_BUFFER),
+            scalars_buffer: Vec::with_capacity(max_msm_buffer),
+            bases_buffer: Vec::with_capacity(max_msm_buffer),
             result: G::Projective::zero(),
-            buf_size: MAX_MSM_BUFFER,
+            buf_size: max_msm_buffer,
         }
     }
     /// Initialize a chunked Pippenger instance with the given buffer size.
@@ -269,9 +278,9 @@ pub struct StreamPippenger<G: AffineCurve> {
 
 impl<G: AffineCurve> StreamPippenger<G> {
     /// Prepare a multi-scalar multiplication.
-    pub fn new(size: usize) -> Self {
+    pub fn new(size: usize, max_msm_buffer_log: usize) -> Self {
         let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
-        let c = bounded_ln_without_floats(size);
+        let c = bounded_ln_without_floats(size, max_msm_buffer_log);
         // split `num_bits` into steps of `c`, but skip window 0.
         let windows = (0..num_bits).step_by(c);
         let buckets_num = 1 << c;
@@ -370,7 +379,7 @@ mod test {
 
         let arkworks = VariableBaseMSM::multi_scalar_mul(g.as_slice(), v.as_slice());
 
-        let mut p = StreamPippenger::<G>::new(3);
+        let mut p = StreamPippenger::<G>::new(3, 20);
         p.add_chunk(&g, v.into_iter());
         let mine = p.finalize();
         assert_eq!(arkworks.into_affine(), mine.into_affine());
@@ -394,7 +403,7 @@ mod test {
 
         let arkworks = VariableBaseMSM::multi_scalar_mul(g.as_slice(), v.as_slice());
 
-        let mut p = ChunkedPippenger::<G>::new();
+        let mut p = ChunkedPippenger::<G>::new(1 << 20);
         for (s, g) in v.iter().zip(g) {
             p.add(g, s);
         }

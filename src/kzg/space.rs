@@ -7,7 +7,7 @@ use ark_ec::{PairingEngine, ProjectiveCurve};
 use ark_ff::{PrimeField, Zero};
 
 use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
-use crate::kzg::vanishing_polynomial;
+use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
 use crate::misc::ceil_div;
 
 use crate::stream::{Reversed, Streamer};
@@ -62,7 +62,7 @@ where
         SF: Streamer,
         SF::Item: Borrow<E::Fr>,
     {
-        let mut quotient = ChunkedPippenger::new();
+        let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
 
         let mut bases = self.powers_of_g.stream();
         let scalars = polynomial.stream();
@@ -95,7 +95,7 @@ where
         SF::Item: Borrow<E::Fr>,
     {
         let zeros = vanishing_polynomial(points);
-        let mut quotient = ChunkedPippenger::new();
+        let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
         let mut bases = self.powers_of_g.stream();
         bases
             .advance_by(self.powers_of_g.len() - polynomial.len() + zeros.degree())
@@ -153,7 +153,7 @@ where
         let mut pippengers: Vec<ChunkedPippenger<E::G1Affine>> = Vec::new();
         let mut folded_bases = Vec::new();
         for i in 1..n + 1 {
-            let pippenger = ChunkedPippenger::with_size(crate::kzg::msm::MAX_MSM_BUFFER / n);
+            let pippenger = ChunkedPippenger::with_size(MAX_MSM_BUFFER / n);
             let mut bases = self.powers_of_g.stream();
 
             let delta = self.powers_of_g.len() - ceil_div(polynomials.len(), 1 << i);
@@ -191,7 +191,7 @@ where
         SF::Item: Borrow<E::Fr> + Copy,
     {
         let n = polynomials.depth();
-        let mut pippenger = HashMapPippenger::<E::G1Affine>::new();
+        let mut pippenger = HashMapPippenger::<E::G1Affine>::new(MAX_MSM_BUFFER);
         let mut folded_bases = Vec::new();
         let zeros = vanishing_polynomial(points);
         let mut remainders = vec![VecDeque::new(); n];
