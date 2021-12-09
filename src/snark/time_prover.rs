@@ -4,7 +4,7 @@ use ark_ff::{Field, One, Zero};
 use log::debug;
 
 use crate::circuit::R1CS;
-use crate::kzg::time::CommitterKey;
+use crate::kzg::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
 use crate::snark::Proof;

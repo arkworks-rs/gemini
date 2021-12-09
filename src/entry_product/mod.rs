@@ -6,6 +6,12 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use merlin::Transcript;
+use crate::stream::Streamer;
+use ark_std::borrow::Borrow;
+
+use self::streams::ProductStream;
+use self::streams::RightRotationStreamer;
+use self::streams::entry_product_streams;
 
 use crate::{
     kzg::{Commitment, CommitterKey, CommitterKeyStream},
@@ -87,12 +93,7 @@ pub fn ep_time<E: PairingEngine>(
     };
     (prover_messages, sumcheck_prover)
 }
-use crate::entry_product::streams::entry_product_streams;
-use crate::stream::Streamer;
-use ark_std::borrow::Borrow;
 
-use self::streams::ProductStream;
-use self::streams::RightRotationStreamer;
 
 pub fn ep_elastic<E, S, SG>(
     transcript: &mut Transcript,

@@ -10,7 +10,7 @@ use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
-use crate::kzg::space::CommitterKeyStream;
+use crate::kzg::CommitterKeyStream;
 use crate::lincomb;
 use crate::misc::{expand_tensor, powers, MatrixElement};
 use crate::psnark::streams::{

@@ -45,7 +45,7 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::One;
 
-use crate::kzg::time::CommitterKey;
+use crate::kzg::CommitterKey;
 use crate::kzg::Commitment;
 use crate::kzg::EvaluationProof;
 use crate::kzg::VerificationError;

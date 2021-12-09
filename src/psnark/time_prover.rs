@@ -3,7 +3,7 @@ use ark_ec::PairingEngine;
 use ark_std::One;
 
 use crate::circuit::{Matrix, R1CS};
-use crate::kzg::time::CommitterKey;
+use crate::kzg::CommitterKey;
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::sumcheck::proof::Sumcheck;
 use crate::transcript::GeminiTranscript;

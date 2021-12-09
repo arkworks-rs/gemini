@@ -7,7 +7,7 @@ use log::debug;
 use merlin::Transcript;
 
 use crate::circuit::R1csStream;
-use crate::kzg::space::CommitterKeyStream;
+use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;

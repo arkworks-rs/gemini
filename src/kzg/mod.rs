@@ -84,8 +84,8 @@
 //!
 
 pub mod msm;
-pub mod space;
-pub mod time;
+mod space;
+mod time;
 
 use ark_ec::ProjectiveCurve;
 pub use space::CommitterKeyStream;
