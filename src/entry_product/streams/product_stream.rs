@@ -5,8 +5,8 @@ use ark_std::marker::PhantomData;
 use crate::stream::Streamer;
 
 #[derive(Clone, Copy)]
-pub struct ProductStream<F, S> {
-    streamer: S,
+pub struct ProductStream<'a, F, S> {
+    streamer: &'a S,
     _field: PhantomData<F>,
 }
 
@@ -15,19 +15,19 @@ pub struct ProductIter<F, I> {
     current: Option<F>,
 }
 
-impl<F, S> ProductStream<F, S>
+impl<'a, F, S> ProductStream<'a, F, S>
 where
     S: Streamer,
     S::Item: Borrow<F>,
     F: Field,
 {
-    pub fn new(streamer: S) -> Self {
+    pub fn new(streamer: &'a S) -> Self {
         let _field = PhantomData;
         Self { streamer, _field }
     }
 }
 
-impl<F, S> Streamer for ProductStream<F, S>
+impl<'a, F, S> Streamer for ProductStream<'a, F, S>
 where
     S: Streamer,
     S::Item: Borrow<F>,

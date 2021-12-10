@@ -3,7 +3,7 @@ use crate::stream::Streamer;
 /// Given a stream for F(X),
 /// produce a stream for XF(X) + 1
 #[derive(Clone, Copy)]
-pub struct RightRotationStreamer<F, S>(S, F);
+pub struct RightRotationStreamer<'a, F, S>(&'a S, F);
 
 pub struct RightRotationIter<I>
 where
@@ -13,17 +13,17 @@ where
     base_iter: I,
 }
 
-impl<S> RightRotationStreamer<S::Item, S>
+impl<'a, S> RightRotationStreamer<'a, S::Item, S>
 where
     S: Streamer,
     S::Item: Copy,
 {
-    pub fn new(stream: S, pad: S::Item) -> Self {
+    pub fn new(stream: &'a S, pad: S::Item) -> Self {
         Self(stream, pad)
     }
 }
 
-impl<S> Streamer for RightRotationStreamer<S::Item, S>
+impl<'a, S> Streamer for RightRotationStreamer<'a, S::Item, S>
 where
     S: Streamer,
     S::Item: Copy,
