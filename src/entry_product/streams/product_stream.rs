@@ -4,8 +4,7 @@ use ark_std::marker::PhantomData;
 
 use crate::stream::Streamer;
 
-#[derive(Clone, Copy)]
-pub struct ProductStream<'a, F, S> {
+pub struct ProductStream<'a, F, S: ?Sized> {
     streamer: &'a S,
     _field: PhantomData<F>,
 }

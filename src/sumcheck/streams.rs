@@ -263,8 +263,7 @@ fn test_folded_polynomial_tree() {
     let coefficients = vec![F::one(), two, F::one(), F::one()];
     let challenges = vec![F::one(), two];
     let coefficients_stream = coefficients.as_slice();
-    let fold_streamer =
-        FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
+    let fold_streamer = FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
     let mut fold_iter = fold_streamer.stream();
     // assert_eq!(fold_stream.next(), Some((0, F::one())));
     // assert_eq!(fold_stream.next(), Some((0, two)));
@@ -278,8 +277,7 @@ fn test_folded_polynomial_tree() {
     let coefficients = vec![one; 12];
     let challenges = vec![F::one(); 4];
     let coefficients_stream = coefficients.as_slice();
-    let fold_streamer =
-        FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
+    let fold_streamer = FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
     let mut fold_iter = fold_streamer.stream();
     fold_iter.advance_by(5).unwrap();
     assert_eq!(fold_iter.next(), Some((1, two)));

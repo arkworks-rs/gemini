@@ -125,7 +125,7 @@ where
     }
 
     /// The commitment procedures, that takes as input a committer key and the streaming coefficients of polynomial, and produces the desired commitment.
-    pub fn commit<SF>(&self, polynomial: &SF) -> Commitment<E>
+    pub fn commit<SF: ?Sized>(&self, polynomial: &SF) -> Commitment<E>
     where
         SF: Streamer,
         SF::Item: Borrow<E::Fr>,
@@ -136,6 +136,16 @@ where
             crate::kzg::msm::stream_pippenger::msm_chunks(&self.powers_of_g, polynomial)
                 .into_affine(),
         )
+    }
+
+    pub fn batch_commit<'a, F>(
+        &self,
+        polynomials: &[&'a dyn Streamer<Item = F, Iter = &mut dyn Iterator<Item = F>>],
+    ) -> Vec<Commitment<E>>
+    where
+        F: Borrow<E::Fr>,
+    {
+        polynomials.iter().map(|&p| self.commit(p)).collect()
     }
 
     /// The commitment procedures for our tensor check protocol.

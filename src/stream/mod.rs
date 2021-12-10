@@ -35,6 +35,28 @@ pub trait Streamer {
     }
 }
 
+impl<S: Streamer + ?Sized> Streamer for Box<S> {
+    type Item = S::Item;
+    type Iter = S::Iter;
+
+    /// Return a new stream for the given object.
+    fn stream(&self) -> Self::Iter {
+        todo!()
+    }
+
+    /// Return the length of the stream.
+    /// Careful: different objects might have different indications of what _length_ means;
+    /// this might not be the actual size in terms of elements.
+    fn len(&self) -> usize {
+        todo!()
+    }
+
+    /// Return `true` if the stream is empty, else `false`.
+    fn is_empty(&self) -> bool {
+        todo!()
+    }
+}
+
 /// A memory-mapped buffer for field elements.
 #[derive(Clone, Copy)]
 pub struct FieldMmap<'a, F>
@@ -77,7 +99,6 @@ where
         self.mmap.len() / std::mem::size_of::<F>()
     }
 }
-
 
 // #[test]
 // fn write_ck<G: AffineCurve>() {

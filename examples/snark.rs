@@ -1,11 +1,11 @@
 use ark_ec::bls12::Bls12;
 use ark_ec::{AffineCurve, PairingEngine};
-use ark_std::rand::Rng;
-use ark_std::test_rng;
-use clap::Parser;
 use ark_gemini::kzg::CommitterKeyStream;
 use ark_gemini::snark::Proof;
 use ark_gemini::stream::dummy::{dumym_r1cs_relation, DummyStreamer};
+use ark_std::rand::Rng;
+use ark_std::test_rng;
+use clap::Parser;
 
 type PE = Bls12<ark_bls12_381::Parameters>;
 type G1 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G1Affine;

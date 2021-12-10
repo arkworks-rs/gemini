@@ -2,7 +2,6 @@ use crate::stream::Streamer;
 
 /// Given a stream for F(X),
 /// produce a stream for XF(X) + 1
-#[derive(Clone, Copy)]
 pub struct RightRotationStreamer<'a, F, S>(&'a S, F);
 
 pub struct RightRotationIter<I>

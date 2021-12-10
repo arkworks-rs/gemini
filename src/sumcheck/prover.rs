@@ -41,3 +41,25 @@ where
     /// otherwise return None.
     fn final_foldings(&self) -> Option<[F; 2]>;
 }
+
+impl<F: Field, P: Prover<F> + ?Sized> Prover<F> for Box<&mut P> {
+    fn next_message(&mut self) -> Option<RoundMsg<F>> {
+        P::next_message(self.as_mut())
+    }
+
+    fn fold(&mut self, challenge: F) {
+        P::fold(self.as_mut(), challenge)
+    }
+
+    fn rounds(&self) -> usize {
+        P::rounds(self)
+    }
+
+    fn round(&self) -> usize {
+        P::round(self)
+    }
+
+    fn final_foldings(&self) -> Option<[F; 2]> {
+        P::final_foldings(self)
+    }
+}
