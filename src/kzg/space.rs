@@ -20,7 +20,7 @@ const LENGTH_MISMATCH_MSG: &str = "Expecting at least one element in the committ
 
 /// The streaming SRS for the polynomial commitment scheme consists of a stream of consecutive powers of g.
 /// It also implements functions for `setup`, `commit` and `open`.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct CommitterKeyStream<E, SG>
 where
     E: PairingEngine,
@@ -30,7 +30,7 @@ where
     /// Stream of G1 elements.
     pub powers_of_g: SG,
     /// Two G2 elements needed for the committer.
-    pub powers_of_g2: [E::G2Affine; 2],
+    pub powers_of_g2: Vec<E::G2Affine>,
 }
 
 impl<E, SG> CommitterKeyStream<E, SG>
@@ -244,7 +244,7 @@ impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
             /*
                 TODO: Gives more G2 elements
             */
-            powers_of_g2: [ck.powers_of_g2[0], ck.powers_of_g2[1]],
+            powers_of_g2: ck.powers_of_g2.clone(),
         }
     }
 }
@@ -256,7 +256,7 @@ where
     SG::Item: Borrow<E::G1Affine>,
 {
     fn from(ck: &CommitterKeyStream<E, SG>) -> Self {
-        let powers_of_g2 = ck.powers_of_g2;
+        let powers_of_g2 = ck.powers_of_g2.to_vec();
         // take the first element from the stream
         let g = *ck
             .powers_of_g
@@ -265,7 +265,7 @@ where
             .expect(LENGTH_MISMATCH_MSG)
             .borrow();
         Self {
-            powers_of_g2: powers_of_g2.to_vec(),
+            powers_of_g2,
             powers_of_g: vec![g],
         }
     }

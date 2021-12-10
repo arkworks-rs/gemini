@@ -50,7 +50,7 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let r1cs_stream = dumym_r1cs_relation(rng, instance_size);
     let ck = CommitterKeyStream::<PE, _> {
         powers_of_g: DummyStreamer::new(g1, instance_size + 1),
-        powers_of_g2: [g2, g2],
+        powers_of_g2: vec![g2; 4],
     };
     println!("Proving an instance of log size  {}", instance_logsize);
     Proof::new_elastic(r1cs_stream, ck);
