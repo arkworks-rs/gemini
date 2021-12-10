@@ -238,7 +238,7 @@ fn test_entry_product_consistency() {
     let stream_ck = CommitterKeyStream::from(&ck);
 
     let time_transcript = &mut Transcript::new(b"test");
-    let ep_time = new_time(time_transcript, &ck, &v, product);
+    let ep_time = EntryProduct::new_time(time_transcript, &ck, &v, product);
     let elastic_transcript = &mut Transcript::new(b"test");
     let ep_space = new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
     assert_eq!(ep_time.prover_messages, ep_space.prover_messages)

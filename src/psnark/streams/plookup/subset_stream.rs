@@ -3,8 +3,8 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
 #[derive(Clone, Copy)]
-pub struct LookupSubsetStreamer<F, S> {
-    base_streamer: S,
+pub struct LookupSubsetStreamer<'a, F, S> {
+    base_streamer: &'a S,
     gamma: F,
 }
 
@@ -13,8 +13,8 @@ pub struct LookupSubsetIterator<F, I> {
     gamma: F,
 }
 
-impl<F, S> LookupSubsetStreamer<F, S> {
-    pub fn new(base_streamer: S, gamma: F) -> Self {
+impl<'a, F, S> LookupSubsetStreamer<'a, F, S> {
+    pub fn new(base_streamer: &'a S, gamma: F) -> Self {
         Self {
             base_streamer,
             gamma,
@@ -22,7 +22,7 @@ impl<F, S> LookupSubsetStreamer<F, S> {
     }
 }
 
-impl<F, S> Streamer for LookupSubsetStreamer<F, S>
+impl<'a, F, S> Streamer for LookupSubsetStreamer<'a, F, S>
 where
     S: Streamer,
     S::Item: Borrow<F>,
@@ -72,7 +72,8 @@ fn test_subset_stream() {
     let z = Fr::rand(rng);
     let expected = (0..size).map(|i| test_vector[i] + z).collect::<Vec<_>>();
 
-    let st = LookupSubsetStreamer::new(test_vector.as_slice(), z);
+    let test_vector_stream = test_vector.as_slice();
+    let st = LookupSubsetStreamer::new(&test_vector_stream, z);
     let got = st.stream().collect::<Vec<_>>();
     assert_eq!(got, expected);
 }

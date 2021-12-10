@@ -3,15 +3,15 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
 #[derive(Clone, Copy)]
-pub struct LookupSortedStreamer<F, S, SA> {
-    base_streamer: S,
-    addr_streamer: SA,
+pub struct LookupSortedStreamer<'a, F, S, SA> {
+    base_streamer: &'a S,
+    addr_streamer: &'a SA,
     y: F,
     z: F,
 }
 
-impl<F, S, SA> LookupSortedStreamer<F, S, SA> {
-    pub fn new(base_streamer: S, addr_streamer: SA, y: F, z: F) -> Self {
+impl<'a, F, S, SA> LookupSortedStreamer<'a, F, S, SA> {
+    pub fn new(base_streamer: &'a S, addr_streamer: &'a SA, y: F, z: F) -> Self {
         Self {
             base_streamer,
             addr_streamer,
@@ -21,7 +21,7 @@ impl<F, S, SA> LookupSortedStreamer<F, S, SA> {
     }
 }
 
-impl<F, S, SA> Streamer for LookupSortedStreamer<F, S, SA>
+impl<'a, F, S, SA> Streamer for LookupSortedStreamer<'a, F, S, SA>
 where
     F: Field,
     S: Streamer,
@@ -228,8 +228,8 @@ fn test_sorted_stream() {
     let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();
     let test_vector_stream = test_vector.iter().rev().cloned().collect::<Vec<_>>();
     let sorted_stream = LookupSortedStreamer::new(
-        test_vector_stream.as_slice(),
-        subset_indices_stream.as_slice(),
+        &test_vector_stream.as_slice(),
+        &subset_indices_stream.as_slice(),
         y,
         z,
     )

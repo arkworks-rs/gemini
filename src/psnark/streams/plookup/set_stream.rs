@@ -3,8 +3,8 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
 #[derive(Clone, Copy)]
-pub struct LookupSetStreamer<F, S> {
-    base_streamer: S,
+pub struct LookupSetStreamer<'a, F, S> {
+    base_streamer: &'a S,
     gamma: F,
     beta: F,
 }
@@ -19,8 +19,8 @@ pub struct LookupSetIterator<F, I> {
     cnt: usize,
 }
 
-impl<F, S> LookupSetStreamer<F, S> {
-    pub fn new(base_streamer: S, beta: F, gamma: F) -> Self {
+impl<'a, F, S> LookupSetStreamer<'a, F, S> {
+    pub fn new(base_streamer: &'a S, beta: F, gamma: F) -> Self {
         Self {
             base_streamer,
             beta,
@@ -29,7 +29,7 @@ impl<F, S> LookupSetStreamer<F, S> {
     }
 }
 
-impl<F, S> Streamer for LookupSetStreamer<F, S>
+impl<'a, F, S> Streamer for LookupSetStreamer<'a, F, S>
 where
     F: Field,
     S: Streamer,
@@ -112,7 +112,8 @@ fn test_set_stream() {
         .map(|i| y * (Fr::one() + z) + test_vector[i] + z * test_vector[(i + 1) % size])
         .collect::<Vec<_>>();
 
-    let st = LookupSetStreamer::new(test_vector.as_slice(), y, z);
+    let test_vector_stream = test_vector.as_slice();
+    let st = LookupSetStreamer::new(&test_vector_stream, y, z);
     let got = st.stream().collect::<Vec<_>>();
     assert_eq!(got, expected);
 }

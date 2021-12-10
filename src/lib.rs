@@ -45,8 +45,8 @@ mod misc;
 
 pub mod kzg;
 /// Preprocessing SNARK for R1CS.
-// #[allow(dead_code)]
-// pub mod psnark;
+#[allow(dead_code)]
+pub mod psnark;
 pub mod snark;
 /// Data structures for the streaming model.
 pub mod stream;
