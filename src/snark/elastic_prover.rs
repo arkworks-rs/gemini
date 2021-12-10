@@ -164,7 +164,7 @@ impl<E: PairingEngine> Proof<E> {
     where
         E: PairingEngine,
         SM: Streamer,
-        SZ: Streamer,
+        SZ: Streamer + Copy,
         SW: Streamer,
         SG: Streamer,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
@@ -200,7 +200,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // run the sumcheck for z_a and z_b with twist alpha
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
-        let first_proof = Sumcheck::new_elastic(&mut transcript, &r1cs.z_a, &r1cs.z_b, alpha);
+        let first_proof = Sumcheck::new_elastic(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(first_sumcheck_time);
 
         // after sumcheck, generate a new challenge
@@ -237,7 +237,7 @@ impl<E: PairingEngine> Proof<E> {
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_elastic(&mut transcript, &lhs, &r1cs.z, E::Fr::one());
+        let second_proof = Sumcheck::new_elastic(&mut transcript, lhs, r1cs.z, E::Fr::one());
         end_timer!(second_sumcheck_time);
 
         let second_sumcheck_msgs = second_proof.prover_messages();

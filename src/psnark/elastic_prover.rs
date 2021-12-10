@@ -6,7 +6,7 @@ use ark_std::One;
 use merlin::Transcript;
 
 // use crate::psnark::streams::memcheck::memcheck_streams;
-use crate::psnark::streams::plookup::plookup_streams;
+// use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;

@@ -61,8 +61,8 @@ where
 
 #[test]
 fn test_rrot() {
-    let numbers = (0..100).collect::<Vec<_>>();
-    let right_rotation = RightRotationStreamer(numbers.as_slice(), &1)
+    let numbers = (0..100u64).collect::<Vec<_>>();
+    let right_rotation = RightRotationStreamer(&numbers.as_slice(), &1)
         .stream()
         .cloned()
         .collect::<Vec<_>>();

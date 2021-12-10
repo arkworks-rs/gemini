@@ -102,10 +102,10 @@ pub fn ep_elastic<'a, E, S, SG>(
     claimed_product: E::Fr,
 ) -> (
     ProverMsgs<E>,
-    // ElasticProver<
-    //     SpaceProver<'a, E::Fr, RightRotationStreamer<'a, E::Fr, S>, ProductStream<'a, E::Fr, S>>,
-    //     E::Fr,
-    // >,
+    ElasticProver<
+        SpaceProver<E::Fr, RightRotationStreamer<'a, E::Fr, S>, ProductStream<'a, E::Fr, S>>,
+        E::Fr,
+    >,
 )
 where
     E: PairingEngine,
@@ -121,12 +121,12 @@ where
     let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
     let claimed_sumcheck = chal * evaluate_be(acc_v.stream(), &chal) + claimed_product
         - chal.pow(&[acc_v.len() as u64]);
-    let _sumcheck_prover: ElasticProver<SpaceProver<'_, E::Fr, RightRotationStreamer<'_, E::Fr, S>, ProductStream<'_, E::Fr, S>>, E::Fr> = ElasticProver::new(&rrot_v, &acc_v, chal);
+    let sumcheck_prover: ElasticProver<SpaceProver<E::Fr, RightRotationStreamer<'_, E::Fr, S>, ProductStream<'_, E::Fr, S>>, E::Fr> = ElasticProver::new(rrot_v, acc_v, chal);
     let prover_messages = ProverMsgs {
         acc_v_commitment,
         claimed_sumcheck,
     };
-    (prover_messages,) // sumcheck_prover)
+    (prover_messages, sumcheck_prover)
 }
 
 #[test]

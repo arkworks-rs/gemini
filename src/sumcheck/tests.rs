@@ -52,7 +52,7 @@ fn test_messages_consistency() {
     let f_stream = rev_f.as_slice();
     let g_stream = rev_g.as_slice();
 
-    let mut space_prover = SpaceProver::new(&f_stream, &g_stream, twist);
+    let mut space_prover = SpaceProver::new(f_stream, g_stream, twist);
 
     // Run the next-message function on the space and the time prover,
     // Check the returned messages are equal.
@@ -82,7 +82,7 @@ fn test_messages_consistency() {
     // now check the aggregated data.
     let mut space_transcript = Transcript::new(crate::PROTOCOL_NAME);
     let mut time_transcript = Transcript::new(crate::PROTOCOL_NAME);
-    let space_proof = Sumcheck::<F>::new_space(&mut space_transcript, &f_stream, &g_stream, twist);
+    let space_proof = Sumcheck::<F>::new_space(&mut space_transcript, f_stream, g_stream, twist);
     let time_proof = Sumcheck::<F>::new_time(&mut time_transcript, &f, &g, &twist);
     assert_eq!(space_proof.messages, time_proof.messages);
 }
@@ -107,7 +107,7 @@ fn test_consistency_elastic() {
 
     // now check the aggregated data.
     let time_proof = Sumcheck::<F>::new_time(&mut time_transcript, &f, &g, &twist);
-    let elastic_proof = Sumcheck::<F>::new_elastic(&mut transcript, &f_stream, &g_stream, twist);
+    let elastic_proof = Sumcheck::<F>::new_elastic(&mut transcript, f_stream, g_stream, twist);
     assert_eq!(time_proof.messages, elastic_proof.messages);
 }
 
@@ -128,7 +128,7 @@ fn test_messages_consistency_with_different_lengths() {
     let f_stream = rev_f.as_slice();
     let g_stream = rev_g.as_slice();
 
-    let mut space_prover = SpaceProver::new(&f_stream, &g_stream, twist);
+    let mut space_prover = SpaceProver::new(f_stream, g_stream, twist);
 
     // Run the next-message function on the space and the time prover,
     // Check the returned messages are equal.

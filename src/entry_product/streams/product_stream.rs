@@ -81,7 +81,7 @@ fn test_product_stream() {
     let e = F::rand(rng);
 
     let vector = DummyStreamer::new(e, n);
-    let accumulated_product = ProductStream::new(vector).stream().collect::<Vec<_>>();
+    let accumulated_product = ProductStream::new(&vector).stream().collect::<Vec<_>>();
     assert_eq!(accumulated_product[0], F::one());
     assert_eq!(accumulated_product[1], e);
     assert_eq!(accumulated_product[2], e.square());
