@@ -154,7 +154,7 @@ fn test_relation() {
 
     // prover: engage in the first sumcheck of z_a, z_b and z_c
     let _space_prover =
-        crate::sumcheck::space_prover::SpaceProver::new(z_a.as_slice(), z_b.as_slice(), alpha);
+        crate::sumcheck::space_prover::SpaceProver::new(&z_a.as_slice(), &z_b.as_slice(), alpha);
 
     // verifier: send beta
     let beta = F::rand(rng);

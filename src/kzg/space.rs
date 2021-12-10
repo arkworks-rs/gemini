@@ -315,7 +315,7 @@ fn test_open_multi_points() {
     assert_eq!(evaluation_proof_batch, evaluation_proof_single);
 
     let (remainder, _evaluation_poof) =
-        space_ck.open_multi_points(polynomial_stream, &[beta, -beta, beta.square()]);
+        space_ck.open_multi_points(&polynomial_stream, &[beta, -beta, beta.square()]);
     let expected_evaluation = evaluate_be(&remainder, &beta);
     let obtained_evaluation = evaluate_be(&polynomial, &beta);
     assert_eq!(expected_evaluation, obtained_evaluation);

@@ -11,7 +11,7 @@ use ark_std::borrow::Borrow;
 
 use self::streams::ProductStream;
 use self::streams::RightRotationStreamer;
-// use self::streams::entry_product_streams;
+use self::streams::entry_product_streams;
 
 use crate::{
     kzg::{Commitment, CommitterKey, CommitterKeyStream},
@@ -95,39 +95,39 @@ pub fn ep_time<E: PairingEngine>(
 }
 
 
-// pub fn ep_elastic<'a, E, S, SG>(
-//     transcript: &mut Transcript,
-//     ck: &CommitterKeyStream<E, SG>,
-//     v: S,
-//     claimed_product: E::Fr,
-// ) -> (
-//     ProverMsgs<E>,
-//     ElasticProver<
-//         SpaceProver<'a, E::Fr, RightRotationStreamer<E::Fr, S>, ProductStream<E::Fr, S>>,
-//         E::Fr,
-//     >,
-// )
-// where
-//     E: PairingEngine,
-//     S: Streamer<Item = E::Fr>,
-//     SG: Streamer,
-//     SG::Item: Borrow<E::G1Affine>,
-// {
-//     let (rrot_v, acc_v) = entry_product_streams(v);
+pub fn ep_elastic<'a, E, S, SG>(
+    transcript: &mut Transcript,
+    ck: &CommitterKeyStream<E, SG>,
+    v: S,
+    claimed_product: E::Fr,
+) -> (
+    ProverMsgs<E>,
+    ElasticProver<
+        SpaceProver<'a, E::Fr, RightRotationStreamer<E::Fr, S>, ProductStream<E::Fr, S>>,
+        E::Fr,
+    >,
+)
+where
+    E: PairingEngine,
+    S: Streamer<Item = E::Fr>,
+    SG: Streamer,
+    SG::Item: Borrow<E::G1Affine>,
+{
+    let (rrot_v, acc_v) = entry_product_streams(v);
 
-//     let acc_v_commitment = ck.commit(acc_v);
-//     transcript.append_commitment(b"acc_v", &acc_v_commitment);
+    let acc_v_commitment = ck.commit(acc_v);
+    transcript.append_commitment(b"acc_v", &acc_v_commitment);
 
-//     let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
-//     let claimed_sumcheck = chal * evaluate_be(acc_v.stream(), &chal) + claimed_product
-//         - chal.pow(&[acc_v.len() as u64]);
-//     let sumcheck_prover = ElasticProver::new(&rrot_v, &acc_v, chal);
-//     let prover_messages = ProverMsgs {
-//         acc_v_commitment,
-//         claimed_sumcheck,
-//     };
-//     (prover_messages, sumcheck_prover)
-// }
+    let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+    let claimed_sumcheck = chal * evaluate_be(acc_v.stream(), &chal) + claimed_product
+        - chal.pow(&[acc_v.len() as u64]);
+    let sumcheck_prover = ElasticProver::new(&rrot_v, &acc_v, chal);
+    let prover_messages = ProverMsgs {
+        acc_v_commitment,
+        claimed_sumcheck,
+    };
+    (prover_messages, sumcheck_prover)
+}
 
 #[test]
 fn test_entry_product_relation() {
@@ -172,6 +172,6 @@ fn test_entry_product_consistency() {
     let time_transcript = &mut Transcript::new(b"test");
     let ep_time = ep_time(time_transcript, &ck, &v, product);
     let elastic_transcript = &mut Transcript::new(b"test");
-    let ep_space = ep_elastic(elastic_transcript, &stream_ck, v_stream, product);
+    let ep_space = ep_elastic(elastic_transcript, &stream_ck, &v_stream, product);
     assert_eq!(ep_time.0, ep_space.0)
 }

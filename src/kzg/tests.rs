@@ -23,7 +23,7 @@ fn test_commitment_consistency() {
 
     // compute the time commitment
     let time_commitment = time_ck.commit(&polynomial);
-    let space_commitment = space_ck.commit(polynomial_stream);
+    let space_commitment = space_ck.commit(&polynomial_stream);
 
     assert_eq!(space_commitment, time_commitment);
 }
