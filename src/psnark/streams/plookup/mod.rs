@@ -39,9 +39,7 @@ where
     let pl_subset = LookupSubsetStreamer::new(subset, z);
     let pl_sorted = LookupSortedStreamer::new(set, index, y, z);
 
-    (
-        pl_set, pl_subset, pl_sorted
-    )
+    (pl_set, pl_subset, pl_sorted)
 }
 
 #[test]

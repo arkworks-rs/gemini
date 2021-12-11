@@ -4,7 +4,7 @@
 //!
 //!
 //!
-// mod elastic_prover;
+mod elastic_prover;
 mod time_prover;
 
 mod streams;
