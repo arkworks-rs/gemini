@@ -115,26 +115,26 @@ impl<E: PairingEngine> Proof<E> {
         let rz_b_star = HadamardStreamer::new(r_b_star, z_b_star);
         let rz_c_star = HadamardStreamer::new(r_c_star, z_c_star);
 
-        let mut ip_val_rz_a = SpaceProver::new(val_a, rz_a_star, one);
-        let mut ip_val_rz_b = SpaceProver::new(val_b, rz_b_star, one);
-        let mut ip_val_rz_c = SpaceProver::new(val_c, rz_c_star, one);
+        let ip_val_rz_a = SpaceProver::new(val_a, rz_a_star, one).boxed();
+        let ip_val_rz_b = SpaceProver::new(val_b, rz_b_star, one).boxed();
+        let ip_val_rz_c = SpaceProver::new(val_c, rz_c_star, one).boxed();
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_sumcheck = Sumcheck::prove_batch(
             &mut transcript,
-            [&mut ip_val_rz_a, &mut ip_val_rz_b, &mut ip_val_rz_c],
+            vec![ip_val_rz_a, ip_val_rz_b, ip_val_rz_c],
         );
         end_timer!(second_sumcheck_time);
         let second_sumcheck_messages = second_sumcheck.prover_messages();
 
-        let mut ip_r_z_star_a = SpaceProver::new(r_a_star, z_a_star, one);
-        let mut ip_r_z_star_b = SpaceProver::new(r_a_star, z_a_star, one);
-        let mut ip_r_z_star_c = SpaceProver::new(r_c_star, z_c_star, one);
+        let ip_r_z_star_a = SpaceProver::new(r_a_star, z_a_star, one).boxed();
+        let ip_r_z_star_b = SpaceProver::new(r_a_star, z_a_star, one).boxed();
+        let ip_r_z_star_c = SpaceProver::new(r_c_star, z_c_star, one).boxed();
 
         let third_sumcheck_time = start_timer!(|| "Third sumcheck");
         let third_sumcheck = Sumcheck::prove_batch(
             &mut transcript,
-            [&mut ip_r_z_star_a, &mut ip_r_z_star_b, &mut ip_r_z_star_c],
+            vec![ip_r_z_star_a, ip_r_z_star_b, ip_r_z_star_c],
         );
         end_timer!(third_sumcheck_time);
         let third_sumcheck_messages = third_sumcheck.prover_messages();
@@ -169,6 +169,8 @@ impl<E: PairingEngine> Proof<E> {
                 E::Fr::one(),
             ],
         );
+
+        let ep_sumcheck = Sumcheck::prove_batch(&mut transcript, provers);
         todo!();
 
         // // let (

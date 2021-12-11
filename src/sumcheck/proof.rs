@@ -61,10 +61,12 @@ impl<F: Field> Sumcheck<F> {
         }
     }
 
+
+
     /// Prove function for a batch of scalar product instances.
-    pub fn prove_batch<const N: usize>(
+    pub fn prove_batch<'a>(
         transcript: &mut Transcript,
-        mut provers: [&mut dyn Prover<F>; N],
+        mut provers: Vec<Box<dyn Prover<F> + 'a>>,
     ) -> Sumcheck<F> {
         let rounds = provers.iter().map(|p| p.rounds()).fold(0, usize::max);
         let mut messages = Vec::with_capacity(rounds);
