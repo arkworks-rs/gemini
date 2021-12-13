@@ -61,8 +61,6 @@ impl<F: Field> Sumcheck<F> {
         }
     }
 
-
-
     /// Prove function for a batch of scalar product instances.
     pub fn prove_batch<'a>(
         transcript: &mut Transcript,

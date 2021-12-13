@@ -52,7 +52,7 @@ pub mod snark;
 pub mod stream;
 pub mod sumcheck;
 
-pub mod entry_product;
+pub mod grandproduct;
 
 pub mod tensorcheck;
 mod transcript;

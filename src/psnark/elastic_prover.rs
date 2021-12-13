@@ -5,13 +5,14 @@ use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
-use crate::entry_product::EntryProduct;
 // use crate::psnark::streams::memcheck::memcheck_streams;
 // use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
+use crate::grandproduct::GrandProduct;
 use crate::kzg::CommitterKeyStream;
+use crate::lincomb;
 use crate::misc::{expand_tensor, powers, MatrixElement};
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
@@ -24,7 +25,6 @@ use crate::sumcheck::space_prover::SpaceProver;
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
-use crate::{entry_product, lincomb};
 
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
@@ -121,10 +121,8 @@ impl<E: PairingEngine> Proof<E> {
         let ip_val_rz_c = SpaceProver::new(val_c, rz_c_star, one).boxed();
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_sumcheck = Sumcheck::prove_batch(
-            &mut transcript,
-            vec![ip_val_rz_a, ip_val_rz_b, ip_val_rz_c],
-        );
+        let second_sumcheck =
+            Sumcheck::prove_batch(&mut transcript, vec![ip_val_rz_a, ip_val_rz_b, ip_val_rz_c]);
         end_timer!(second_sumcheck_time);
         let second_sumcheck_messages = second_sumcheck.prover_messages();
 
@@ -152,7 +150,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let (pl_set_c, pl_subset_c, pl_sorted_c) = plookup_streams(&r_c, &r_c_star, &row_c, y, z);
 
-        let EntryProduct { msgs, provers } = EntryProduct::new_elastic_batch(
+        let GrandProduct { msgs, provers } = GrandProduct::new_elastic_batch(
             &mut transcript,
             &ck,
             (
@@ -166,9 +164,7 @@ impl<E: PairingEngine> Proof<E> {
                 // pl_subset_c,
                 // pl_sorted_c,
             ),
-            &[
-                E::Fr::one(),
-            ],
+            &[E::Fr::one()],
         );
 
         let ep_sumcheck = Sumcheck::prove_batch(&mut transcript, provers);
