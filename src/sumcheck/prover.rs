@@ -42,24 +42,24 @@ where
     fn final_foldings(&self) -> Option<[F; 2]>;
 }
 
-impl<F: Field, P: Prover<F> + ?Sized> Prover<F> for Box<&mut P> {
+impl<'a, F: Field> Prover<F> for Box<dyn Prover<F> + 'a> {
     fn next_message(&mut self) -> Option<RoundMsg<F>> {
-        P::next_message(self.as_mut())
+        (**self).next_message()
     }
 
     fn fold(&mut self, challenge: F) {
-        P::fold(self.as_mut(), challenge)
+        (**self).fold(challenge)
     }
 
     fn rounds(&self) -> usize {
-        P::rounds(self)
+        (**self).rounds()
     }
 
     fn round(&self) -> usize {
-        P::round(self)
+        (**self).round()
     }
 
     fn final_foldings(&self) -> Option<[F; 2]> {
-        P::final_foldings(self)
+        (**self).final_foldings()
     }
 }

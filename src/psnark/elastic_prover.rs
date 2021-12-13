@@ -5,6 +5,7 @@ use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
+use crate::entry_product::EntryProduct;
 // use crate::psnark::streams::memcheck::memcheck_streams;
 // use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::Proof;
@@ -151,7 +152,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let (pl_set_c, pl_subset_c, pl_sorted_c) = plookup_streams(&r_c, &r_c_star, &row_c, y, z);
 
-        let (msgs, provers) = entry_product::new_elastic_batch(
+        let EntryProduct { msgs, provers } = EntryProduct::new_elastic_batch(
             &mut transcript,
             &ck,
             (
