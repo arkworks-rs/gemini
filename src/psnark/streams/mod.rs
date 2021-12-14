@@ -1,3 +1,4 @@
+mod algebraic_hash;
 mod hadamard_stream;
 mod index_stream;
 mod line_stream;

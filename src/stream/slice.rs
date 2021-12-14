@@ -18,6 +18,25 @@ impl<'a, T> Streamer for &'a [T] {
     }
 }
 
+use ark_std::ops::Range;
+
+impl<'a, T> Streamer for Range<T>
+where
+Range<T>: ExactSizeIterator<Item = T> {
+    type Item = T;
+
+    type Iter = Self;
+
+    fn stream(&self) -> Self::Iter {
+        *self
+    }
+
+    fn len(&self) -> usize {
+        ExactSizeIterator::len(self)
+    }
+
+}
+
 /// Reversed stream for Rust slice.
 /// It outputs elements in the slice in reversed order.
 #[derive(Clone, Copy)]

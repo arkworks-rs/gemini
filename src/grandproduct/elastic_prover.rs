@@ -53,11 +53,21 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
     }
 }
 
+fn sumcheck_subclaim<F, S>(claimed_product: &F, acc_v: &S, chal: &F) -> F
+where
+    F: Field,
+    S: Streamer<Item = F>,
+{
+    let acc_v_chal = evaluate_be(acc_v.stream(), &chal);
+    let chal_n = chal.pow(&[acc_v.len() as u64]);
+    acc_v_chal * chal + claimed_product - chal_n
+}
+
 macro_rules! impl_elastic_batch {
-    ($($B:ident), *) => {
+    ($name: ident; $($B:ident), *) => {
         #[allow(non_snake_case)]
         #[allow(unused_assignments)]
-        pub fn new_elastic_batch<SG, $($B),*>(
+        pub fn $name<SG, $($B),*>(
             transcript: &mut Transcript,
             ck: &CommitterKeyStream<E, SG>,
             vs: ($(&'a $B,)*),
@@ -89,9 +99,8 @@ macro_rules! impl_elastic_batch {
             $(
                 let rrot_v = RightRotationStreamer::new($B, E::Fr::one());
                 let acc_v = ProductStream::new($B);
-                let claimed_product = claimed_products_it.next().expect("mismetch in claimed prod len");
-                let claimed_sumcheck = chal * evaluate_be(acc_v.stream(), &chal) + claimed_product
-                - chal.pow(&[acc_v.len() as u64]);
+                let claimed_product = claimed_products_it.next().expect("mismatch in claimed prod len");
+                let claimed_sumcheck = sumcheck_subclaim(claimed_product, &acc_v, &chal);
 
                 claimed_sumchecks.push(claimed_sumcheck);
                 let sumcheck_prover = ElasticProver::new(rrot_v, acc_v, chal);
@@ -109,5 +118,12 @@ macro_rules! impl_elastic_batch {
 }
 
 impl<'a, E: PairingEngine> GrandProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
-    impl_elastic_batch!(A0, A1, A2);
+    // lets gooooo
+    // impl_elastic_batch!(A0, A1, A2);
+    // impl_elastic_batch!(A0, A1, A2, A3);
+    // impl_elastic_batch!(A0, A1, A2, A3, A4);
+    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5);
+    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6);
+    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6, A7);
+    impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6, A7, A8);
 }

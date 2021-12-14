@@ -144,27 +144,35 @@ impl<E: PairingEngine> Proof<E> {
 
         let entry_product_time = start_timer!(|| "Entry product");
 
-        let (pl_set_a, pl_subset_a, pl_sorted_a) = plookup_streams(&r_a, &r_a_star, &row_a, y, z);
+        let (pl_set_ra, pl_subset_ra, pl_sorted_ra) =
+            plookup_streams(&r_a, &r_a_star, &row_a, y, z);
 
-        let (pl_set_b, pl_subset_b, ps_sorted_b) = plookup_streams(&r_b, &r_b_star, &row_b, y, z);
+        let gp_set_ra = pl_set_ra.stream().product();
+        let gp_subset_ra = pl_subset_ra.stream().product();
+        let gp_sorted_ra = pl_sorted_ra.stream().product();
 
-        let (pl_set_c, pl_subset_c, pl_sorted_c) = plookup_streams(&r_c, &r_c_star, &row_c, y, z);
+        let (pl_set_rb, pl_subset_rb, pl_sorted_rb) =
+            plookup_streams(&r_b, &r_b_star, &row_b, y, z);
+
+        let (pl_set_rc, pl_subset_rc, pl_sorted_rc) =
+            plookup_streams(&r_c, &r_c_star, &row_c, y, z);
+        // let (pl_set_za, pl_subset_za , pl_sorted_za) = plookup_streams(&r1cs.z_a, &z_a_star, &col_a, y, z);
 
         let GrandProduct { msgs, provers } = GrandProduct::new_elastic_batch(
             &mut transcript,
             &ck,
             (
-                &pl_set_a,
-                &pl_subset_a,
-                &pl_sorted_a,
-                // pl_set_b,
-                // pl_subset_b,
-                // pl_sorted_b,
-                // pl_set_c,
-                // pl_subset_c,
-                // pl_sorted_c,
+                &pl_set_ra,
+                &pl_subset_ra,
+                &pl_sorted_ra,
+                &pl_set_rb,
+                &pl_subset_rb,
+                &pl_sorted_rb,
+                &pl_set_rc,
+                &pl_subset_rc,
+                &pl_sorted_rc,
             ),
-            &[E::Fr::one()],
+            &vec![gp_set_ra, gp_subset_ra, gp_sorted_ra],
         );
 
         let ep_sumcheck = Sumcheck::prove_batch(&mut transcript, provers);
