@@ -53,6 +53,7 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
     }
 }
 
+#[inline]
 fn sumcheck_subclaim<F, S>(claimed_product: &F, acc_v: &S, chal: &F) -> F
 where
     F: Field,
@@ -62,6 +63,7 @@ where
     let chal_n = chal.pow(&[acc_v.len() as u64]);
     acc_v_chal * chal + claimed_product - chal_n
 }
+
 
 macro_rules! impl_elastic_batch {
     ($name: ident; $($B:ident), *) => {

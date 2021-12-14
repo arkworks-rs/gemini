@@ -173,18 +173,21 @@ where
 }
 
 /// Return the hadamard product of `lhs` and `rhs`.
-/// Panics if the length of `lhs` is different from `rhs`.
+/// # Panics
+// If the length of `lhs` is different from `rhs`.
 #[inline]
 pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
     assert_eq!(lhs.len(), rhs.len());
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).collect()
 }
 
-/// Return the scalar product $$<lhs, rhs>$$.
+/// Return the scalar product of `lhs` with `rhs`.
+///
+/// # Panics
+/// If the length of `lhs` and `rhs` are different.
 #[inline]
 pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     assert_eq!(lhs.len(), rhs.len());
-
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).sum()
 }
 

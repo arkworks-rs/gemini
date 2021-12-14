@@ -1,6 +1,4 @@
 //! Stream implementation for Rust slice.
-use ark_std::iter::Rev;
-
 use super::Streamer;
 
 impl<'a, T> Streamer for &'a [T] {
@@ -18,23 +16,21 @@ impl<'a, T> Streamer for &'a [T] {
     }
 }
 
-use ark_std::ops::Range;
-
-impl<'a, T> Streamer for Range<T>
+impl<'a, T> Streamer for ark_std::ops::Range<T>
 where
-Range<T>: ExactSizeIterator<Item = T> {
+    ark_std::ops::Range<T>: ExactSizeIterator<Item = T> + Clone,
+{
     type Item = T;
 
     type Iter = Self;
 
     fn stream(&self) -> Self::Iter {
-        *self
+        self.clone()
     }
 
     fn len(&self) -> usize {
         ExactSizeIterator::len(self)
     }
-
 }
 
 /// Reversed stream for Rust slice.
@@ -55,7 +51,7 @@ where
 {
     type Item = &'a T;
 
-    type Iter = Rev<std::slice::Iter<'a, T>>;
+    type Iter = ark_std::iter::Rev<std::slice::Iter<'a, T>>;
 
     #[inline]
     fn stream(&self) -> Self::Iter {

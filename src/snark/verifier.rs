@@ -31,10 +31,11 @@ impl<E: PairingEngine> Proof<E> {
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
 
-        let num_constraints = r1cs.a.len();
+        let num_constraints = r1cs.z.len();
         let tensor_challenges = tensor(&subclaim_1.challenges);
+        let tensor_challenges_head = &tensor_challenges[.. num_constraints];
         let alpha_powers = powers(alpha, num_constraints);
-        let hadamard_randomness = hadamard(&tensor_challenges, &alpha_powers);
+        let hadamard_randomness = hadamard(tensor_challenges_head, &alpha_powers);
 
         // Verify the second sumcheck
         let asserted_sum_2 = subclaim_1.final_foldings[0][0]
@@ -51,8 +52,11 @@ impl<E: PairingEngine> Proof<E> {
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
         let beta = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
-        let beta_powers = powers(beta, num_constraints);
-        let minus_beta_powers = powers(-beta, num_constraints);
+        let beta_powers = powers(beta, r1cs.a.len());
+        let minus_beta_powers = powers(-beta, r1cs.a.len());
+
+        // XXXX BUG HERE @huyuncong XXX //
+        assert_eq!(product_matrix_vector(&r1cs.c, &beta_powers).len(), r1cs.z.len());
 
         let m_pos = scalar_prod(
             &product_matrix_vector(&r1cs.a, &beta_powers),

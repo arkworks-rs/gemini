@@ -50,16 +50,14 @@ impl<E: PairingEngine> Proof<E> {
         let first_sumcheck_msgs = first_proof.prover_messages();
         end_timer!(first_sumcheck_time);
 
-        // XXXX change me
-        let num_constraints = r1cs.z.len();
         let b_challenges = tensor(&first_proof.challenges);
-        let c_challenges = powers(alpha, num_constraints);
+        let c_challenges = powers(alpha, b_challenges.len());
         let a_challenges = hadamard(&b_challenges, &c_challenges);
 
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
 
-        let mut abc_tensored = vec![E::Fr::zero(); num_constraints];
+        let mut abc_tensored = vec![E::Fr::zero(); r1cs.z.len()];
 
         for (i, row_a) in r1cs.a.iter().enumerate() {
             for &(val, col) in row_a {

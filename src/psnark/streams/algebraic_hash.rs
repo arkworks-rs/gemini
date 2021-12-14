@@ -79,4 +79,3 @@ where
         Some(F::from(index) + self.chal * element.borrow())
     }
 }
-

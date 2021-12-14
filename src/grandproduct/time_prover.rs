@@ -41,6 +41,9 @@ fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
     acc_v
 }
 
+/// Given as input \\(f(x) \in \FF[x]\\) of degree \\(N\\)
+/// represented as a vector of its coefficient (in little-endian),
+/// return \\(f(x) + x^N\\).
 fn monic<F: Field>(v: &[F]) -> Vec<F> {
     let mut monic_v = v.to_vec();
     monic_v.push(F::one());
@@ -48,6 +51,7 @@ fn monic<F: Field>(v: &[F]) -> Vec<F> {
 }
 
 impl<E: PairingEngine> GrandProduct<E, TimeProver<E::Fr>> {
+    /// Creates a new grand product argument using the time prover.
     pub fn new_time(
         transcript: &mut Transcript,
         ck: &CommitterKey<E>,

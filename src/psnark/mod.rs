@@ -24,3 +24,4 @@ pub struct Proof<E: PairingEngine> {
     proofs: EvaluationProof<E>,
     evaluations: Vec<[E::Fr; 2]>,
 }
+
