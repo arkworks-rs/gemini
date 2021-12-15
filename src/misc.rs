@@ -102,6 +102,21 @@ pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> V
     matrix.iter().map(|row| inner_prod_fn(row)).collect()
 }
 
+pub fn product_vector_matrix<F: Field>(z: &[F], matrix: &[Vec<(F, usize)>]) -> Vec<F> {
+    let mut res = vec![F::zero(); z.len()];
+    for (row_index, row) in matrix.iter().enumerate() {
+        for &(ref coeff, i) in row {
+            res[i] += if coeff.is_one() {
+                z[row_index]
+            } else {
+                z[row_index] * coeff
+            };
+        }
+    }
+
+    res
+}
+
 /// Given as input `elements`, an array of field elements
 /// \\(\rho_0, \dots, \rho_{n-1}\\)
 /// compute the tensor product

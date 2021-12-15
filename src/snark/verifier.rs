@@ -31,9 +31,10 @@ impl<E: PairingEngine> Proof<E> {
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
 
-        let num_constraints = r1cs.z.len();
+        let num_constraints = r1cs.a.len();
+        let num_variables = r1cs.z.len();
         let tensor_challenges = tensor(&subclaim_1.challenges);
-        let tensor_challenges_head = &tensor_challenges[.. num_constraints];
+        let tensor_challenges_head = &tensor_challenges[..num_constraints];
         let alpha_powers = powers(alpha, num_constraints);
         let hadamard_randomness = hadamard(tensor_challenges_head, &alpha_powers);
 
@@ -52,11 +53,8 @@ impl<E: PairingEngine> Proof<E> {
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
         let beta = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
-        let beta_powers = powers(beta, r1cs.a.len());
-        let minus_beta_powers = powers(-beta, r1cs.a.len());
-
-        // XXXX BUG HERE @huyuncong XXX //
-        assert_eq!(product_matrix_vector(&r1cs.c, &beta_powers).len(), r1cs.z.len());
+        let beta_powers = powers(beta, num_constraints);
+        let minus_beta_powers = powers(-beta, num_constraints);
 
         let m_pos = scalar_prod(
             &product_matrix_vector(&r1cs.a, &beta_powers),
@@ -64,7 +62,7 @@ impl<E: PairingEngine> Proof<E> {
         ) + eta
             * scalar_prod(
                 &product_matrix_vector(&r1cs.b, &beta_powers),
-                &tensor_challenges,
+                &tensor_challenges_head,
             )
             + eta2 * scalar_prod(&product_matrix_vector(&r1cs.c, &beta_powers), &alpha_powers);
         let m_neg = scalar_prod(
@@ -73,7 +71,7 @@ impl<E: PairingEngine> Proof<E> {
         ) + eta
             * scalar_prod(
                 &product_matrix_vector(&r1cs.b, &minus_beta_powers),
-                &tensor_challenges,
+                &tensor_challenges_head,
             )
             + eta2
                 * scalar_prod(
