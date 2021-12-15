@@ -4,6 +4,7 @@
 //!
 //!
 //!
+#[allow(unused_assignments)]
 mod elastic_prover;
 mod time_prover;
 

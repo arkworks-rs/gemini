@@ -4,9 +4,9 @@ use ark_std::test_rng;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::kzg::CommitterKey;
 use crate::kzg::CommitterKeyStream;
-use crate::misc::matrix_into_row_major_slice;
+use crate::misc::{matrix_into_row_major_slice, powers, evaluate_le};
 use crate::misc::product_matrix_vector;
-use crate::misc::{evaluate_be, matrix_into_col_major_slice};
+use crate::misc::matrix_into_col_major_slice;
 use crate::snark::Proof;
 use crate::stream::{Reversed, Streamer};
 
@@ -80,19 +80,15 @@ fn test_snark_correctness() {
 
 #[test]
 fn test_relation() {
-    use ark_bls12_381::Fr;
-    use ark_ff::{One, Zero};
+    use ark_bls12_381::Fr as F;
+    use ark_ff::Zero;
     use ark_std::test_rng;
-    use ark_std::UniformRand;
 
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
     use crate::circuit::R1CS;
     use crate::misc::matrix_into_row_major_slice;
     use crate::misc::matrix_slice_naive;
-    use crate::sumcheck::space_prover::SpaceProver;
-
-    type F = Fr;
 
     let rng = &mut test_rng();
     let num_constraints = 1 << 13;
@@ -106,8 +102,8 @@ fn test_relation() {
         z,
         w: _w,
         x: _,
-    } = generate_relation(circuit);
-    let mut z_a = vec![F::zero(); z.len()];
+    } = generate_relation::<F, _>(circuit);
+    let mut z_a = vec![F::zero(); a.len()];
 
     for (row, elements) in a.iter().enumerate() {
         for &(val, col) in elements {
@@ -115,23 +111,23 @@ fn test_relation() {
         }
     }
 
-    let mut z_b = vec![F::zero(); z.len()];
+    let mut z_b = vec![F::zero(); a.len()];
     for (row, elements) in b.iter().enumerate() {
         for &(val, col) in elements {
             z_b[row] += val * z[col];
         }
     }
 
-    let mut z_c = vec![F::zero(); z.len()];
+    let mut z_c = vec![F::zero(); a.len()];
     for (row, elements) in c.iter().enumerate() {
         for &(val, col) in elements {
             z_c[row] += val * z[col];
         }
     }
 
-    let aa_row_flat = matrix_into_row_major_slice(&a, z.len());
+    let aa_row_flat = matrix_into_row_major_slice(&a, a.len());
 
-    let a_row_flat = matrix_slice_naive(&a, z.len());
+    let a_row_flat = matrix_slice_naive(&a, a.len());
     assert_eq!(
         a_row_flat
             .iter()
@@ -140,49 +136,5 @@ fn test_relation() {
             .count(),
         0
     );
-
-    let mut z_stream = z.clone();
-
     assert_eq!(z_a[1] * z_b[1], z_c[1]);
-    //  ok now we know that they are equal.
-    z_a.reverse();
-    z_b.reverse();
-    z_c.reverse();
-    z_stream.reverse();
-
-    // receive alpha from the verifier
-    let alpha = F::rand(rng);
-
-    // verifier: send beta
-    let beta = F::rand(rng);
-    let mut acc = F::one();
-    let beta_pows = (0..z.len())
-        .map(|_| {
-            let res = acc;
-            acc *= beta;
-            res
-        })
-        .collect::<Vec<_>>();
-
-    let mut a_beta_expected = vec![F::zero(); z.len()];
-    let mut aa = vec![vec![F::zero(); z.len()]; z.len()];
-    for (row, elements) in a.iter().enumerate() {
-        for &(val, col) in elements {
-            aa[row][col] = val;
-        }
-    }
-    for (i, row) in aa.iter().enumerate() {
-        for (j, val) in row.iter().enumerate() {
-            a_beta_expected[j] += *val * beta_pows[i];
-        }
-    }
-    a_beta_expected.reverse();
-
-    let expected_evaluation = a_beta_expected
-        .iter()
-        .zip(z_stream.as_slice().stream())
-        .map(|(x, y)| *x * y)
-        .sum();
-
-    assert_eq!(evaluate_be(z_a.as_slice(), &beta), expected_evaluation);
 }
