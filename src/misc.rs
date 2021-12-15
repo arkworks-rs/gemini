@@ -75,11 +75,23 @@ pub(crate) fn fold_polynomial<F: Field>(f: &[F], r: F) -> Vec<F> {
         .collect()
 }
 
-/// Return a vector of length len containing the consecutive powers of element.
+/// Return a vector of length `len` containing the consecutive powers of element.
 pub(crate) fn powers<F: Field>(element: F, len: usize) -> Vec<F> {
     let mut powers = vec![F::one(); len];
     for i in 1..len {
         powers[i] = element * powers[i - 1];
+    }
+    powers
+}
+
+/// Return a vector of length `len` containing the 2^j-th powers of element.
+pub(crate) fn powers2<F: Field>(element: F, len: usize) -> Vec<F> {
+    let mut powers = vec![F::one(); len];
+    if len > 0 {
+        powers[1] = element;
+    }
+    for i in 2..len {
+        powers[i] = powers[i - 1].square();
     }
     powers
 }

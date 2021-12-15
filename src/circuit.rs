@@ -183,7 +183,6 @@ pub(crate) fn pad_input_for_indexer_and_prover<F: PrimeField>(cs: ConstraintSyst
     }
 }
 
-
 pub fn random_circuit<F: Field>(
     rng: &mut impl RngCore,
     num_constraints: usize,

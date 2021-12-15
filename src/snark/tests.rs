@@ -90,6 +90,7 @@ fn test_relation() {
     use crate::circuit::R1CS;
     use crate::misc::matrix_into_row_major_slice;
     use crate::misc::matrix_slice_naive;
+    use crate::sumcheck::space_prover::SpaceProver;
 
     type F = Fr;
 
@@ -151,10 +152,6 @@ fn test_relation() {
 
     // receive alpha from the verifier
     let alpha = F::rand(rng);
-
-    // prover: engage in the first sumcheck of z_a, z_b and z_c
-    let _space_prover =
-        crate::sumcheck::space_prover::SpaceProver::new(z_a.as_slice(), z_b.as_slice(), alpha);
 
     // verifier: send beta
     let beta = F::rand(rng);

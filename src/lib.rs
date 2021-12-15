@@ -25,7 +25,6 @@
 //!
 
 #![feature(iter_advance_by)]
-#![feature(associated_type_bounds)]
 // #![deny(unused_import_braces, unused_qualifications,
 //         trivial_casts)]
 // #![deny(trivial_numeric_casts, private_in_public)]

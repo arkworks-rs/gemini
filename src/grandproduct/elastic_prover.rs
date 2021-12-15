@@ -64,7 +64,6 @@ where
     acc_v_chal * chal + claimed_product - chal_n
 }
 
-
 macro_rules! impl_elastic_batch {
     ($name: ident; $($B:ident), *) => {
         #[allow(non_snake_case)]

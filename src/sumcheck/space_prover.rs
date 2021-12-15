@@ -103,10 +103,6 @@ where
             twist,
         }
     }
-
-    pub fn boxed(self) -> Box<Self> {
-        Box::new(self)
-    }
 }
 
 impl<'a, F, S1, S2> Prover<F> for SpaceProver<F, S1, S2>
