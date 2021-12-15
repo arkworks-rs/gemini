@@ -48,7 +48,7 @@ pub mod kzg;
 pub mod psnark;
 pub mod snark;
 /// Data structures for the streaming model.
-pub mod stream;
+pub mod iterable;
 pub mod sumcheck;
 
 pub mod entryproduct;

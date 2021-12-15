@@ -8,7 +8,7 @@ use ark_ec::{AffineCurve, ProjectiveCurve};
 
 use ark_std::borrow::Borrow;
 
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 use super::bounded_ln_without_floats;
 
@@ -20,17 +20,17 @@ pub fn msm<G, F, I, J>(
 ) -> G::Projective
 where
     G: AffineCurve,
-    I: Streamer,
+    I: Iterable,
     F: PrimeField,
     I::Item: Borrow<F>,
-    J: Streamer,
+    J: Iterable,
     J::Item: Borrow<G>,
 {
     assert!(scalars_stream.len() <= bases_stream.len());
 
     // remove offset
-    let mut bases = bases_stream.stream();
-    let scalars = scalars_stream.stream();
+    let mut bases = bases_stream.iter();
+    let scalars = scalars_stream.iter();
 
     // align the streams
     bases
@@ -43,17 +43,17 @@ where
 pub fn msm_chunks<G, F, I: ?Sized, J>(bases_stream: &J, scalars_stream: &I) -> G::Projective
 where
     G: AffineCurve<ScalarField = F>,
-    I: Streamer,
+    I: Iterable,
     F: PrimeField,
     I::Item: Borrow<F>,
-    J: Streamer,
+    J: Iterable,
     J::Item: Borrow<G>,
 {
     assert!(scalars_stream.len() <= bases_stream.len());
 
     // remove offset
-    let mut bases = bases_stream.stream();
-    let mut scalars = scalars_stream.stream();
+    let mut bases = bases_stream.iter();
+    let mut scalars = scalars_stream.iter();
 
     // align the streams
     bases

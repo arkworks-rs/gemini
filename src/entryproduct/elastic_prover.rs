@@ -6,14 +6,14 @@ use merlin::Transcript;
 
 use crate::kzg::CommitterKeyStream;
 use crate::misc::evaluate_be;
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use crate::sumcheck::{ElasticProver, Prover, SpaceProver, TimeProver};
 
 use super::streams::{entry_product_streams, ProductStream, RightRotationStreamer};
 use super::{EntryProduct, ProverMsgs};
 use crate::transcript::GeminiTranscript;
 
-impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
+impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
     EntryProduct<
         E,
         ElasticProver<
@@ -31,7 +31,7 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
         claimed_product: E::Fr,
     ) -> Self
     where
-        SG: Streamer,
+        SG: Iterable,
         SG::Item: Borrow<E::G1Affine>,
     {
         let (rrot_v, acc_v) = entry_product_streams(v);
@@ -41,7 +41,7 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
 
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
         let claimed_sumchecks = vec![
-            chal * evaluate_be(acc_v.stream(), &chal) + claimed_product
+            chal * evaluate_be(acc_v.iter(), &chal) + claimed_product
                 - chal.pow(&[acc_v.len() as u64]),
         ];
         let provers = vec![ElasticProver::new(rrot_v, acc_v, chal)];
@@ -57,9 +57,9 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
 fn sumcheck_subclaim<F, S>(claimed_product: &F, acc_v: &S, chal: &F) -> F
 where
     F: Field,
-    S: Streamer<Item = F>,
+    S: Iterable<Item = F>,
 {
-    let acc_v_chal = evaluate_be(acc_v.stream(), &chal);
+    let acc_v_chal = evaluate_be(acc_v.iter(), &chal);
     let chal_n = chal.pow(&[acc_v.len() as u64]);
     acc_v_chal * chal + claimed_product - chal_n
 }
@@ -75,10 +75,10 @@ macro_rules! impl_elastic_batch {
             claimed_products: &[E::Fr],
         ) -> Self
         where
-            SG: Streamer,
+            SG: Iterable,
             SG::Item: Borrow<E::G1Affine>,
             $(
-                $B: crate::stream::Streamer<Item=E::Fr>,
+                $B: crate::iterable::Iterable<Item=E::Fr>,
             )*
 
         {

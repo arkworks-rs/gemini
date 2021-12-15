@@ -11,7 +11,7 @@ use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorCheckProof};
@@ -28,11 +28,11 @@ pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
 where
     F: Field,
     E: PairingEngine<Fr = F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
-    SB: Streamer,
+    SB: Iterable,
     SB::Item: Borrow<E::Fr>,
-    SF1: Streamer<Item = F>,
+    SF1: Iterable<Item = F>,
 {
     let tensorcheck_challenges = strip_last(body_polynomials.1);
     let time_ck = ck.as_committer_key(usize::min(1 << SPACE_TIME_THRESHOLD, ck.powers_of_g.len()));
@@ -61,9 +61,9 @@ where
         ]
     }));
     let evaluations_w = [
-        evaluate_be(base_polynomial.stream(), &eval_points[0]),
-        evaluate_be(base_polynomial.stream(), &eval_points[1]),
-        evaluate_be(base_polynomial.stream(), &eval_points[2]),
+        evaluate_be(base_polynomial.iter(), &eval_points[0]),
+        evaluate_be(base_polynomial.iter(), &eval_points[1]),
+        evaluate_be(base_polynomial.iter(), &eval_points[2]),
     ];
     evaluations_w
         .iter()
@@ -103,11 +103,11 @@ pub fn tensorcheck<F, E, SG, SB, SF1>(
 where
     F: Field,
     E: PairingEngine<Fr = F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
-    SB: Streamer,
+    SB: Iterable,
     SB::Item: Borrow<E::Fr>,
-    SF1: Streamer<Item = F>,
+    SF1: Iterable<Item = F>,
 {
     let tensorcheck_challenges = strip_last(body_polynomials.1);
     let tensorcheck_foldings =
@@ -127,9 +127,9 @@ where
         .map(|(x, y)| [x, y])
         .collect::<Vec<_>>();
     let evaluations_w = [
-        evaluate_be(base_polynomial.stream(), &eval_points[0]),
-        evaluate_be(base_polynomial.stream(), &eval_points[1]),
-        evaluate_be(base_polynomial.stream(), &eval_points[2]),
+        evaluate_be(base_polynomial.iter(), &eval_points[0]),
+        evaluate_be(base_polynomial.iter(), &eval_points[1]),
+        evaluate_be(base_polynomial.iter(), &eval_points[2]),
     ];
     evaluations_w
         .iter()
@@ -163,10 +163,10 @@ impl<E: PairingEngine> Proof<E> {
     ) -> Proof<E>
     where
         E: PairingEngine,
-        SM: Streamer,
-        SZ: Streamer + Copy,
-        SW: Streamer,
-        SG: Streamer,
+        SM: Iterable,
+        SZ: Iterable + Copy,
+        SW: Iterable,
+        SG: Iterable,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
         SZ::Item: Borrow<E::Fr>,
         SW::Item: Borrow<E::Fr>,
@@ -195,7 +195,7 @@ impl<E: PairingEngine> Proof<E> {
         let alpha = transcript.get_challenge(b"alpha");
 
         // send evaluation of zc(alpha)
-        let zc_alpha = evaluate_be(r1cs.z_c.stream(), &alpha);
+        let zc_alpha = evaluate_be(r1cs.z_c.iter(), &alpha);
         transcript.append_scalar(b"zc(alpha)", &zc_alpha);
 
         // run the sumcheck for z_a and z_b with twist alpha

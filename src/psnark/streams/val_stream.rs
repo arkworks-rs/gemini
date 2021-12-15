@@ -1,5 +1,5 @@
 use crate::misc::MatrixElement;
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
@@ -18,7 +18,7 @@ pub struct ValStreamIter<F, I> {
 
 impl<F, S> ValStream<F, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<MatrixElement<F>>,
     F: Field,
 {
@@ -30,9 +30,9 @@ where
         }
     }
 }
-impl<F, S> Streamer for ValStream<F, S>
+impl<F, S> Iterable for ValStream<F, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<MatrixElement<F>>,
     F: Field,
 {
@@ -40,8 +40,8 @@ where
 
     type Iter = ValStreamIter<F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
-        let matrix_iter = self.matrix.stream();
+    fn iter(&self) -> Self::Iter {
+        let matrix_iter = self.matrix.iter();
         let _field = PhantomData;
         ValStreamIter {
             matrix_iter,

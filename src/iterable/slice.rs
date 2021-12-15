@@ -1,13 +1,13 @@
 //! Stream implementation for Rust slice.
-use super::Streamer;
+use super::Iterable;
 
-impl<'a, T> Streamer for &'a [T] {
+impl<'a, T> Iterable for &'a [T] {
     type Item = &'a T;
     type Iter = std::slice::Iter<'a, T>;
 
     #[inline]
-    fn stream(&self) -> Self::Iter {
-        self.iter()
+    fn iter(&self) -> Self::Iter {
+        <[T]>::iter(self)
     }
 
     #[inline]
@@ -16,7 +16,7 @@ impl<'a, T> Streamer for &'a [T] {
     }
 }
 
-impl<'a, T> Streamer for ark_std::ops::Range<T>
+impl<'a, T> Iterable for ark_std::ops::Range<T>
 where
     ark_std::ops::Range<T>: ExactSizeIterator<Item = T> + Clone,
 {
@@ -24,7 +24,7 @@ where
 
     type Iter = Self;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         self.clone()
     }
 
@@ -45,7 +45,7 @@ impl<'a, T> Reversed<'a, T> {
     }
 }
 
-impl<'a, T> Streamer for Reversed<'a, T>
+impl<'a, T> Iterable for Reversed<'a, T>
 where
     T: Copy,
 {
@@ -54,7 +54,7 @@ where
     type Iter = ark_std::iter::Rev<std::slice::Iter<'a, T>>;
 
     #[inline]
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         self.0.iter().rev()
     }
 

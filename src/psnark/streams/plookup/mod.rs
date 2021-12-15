@@ -7,7 +7,7 @@ pub use set_stream::LookupSetStreamer;
 pub use sorted_stream::LookupSortedStreamer;
 pub use subset_stream::LookupSubsetStreamer;
 
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 /// Given a lookup instance of the form
 /// `subset` (denoted \\(\vec f^*\\)),
@@ -31,9 +31,9 @@ pub fn plookup_streams<'a, SET, SUB, IND, F>(
 )
 where
     F: Field,
-    SET: Streamer<Item = F>,
-    SUB: Streamer<Item = F>,
-    IND: Streamer<Item = usize>,
+    SET: Iterable<Item = F>,
+    SUB: Iterable<Item = F>,
+    IND: Iterable<Item = usize>,
 {
     let pl_set = LookupSetStreamer::new(set, y, z);
     let pl_subset = LookupSubsetStreamer::new(subset, z);
@@ -71,9 +71,9 @@ fn test_plookup_relation() {
     let pl_set = LookupSetStreamer::new(&set_stream, y, z);
     let pl_subset = LookupSubsetStreamer::new(&subset_stream, z);
     let pl_sorted = LookupSortedStreamer::new(&set_stream, &indices_stream, y, z);
-    let entry_product_pl_set = pl_set.stream().fold(F::one(), |x, y| x * y);
-    let entry_product_pl_subset = pl_subset.stream().fold(F::one(), |x, y| x * y);
-    let entry_product_pl_merged = pl_sorted.stream().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_set = pl_set.iter().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_subset = pl_subset.iter().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_merged = pl_sorted.iter().fold(F::one(), |x, y| x * y);
 
     assert_eq!(
         entry_product_pl_merged,

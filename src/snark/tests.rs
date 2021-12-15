@@ -4,11 +4,11 @@ use ark_std::test_rng;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::kzg::CommitterKey;
 use crate::kzg::CommitterKeyStream;
-use crate::misc::{matrix_into_row_major_slice, powers, evaluate_le};
+use crate::misc::matrix_into_row_major_slice;
 use crate::misc::product_matrix_vector;
 use crate::misc::matrix_into_col_major_slice;
 use crate::snark::Proof;
-use crate::stream::{Reversed, Streamer};
+use crate::iterable::Reversed;
 
 #[test]
 fn test_snark_consistency() {

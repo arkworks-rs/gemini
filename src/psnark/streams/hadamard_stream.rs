@@ -1,4 +1,4 @@
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
@@ -8,9 +8,9 @@ pub struct HadamardStreamer<F, S0, S1>(S0, S1, PhantomData<F>);
 
 impl<F, S0, S1> HadamardStreamer<F, S0, S1>
 where
-    S0: Streamer,
+    S0: Iterable,
     F: Field,
-    S1: Streamer,
+    S1: Iterable,
     S0::Item: Borrow<F>,
     S1::Item: Borrow<F>,
 {
@@ -42,10 +42,10 @@ where
     }
 }
 
-impl<S0, S1, F> Streamer for HadamardStreamer<F, S0, S1>
+impl<S0, S1, F> Iterable for HadamardStreamer<F, S0, S1>
 where
-    S0: Streamer,
-    S1: Streamer,
+    S0: Iterable,
+    S1: Iterable,
     S0::Item: Borrow<F>,
     S1::Item: Borrow<F>,
     F: Field,
@@ -54,8 +54,8 @@ where
 
     type Iter = HadamardIter<F, S0::Iter, S1::Iter>;
 
-    fn stream(&self) -> Self::Iter {
-        HadamardIter(self.0.stream(), self.1.stream(), PhantomData)
+    fn iter(&self) -> Self::Iter {
+        HadamardIter(self.0.iter(), self.1.iter(), PhantomData)
     }
 
     fn len(&self) -> usize {
@@ -79,6 +79,6 @@ fn test_hadamard_stream() {
         .map(|(&x, y)| x * y)
         .collect::<Vec<_>>();
     let hadamard_stream = HadamardStreamer::<Fr, _, _>::new(lhs.as_slice(), rhs.as_slice());
-    let hadamard_stream_collected = hadamard_stream.stream().collect::<Vec<_>>();
+    let hadamard_stream_collected = hadamard_stream.iter().collect::<Vec<_>>();
     assert_eq!(hadamard_stream_collected, hadamard_product);
 }

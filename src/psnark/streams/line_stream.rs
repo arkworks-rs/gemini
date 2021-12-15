@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{misc::MatrixElement, stream::Streamer};
+use crate::{misc::MatrixElement, iterable::Iterable};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -18,7 +18,7 @@ pub struct LineIter<I, T> {
 
 impl<S, T> LineStream<S, T>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<MatrixElement<T>>,
     T: ark_ff::Field,
 {
@@ -28,9 +28,9 @@ where
     }
 }
 
-impl<S, T> Streamer for LineStream<S, T>
+impl<S, T> Iterable for LineStream<S, T>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<MatrixElement<T>>,
     T: ark_ff::Field,
 {
@@ -38,8 +38,8 @@ where
 
     type Iter = LineIter<S::Iter, T>;
 
-    fn stream(&self) -> Self::Iter {
-        let matrix_stream = self.matrix.stream();
+    fn iter(&self) -> Self::Iter {
+        let matrix_stream = self.matrix.iter();
         let _t = PhantomData;
         // XXX: here we assume that the number of lines is the same as the number of non-zero entries.
         let count = self.matrix.len();
@@ -82,14 +82,14 @@ where
 
 #[test]
 fn test_line_stream() {
-    use crate::stream::dummy::DiagonalMatrixStreamer;
+    use crate::iterable::dummy::DiagonalMatrixStreamer;
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
 
     let n: usize = 1200;
     let matrix = DiagonalMatrixStreamer::new(F::one(), n);
     let index_stream = LineStream::new(matrix);
-    let indices = index_stream.stream().collect::<Vec<_>>();
+    let indices = index_stream.iter().collect::<Vec<_>>();
     assert_eq!(indices.last(), Some(&0));
     assert_eq!(indices.len(), n);
 }

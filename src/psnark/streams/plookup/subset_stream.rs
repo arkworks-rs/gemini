@@ -1,4 +1,4 @@
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -22,9 +22,9 @@ impl<'a, F, S> LookupSubsetStreamer<'a, F, S> {
     }
 }
 
-impl<'a, F, S> Streamer for LookupSubsetStreamer<'a, F, S>
+impl<'a, F, S> Iterable for LookupSubsetStreamer<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
     F: Field,
 {
@@ -32,8 +32,8 @@ where
 
     type Iter = LookupSubsetIterator<F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
-        let base_iterator = self.base_streamer.stream();
+    fn iter(&self) -> Self::Iter {
+        let base_iterator = self.base_streamer.iter();
         let gamma = self.gamma;
         Self::Iter {
             base_iterator,
@@ -74,6 +74,6 @@ fn test_subset_stream() {
 
     let test_vector_stream = test_vector.as_slice();
     let st = LookupSubsetStreamer::new(&test_vector_stream, z);
-    let got = st.stream().collect::<Vec<_>>();
+    let got = st.iter().collect::<Vec<_>>();
     assert_eq!(got, expected);
 }

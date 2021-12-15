@@ -3,7 +3,7 @@
 use ark_ff::{PrimeField, Zero};
 use ark_std::{iter, rand::RngCore};
 
-use crate::{circuit::R1csStream, misc::MatrixElement, stream::Streamer};
+use crate::{circuit::R1csStream, misc::MatrixElement, iterable::Iterable};
 
 /// A DummyStream is the stream that returns the same element `e`, `len` times.
 #[derive(Clone, Copy)]
@@ -39,14 +39,14 @@ pub struct SingleEntryStream<T> {
     len: usize,
 }
 
-impl<T: Copy + Zero> Streamer for SingleEntryStream<T> {
+impl<T: Copy + Zero> Iterable for SingleEntryStream<T> {
     type Item = T;
     type Iter = iter::Chain<iter::Take<iter::Repeat<T>>, iter::Take<iter::Repeat<T>>>;
 
     fn len(&self) -> usize {
         self.len
     }
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         iter::repeat(T::zero())
             .take(self.len - 1)
             .chain(iter::repeat(self.e).take(1))
@@ -59,7 +59,7 @@ impl<T: Copy> DiagonalMatrixStreamer<T> {
     }
 }
 
-impl<T: PrimeField> Streamer for DiagonalMatrixStreamer<T> {
+impl<T: PrimeField> Iterable for DiagonalMatrixStreamer<T> {
     type Item = MatrixElement<T>;
     type Iter = DiagonalMatrixIter<T>;
 
@@ -69,7 +69,7 @@ impl<T: PrimeField> Streamer for DiagonalMatrixStreamer<T> {
     }
 
     #[inline]
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         DiagonalMatrixIter {
             e: self.e,
             len: self.len * 2,
@@ -94,11 +94,11 @@ impl<T: PrimeField> Iterator for DiagonalMatrixIter<T> {
     }
 }
 
-impl<T: Copy> Streamer for DummyStreamer<T> {
+impl<T: Copy> Iterable for DummyStreamer<T> {
     type Item = T;
     type Iter = iter::Take<iter::Repeat<T>>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         iter::repeat(self.e).take(self.len)
     }
 
@@ -133,7 +133,7 @@ pub fn dumym_r1cs_relation<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> 
 fn test_dummy_streamer() {
     let e = 1;
     let dummy = DummyStreamer::new(e, 1);
-    let mut stream = dummy.stream();
+    let mut stream = dummy.iter();
 
     assert_eq!(stream.next(), Some(1));
     assert_eq!(stream.next(), None);
@@ -147,7 +147,7 @@ fn test_dummy_matrix_streamer() {
 
     let e = F::one();
     let dummy = DiagonalMatrixStreamer::new(e, 2);
-    let mut stream = dummy.stream();
+    let mut stream = dummy.iter();
 
     assert_eq!(stream.next(), Some(MatrixElement::Element((e, 1))));
     assert_eq!(stream.next(), Some(MatrixElement::EOL));

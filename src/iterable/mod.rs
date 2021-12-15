@@ -17,12 +17,12 @@ mod slice;
 pub use slice::Reversed;
 
 /// The trait representing a streamable object.
-pub trait Streamer {
+pub trait Iterable {
     type Item;
     type Iter: Iterator<Item = Self::Item>;
 
     /// Return a new stream for the given object.
-    fn stream(&self) -> Self::Iter;
+    fn iter(&self) -> Self::Iter;
 
     /// Return the length of the stream.
     /// Careful: different objects might have different indications of what _length_ means;
@@ -35,12 +35,12 @@ pub trait Streamer {
     }
 }
 
-impl<S: Streamer + ?Sized> Streamer for Box<S> {
+impl<S: Iterable + ?Sized> Iterable for Box<S> {
     type Item = S::Item;
     type Iter = S::Iter;
 
     /// Return a new stream for the given object.
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         todo!()
     }
 
@@ -80,7 +80,7 @@ where
     }
 }
 
-impl<'a, F> Streamer for FieldMmap<'a, F>
+impl<'a, F> Iterable for FieldMmap<'a, F>
 where
     F: Field,
 {
@@ -88,7 +88,7 @@ where
 
     type Iter = std::slice::Iter<'a, F>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         let source =
             unsafe { std::slice::from_raw_parts_mut(self.mmap.as_ptr() as *mut F, self.len()) }
                 as &[F];

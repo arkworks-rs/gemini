@@ -10,7 +10,7 @@ use ark_std::cmp::Ordering;
 use ark_std::log2;
 
 use super::{prover::Prover, time_prover::TimeProver};
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use crate::sumcheck::prover::RoundMsg;
 use crate::sumcheck::streams::FoldedPolynomialStream;
 // use crate::{misc::ceil_div, SUMCHECK_BUF_SIZE};
@@ -20,9 +20,9 @@ use crate::sumcheck::streams::FoldedPolynomialStream;
 pub struct WitnessStream<F, SF, SG>
 where
     F: Field,
-    SF: Streamer,
+    SF: Iterable,
     SF::Item: Borrow<F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<F>,
 {
     /// The left-hand side.
@@ -37,9 +37,9 @@ where
 pub struct SpaceProver<F, SF, SG>
 where
     F: Field,
-    SF: Streamer,
+    SF: Iterable,
     SF::Item: Borrow<F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<F>,
 {
     /// Randomness given by the verifier, used to fold the right-hand side.
@@ -61,9 +61,9 @@ where
 impl<F, SF, SG> WitnessStream<F, SF, SG>
 where
     F: Field,
-    SF: Streamer,
+    SF: Iterable,
     SF::Item: Borrow<F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<F>,
 {
     /// Initialize a new witness stream.
@@ -81,9 +81,9 @@ where
 impl<F, SF, SG> SpaceProver<F, SF, SG>
 where
     F: Field,
-    SF: Streamer,
+    SF: Iterable,
     SF::Item: Borrow<F>,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<F>,
 {
     /// Create a new space prover.
@@ -108,9 +108,9 @@ where
 impl<'a, F, S1, S2> Prover<F> for SpaceProver<F, S1, S2>
 where
     F: Field,
-    S1: Streamer,
+    S1: Iterable,
     S1::Item: Borrow<F>,
-    S2: Streamer,
+    S2: Iterable,
     S2::Item: Borrow<F>,
 {
     fn next_message(&mut self) -> Option<RoundMsg<F>> {
@@ -133,8 +133,8 @@ where
         let mut f_coefficients = folded_f.len();
         let mut g_coefficients = folded_g.len();
 
-        let mut f_it = folded_f.stream();
-        let mut g_it = folded_g.stream();
+        let mut f_it = folded_f.iter();
+        let mut g_it = folded_g.iter();
 
         // Align the streams: if one stream is much larger than the other,
         // some positions must be skipped.
@@ -259,8 +259,8 @@ where
     fn final_foldings(&self) -> Option<[F; 2]> {
         let folded_f = FoldedPolynomialStream::new(&self.witness.f, &self.twisted_challenges);
         let folded_g = FoldedPolynomialStream::new(&self.witness.g, &self.challenges);
-        let lhs = folded_f.stream().next()?;
-        let rhs = folded_g.stream().next()?;
+        let lhs = folded_f.iter().next()?;
+        let rhs = folded_g.iter().next()?;
         (self.round == self.tot_rounds).then(|| [lhs, rhs])
     }
 }
@@ -268,9 +268,9 @@ where
 impl<'a, F, S1, S2> From<&SpaceProver<F, S1, S2>> for TimeProver<F>
 where
     F: Field,
-    S1: Streamer,
+    S1: Iterable,
     S1::Item: Borrow<F>,
-    S2: Streamer,
+    S2: Iterable,
     S2::Item: Borrow<F>,
 {
     fn from(sp: &SpaceProver<F, S1, S2>) -> Self {
@@ -283,11 +283,11 @@ where
         let mut g = vec![F::default(); folded_g.len()];
         f.iter_mut()
             .rev()
-            .zip(folded_f.stream())
+            .zip(folded_f.iter())
             .for_each(|(dst, src)| *dst = src);
         g.iter_mut()
             .rev()
-            .zip(folded_g.stream())
+            .zip(folded_g.iter())
             .for_each(|(dst, src)| *dst = src);
 
         // copy other informations such us round(s) and twist.

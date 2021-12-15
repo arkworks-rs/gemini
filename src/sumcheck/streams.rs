@@ -1,5 +1,5 @@
 //! Stream utilities for the scalar-product protocol.
-use crate::{misc::ceil_div, stream::Streamer};
+use crate::{misc::ceil_div, iterable::Iterable};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -15,7 +15,7 @@ pub struct FoldedPolynomialTree<'a, F, S> {
 
 impl<'a, F, S> FoldedPolynomialTree<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     F: Field,
     S::Item: Borrow<F>,
 {
@@ -34,9 +34,9 @@ where
     }
 }
 
-impl<'a, F, S> Streamer for FoldedPolynomialTree<'a, F, S>
+impl<'a, F, S> Iterable for FoldedPolynomialTree<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     F: Field,
     S::Item: Borrow<F>,
 {
@@ -44,9 +44,9 @@ where
 
     type Iter = FoldedPolynomialTreeIter<'a, F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         FoldedPolynomialTreeIter::new(
-            self.coefficients.stream(),
+            self.coefficients.iter(),
             self.coefficients.len(),
             self.challenges,
         )
@@ -147,7 +147,7 @@ pub struct FoldedPolynomialStreamIter<'a, F, I> {
 
 impl<'a, F, S> FoldedPolynomialStream<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     F: Field,
     S::Item: Borrow<F>,
 {
@@ -159,17 +159,17 @@ where
     }
 }
 
-impl<'a, F, S> Streamer for FoldedPolynomialStream<'a, F, S>
+impl<'a, F, S> Iterable for FoldedPolynomialStream<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     F: Field,
     S::Item: Borrow<F>,
 {
     type Item = F;
     type Iter = FoldedPolynomialStreamIter<'a, F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
-        let iterator = self.0.coefficients.stream();
+    fn iter(&self) -> Self::Iter {
+        let iterator = self.0.coefficients.iter();
         let challenges = self.0.challenges;
         let stack = init_stack(self.0.coefficients.len(), challenges.len());
         FoldedPolynomialStreamIter {
@@ -240,7 +240,7 @@ fn test_folded_polynomial() {
     let fold_stream = FoldedPolynomialStream(foldstream, 2);
     assert_eq!(fold_stream.len(), 1);
     assert_eq!(
-        fold_stream.stream().next(),
+        fold_stream.iter().next(),
         Some(two + two * (F::one() + two))
     );
 
@@ -249,7 +249,7 @@ fn test_folded_polynomial() {
     let challenges = vec![F::one(); 4];
     let coefficients_stream = coefficients.as_slice();
     let foldstream = FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
-    let fold_stream = FoldedPolynomialStream(foldstream, 4).stream();
+    let fold_stream = FoldedPolynomialStream(foldstream, 4).iter();
     assert_eq!(fold_stream.last(), Some(coefficients.iter().sum()));
 }
 
@@ -264,7 +264,7 @@ fn test_folded_polynomial_tree() {
     let challenges = vec![F::one(), two];
     let coefficients_stream = coefficients.as_slice();
     let fold_streamer = FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
-    let mut fold_iter = fold_streamer.stream();
+    let mut fold_iter = fold_streamer.iter();
     // assert_eq!(fold_stream.next(), Some((0, F::one())));
     // assert_eq!(fold_stream.next(), Some((0, two)));
     assert_eq!(fold_iter.next(), Some((1, F::one() + two)));
@@ -278,7 +278,7 @@ fn test_folded_polynomial_tree() {
     let challenges = vec![F::one(); 4];
     let coefficients_stream = coefficients.as_slice();
     let fold_streamer = FoldedPolynomialTree::new(&coefficients_stream, challenges.as_slice());
-    let mut fold_iter = fold_streamer.stream();
+    let mut fold_iter = fold_streamer.iter();
     fold_iter.advance_by(5).unwrap();
     assert_eq!(fold_iter.next(), Some((1, two)));
     assert_eq!(fold_iter.last(), Some((4, coefficients.iter().sum())));

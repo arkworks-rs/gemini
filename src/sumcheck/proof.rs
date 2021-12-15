@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 use ark_ff::Field;
 use merlin::Transcript;
 
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 use super::prover::{ProverMsgs, RoundMsg};
 use super::Prover;
@@ -118,8 +118,8 @@ impl<F: Field> Sumcheck<F> {
     /// Construct a new Proof using the space prover.
     pub fn new_space<SF1, SF2>(transcript: &mut Transcript, f: SF1, g: SF2, twist: F) -> Self
     where
-        SF1: Streamer,
-        SF2: Streamer,
+        SF1: Iterable,
+        SF2: Iterable,
         SF1::Item: Borrow<F>,
         SF2::Item: Borrow<F>,
     {
@@ -130,8 +130,8 @@ impl<F: Field> Sumcheck<F> {
     /// Construct a new Proof using the Elastic prover
     pub fn new_elastic<SF1, SF2>(transcript: &mut Transcript, f: SF1, g: SF2, twist: F) -> Self
     where
-        SF1: Streamer,
-        SF2: Streamer,
+        SF1: Iterable,
+        SF2: Iterable,
         SF1::Item: Borrow<F>,
         SF2::Item: Borrow<F>,
     {

@@ -2,7 +2,7 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
 
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 pub struct ProductStream<'a, F, S: ?Sized> {
     streamer: &'a S,
@@ -16,7 +16,7 @@ pub struct ProductIter<F, I> {
 
 impl<'a, F, S> ProductStream<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
     F: Field,
 {
@@ -26,9 +26,9 @@ where
     }
 }
 
-impl<'a, F, S> Streamer for ProductStream<'a, F, S>
+impl<'a, F, S> Iterable for ProductStream<'a, F, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
     F: Field,
 {
@@ -36,8 +36,8 @@ where
 
     type Iter = ProductIter<F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
-        let stream = self.streamer.stream();
+    fn iter(&self) -> Self::Iter {
+        let stream = self.streamer.iter();
         let current = Some(F::one());
         ProductIter { stream, current }
     }
@@ -69,7 +69,7 @@ where
 
 #[test]
 fn test_product_stream() {
-    use crate::stream::dummy::DummyStreamer;
+    use crate::iterable::dummy::DummyStreamer;
     use ark_bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
@@ -80,7 +80,7 @@ fn test_product_stream() {
     let e = F::rand(rng);
 
     let vector = DummyStreamer::new(e, n);
-    let accumulated_product = ProductStream::new(&vector).stream().collect::<Vec<_>>();
+    let accumulated_product = ProductStream::new(&vector).iter().collect::<Vec<_>>();
     assert_eq!(accumulated_product[0], F::one());
     assert_eq!(accumulated_product[1], e);
     assert_eq!(accumulated_product[2], e.square());

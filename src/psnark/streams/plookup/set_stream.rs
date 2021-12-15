@@ -1,4 +1,4 @@
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -29,20 +29,20 @@ impl<'a, F, S> LookupSetStreamer<'a, F, S> {
     }
 }
 
-impl<'a, F, S> Streamer for LookupSetStreamer<'a, F, S>
+impl<'a, F, S> Iterable for LookupSetStreamer<'a, F, S>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
 {
     type Item = F;
 
     type Iter = LookupSetIterator<F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         let gamma = self.gamma;
         let y1z = self.beta * (F::one() + self.gamma);
-        let base_iterator = self.base_streamer.stream();
+        let base_iterator = self.base_streamer.iter();
         LookupSetIterator {
             base_iterator,
             zeta: gamma,
@@ -114,6 +114,6 @@ fn test_set_stream() {
 
     let test_vector_stream = test_vector.as_slice();
     let st = LookupSetStreamer::new(&test_vector_stream, y, z);
-    let got = st.stream().collect::<Vec<_>>();
+    let got = st.iter().collect::<Vec<_>>();
     assert_eq!(got, expected);
 }

@@ -1,7 +1,7 @@
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
-use crate::{stream::Streamer, SPACE_TIME_THRESHOLD};
+use crate::{iterable::Iterable, SPACE_TIME_THRESHOLD};
 
 use super::prover::RoundMsg;
 use super::{Prover, SpaceProver, TimeProver};
@@ -15,8 +15,8 @@ pub enum ElasticProver<S, T> {
 impl<'a, F, S1, S2, T> ElasticProver<SpaceProver<F, S1, S2>, T>
 where
     F: Field,
-    S1: Streamer,
-    S2: Streamer,
+    S1: Iterable,
+    S2: Iterable,
     S1::Item: Borrow<F>,
     S2::Item: Borrow<F>,
 {
@@ -29,8 +29,8 @@ where
 impl<F, S1, S2> Prover<F> for ElasticProver<SpaceProver<F, S1, S2>, TimeProver<F>>
 where
     F: Field,
-    S1: Streamer,
-    S2: Streamer,
+    S1: Iterable,
+    S2: Iterable,
     S1::Item: Borrow<F>,
     S2::Item: Borrow<F>,
 {

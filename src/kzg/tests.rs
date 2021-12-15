@@ -10,7 +10,7 @@ use crate::kzg::space::CommitterKeyStream;
 use crate::kzg::time::CommitterKey;
 use crate::kzg::VerifierKey;
 use crate::misc::evaluate_le;
-use crate::stream::{Reversed, Streamer};
+use crate::iterable::{Reversed, Iterable};
 
 #[test]
 fn test_commitment_consistency() {

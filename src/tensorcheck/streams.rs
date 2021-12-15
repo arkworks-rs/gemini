@@ -48,7 +48,7 @@ macro_rules! impl_lincomb_iter {
             where
             F: Field,
             $(
-                $B: crate::stream::Streamer,
+                $B: crate::iterable::Iterable,
                 $B::Item: ark_std::borrow::Borrow<F>,
             )*
         {
@@ -62,11 +62,11 @@ macro_rules! impl_lincomb_iter {
 
         #[allow(non_snake_case)]
         #[allow(unused_assignments)]
-        impl<'a, F, $($B),*> crate::stream::Streamer for LinCombStream<'a, F, ($(&'a $B,)*)>
+        impl<'a, F, $($B),*> crate::iterable::Iterable for LinCombStream<'a, F, ($(&'a $B,)*)>
             where
             F: Field,
             $(
-                $B: crate::stream::Streamer,
+                $B: crate::iterable::Iterable,
                 $B::Item: ark_std::borrow::Borrow<F>,
             )*
         {
@@ -82,12 +82,12 @@ macro_rules! impl_lincomb_iter {
                     len
                 }
 
-                fn stream(&self) -> Self::Iter {
+                fn iter(&self) -> Self::Iter {
                     let len = self.len();
                     let ($(ref $B,)*) = self.t;
                     let pads = vec![$(len - $B.len(),)*];
                     $(
-                        let $B = $B.stream();
+                        let $B = $B.iter();
                     )*
 
                     LinCombIter {t: ($($B,)*), coeffs: self.coeffs, pads }

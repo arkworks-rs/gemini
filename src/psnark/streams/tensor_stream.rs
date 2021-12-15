@@ -1,7 +1,7 @@
 use ark_ff::Field;
 
 use crate::misc::{PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 const T: usize = TENSOR_EXPANSION;
 
@@ -30,14 +30,14 @@ where
     }
 }
 
-impl<'a, F> Streamer for TensorStreamer<'a, F>
+impl<'a, F> Iterable for TensorStreamer<'a, F>
 where
     F: Field,
 {
     type Item = F;
     type Iter = TensorIter<'a, F>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         TensorIter {
             index: self.len(),
             tensor: self.tensor,
@@ -86,7 +86,7 @@ use ark_std::borrow::Borrow;
 pub struct TensorIStreamer<'a, F, S>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<usize>,
 {
     tensor: &'a PartialTensor<F>,
@@ -106,7 +106,7 @@ where
 impl<'a, F, S> TensorIStreamer<'a, F, S>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<usize>,
 {
     pub fn new(tensor: &'a PartialTensor<F>, index: S, len: usize) -> Self {
@@ -114,18 +114,18 @@ where
     }
 }
 
-impl<'a, F, S> Streamer for TensorIStreamer<'a, F, S>
+impl<'a, F, S> Iterable for TensorIStreamer<'a, F, S>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<usize>,
 {
     type Item = F;
     type Iter = TensorIIter<'a, F, S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         Self::Iter {
-            index: self.index.stream(),
+            index: self.index.iter(),
             tensor: self.tensor,
         }
     }
@@ -181,7 +181,7 @@ fn test_tensor() {
     let len = 1 << v.len();
     let v = expand_tensor(&v);
     let tensor_streamer = TensorStreamer::new(&v, len);
-    let mut tensor = tensor_streamer.stream().collect::<Vec<_>>();
+    let mut tensor = tensor_streamer.iter().collect::<Vec<_>>();
     tensor.reverse();
 
     assert_eq!(tensor[0], Fr::one());

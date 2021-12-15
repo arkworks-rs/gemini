@@ -14,7 +14,7 @@ use crate::misc::{expand_tensor, hadamard, powers2, MatrixElement};
 use crate::psnark::streams::{
     IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer, ValStream,
 };
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use crate::sumcheck::proof::Sumcheck;
 
 use crate::transcript::GeminiTranscript;
@@ -30,10 +30,10 @@ impl<E: PairingEngine> Proof<E> {
         ck: CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where
-        SM: Streamer + Copy,
-        SZ: Streamer + Copy,
-        SW: Streamer,
-        SG: Streamer,
+        SM: Iterable + Copy,
+        SZ: Iterable + Copy,
+        SW: Iterable,
+        SG: Iterable,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
         SZ::Item: Borrow<E::Fr> + Copy,
         SW::Item: Borrow<E::Fr> + Copy,

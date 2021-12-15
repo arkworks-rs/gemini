@@ -10,7 +10,7 @@ use crate::misc::fold_polynomial;
 use crate::misc::hadamard;
 use crate::misc::powers;
 use crate::misc::scalar_prod;
-use crate::stream::Reversed;
+use crate::iterable::Reversed;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::prover::Prover;
 use crate::sumcheck::space_prover::SpaceProver;
@@ -140,7 +140,7 @@ fn test_messages_consistency_with_different_lengths() {
 
 #[test]
 fn test_folding_consistency() {
-    use crate::stream::Streamer;
+    use crate::iterable::Iterable;
     let rng = &mut ark_std::test_rng();
 
     // Easy folding:
@@ -149,13 +149,13 @@ fn test_folding_consistency() {
     let rev_f = Reversed::new(&f.coeffs);
 
     let trivial_folded_stream = FoldedPolynomialStream::new(&rev_f, &[]);
-    let mut collected_stream = trivial_folded_stream.stream().collect::<Vec<_>>();
+    let mut collected_stream = trivial_folded_stream.iter().collect::<Vec<_>>();
     collected_stream.reverse();
     assert_eq!(f.coeffs().to_vec(), collected_stream);
 
     let mut r = vec![F::rand(rng)];
     let folded_once_stream = FoldedPolynomialStream::new(&rev_f, &r);
-    let mut folded_space = folded_once_stream.stream().collect::<Vec<_>>();
+    let mut folded_space = folded_once_stream.iter().collect::<Vec<_>>();
     folded_space.reverse();
     let mut folded_time = fold_polynomial(f.coeffs(), r[0]);
     assert_eq!(folded_time, folded_space);
@@ -163,14 +163,14 @@ fn test_folding_consistency() {
     r.push(F::rand(rng));
     folded_time = fold_polynomial(&folded_time, r[1]);
     let folded_once_stream = FoldedPolynomialStream::new(&rev_f, &r);
-    let mut folded_space = folded_once_stream.stream().collect::<Vec<_>>();
+    let mut folded_space = folded_once_stream.iter().collect::<Vec<_>>();
     folded_space.reverse();
     assert_eq!(folded_time, folded_space);
 
     r.push(F::rand(rng));
     folded_time = fold_polynomial(&folded_time, r[2]);
     let folded_once_stream = FoldedPolynomialStream::new(&rev_f, &r);
-    let mut folded_space = folded_once_stream.stream().collect::<Vec<_>>();
+    let mut folded_space = folded_once_stream.iter().collect::<Vec<_>>();
     folded_space.reverse();
     assert_eq!(folded_time, folded_space);
 
@@ -180,13 +180,13 @@ fn test_folding_consistency() {
     let rev_f = Reversed::new(&f.coeffs);
 
     let trivial_folded_stream = FoldedPolynomialStream::new(&rev_f, &[]);
-    let mut collected_stream = trivial_folded_stream.stream().collect::<Vec<_>>();
+    let mut collected_stream = trivial_folded_stream.iter().collect::<Vec<_>>();
     collected_stream.reverse();
     assert_eq!(f.coeffs().to_vec(), collected_stream);
 
     let mut r = vec![F::rand(rng)];
     let folded_once_stream = FoldedPolynomialStream::new(&rev_f, &r);
-    let mut folded_space = folded_once_stream.stream().collect::<Vec<_>>();
+    let mut folded_space = folded_once_stream.iter().collect::<Vec<_>>();
     folded_space.reverse();
     let mut folded_time = fold_polynomial(f.coeffs(), r[0]);
     assert_eq!(folded_time, folded_space);
@@ -195,7 +195,7 @@ fn test_folding_consistency() {
     folded_time = fold_polynomial(&folded_time, r[1]);
 
     let folded_once_stream = FoldedPolynomialStream::new(&rev_f, &r);
-    let mut folded_space = folded_once_stream.stream().collect::<Vec<_>>();
+    let mut folded_space = folded_once_stream.iter().collect::<Vec<_>>();
     folded_space.reverse();
     assert_eq!(folded_time, folded_space);
 }

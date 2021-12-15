@@ -1,4 +1,4 @@
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -21,11 +21,11 @@ impl<'a, F, S, SA> LookupSortedStreamer<'a, F, S, SA> {
     }
 }
 
-impl<'a, F, S, SA> Streamer for LookupSortedStreamer<'a, F, S, SA>
+impl<'a, F, S, SA> Iterable for LookupSortedStreamer<'a, F, S, SA>
 where
     F: Field,
-    S: Streamer,
-    SA: Streamer,
+    S: Iterable,
+    SA: Iterable,
     S::Item: Borrow<F> + Clone,
     SA::Item: Borrow<usize>,
 {
@@ -33,9 +33,9 @@ where
 
     type Iter = AlgHashIterator<F, SortedIterator<S::Item, S::Iter, SA::Iter>>;
 
-    fn stream(&self) -> Self::Iter {
-        let base_iter = self.base_streamer.stream();
-        let addr_iter = self.addr_streamer.stream();
+    fn iter(&self) -> Self::Iter {
+        let base_iter = self.base_streamer.iter();
+        let addr_iter = self.addr_streamer.iter();
         AlgHashIterator::new(
             SortedIterator::new(base_iter, addr_iter, self.base_streamer.len()),
             self.y,
@@ -233,7 +233,7 @@ fn test_sorted_stream() {
         y,
         z,
     )
-    .stream()
+    .iter()
     .collect::<Vec<_>>();
     assert_eq!(sorted_stream, ans);
 }

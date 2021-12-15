@@ -1,4 +1,4 @@
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 /// Given a stream for F(X),
 /// produce a stream for XF(X) + 1
@@ -14,7 +14,7 @@ where
 
 impl<'a, S> RightRotationStreamer<'a, S::Item, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Copy,
 {
     pub fn new(stream: &'a S, pad: S::Item) -> Self {
@@ -22,19 +22,19 @@ where
     }
 }
 
-impl<'a, S> Streamer for RightRotationStreamer<'a, S::Item, S>
+impl<'a, S> Iterable for RightRotationStreamer<'a, S::Item, S>
 where
-    S: Streamer,
+    S: Iterable,
     S::Item: Copy,
 {
     type Item = S::Item;
 
     type Iter = RightRotationIter<S::Iter>;
 
-    fn stream(&self) -> Self::Iter {
+    fn iter(&self) -> Self::Iter {
         RightRotationIter {
             end: Some(self.1),
-            base_iter: self.0.stream(),
+            base_iter: self.0.iter(),
         }
     }
 
@@ -62,7 +62,7 @@ where
 fn test_rrot() {
     let numbers = (0..100u64).collect::<Vec<_>>();
     let right_rotation = RightRotationStreamer(&numbers.as_slice(), &1)
-        .stream()
+        .iter()
         .cloned()
         .collect::<Vec<_>>();
     assert_eq!(right_rotation[0], 0);

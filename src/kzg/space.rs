@@ -10,7 +10,7 @@ use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
 use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
 use crate::misc::ceil_div;
 
-use crate::stream::{Reversed, Streamer};
+use crate::iterable::{Reversed, Iterable};
 use crate::sumcheck::streams::FoldedPolynomialTree;
 
 use super::{time::CommitterKey, VerifierKey};
@@ -24,7 +24,7 @@ const LENGTH_MISMATCH_MSG: &str = "Expecting at least one element in the committ
 pub struct CommitterKeyStream<E, SG>
 where
     E: PairingEngine,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
     /// Stream of G1 elements.
@@ -36,7 +36,7 @@ where
 impl<E, SG> CommitterKeyStream<E, SG>
 where
     E: PairingEngine,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
     /// Turn a streaming SRS into a normal SRS.
@@ -44,7 +44,7 @@ where
         let offset = self.powers_of_g.len() - max_degree;
         let mut powers_of_g = self
             .powers_of_g
-            .stream()
+            .iter()
             .skip(offset)
             .map(|x| *x.borrow())
             .collect::<Vec<_>>();
@@ -59,13 +59,13 @@ where
     /// Evaluate a single polynomial at the point `alpha`, and provide an evaluation proof along with the evaluation.
     pub fn open<SF>(&self, polynomial: SF, alpha: &E::Fr) -> (E::Fr, EvaluationProof<E>)
     where
-        SF: Streamer,
+        SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
         let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
 
-        let mut bases = self.powers_of_g.stream();
-        let scalars = polynomial.stream();
+        let mut bases = self.powers_of_g.iter();
+        let scalars = polynomial.iter();
 
         // align the streams and remove one degree
         bases
@@ -91,19 +91,19 @@ where
         points: &[E::Fr],
     ) -> (Vec<E::Fr>, EvaluationProof<E>)
     where
-        SF: Streamer,
+        SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
         let zeros = vanishing_polynomial(points);
         let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
-        let mut bases = self.powers_of_g.stream();
+        let mut bases = self.powers_of_g.iter();
         bases
             .advance_by(self.powers_of_g.len() - polynomial.len() + zeros.degree())
             .unwrap();
 
         let mut state = VecDeque::<E::Fr>::with_capacity(points.len());
 
-        let mut polynomial_iterator = polynomial.stream();
+        let mut polynomial_iterator = polynomial.iter();
 
         (0..points.len()).for_each(|_| {
             state.push_back(*polynomial_iterator.next().unwrap().borrow());
@@ -127,7 +127,7 @@ where
     /// The commitment procedures, that takes as input a committer key and the streaming coefficients of polynomial, and produces the desired commitment.
     pub fn commit<SF: ?Sized>(&self, polynomial: &SF) -> Commitment<E>
     where
-        SF: Streamer,
+        SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
         assert!(self.powers_of_g.len() >= polynomial.len());
@@ -140,7 +140,7 @@ where
 
     pub fn batch_commit<'a, F>(
         &self,
-        polynomials: &[&'a dyn Streamer<Item = F, Iter = &mut dyn Iterator<Item = F>>],
+        polynomials: &[&'a dyn Iterable<Item = F, Iter = &mut dyn Iterator<Item = F>>],
     ) -> Vec<Commitment<E>>
     where
         F: Borrow<E::Fr>,
@@ -156,7 +156,7 @@ where
         polynomials: &FoldedPolynomialTree<E::Fr, SF>,
     ) -> Vec<Commitment<E>>
     where
-        SF: Streamer,
+        SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
         let n = polynomials.depth();
@@ -164,7 +164,7 @@ where
         let mut folded_bases = Vec::new();
         for i in 1..n + 1 {
             let pippenger = ChunkedPippenger::with_size(MAX_MSM_BUFFER / n);
-            let mut bases = self.powers_of_g.stream();
+            let mut bases = self.powers_of_g.iter();
 
             let delta = self.powers_of_g.len() - ceil_div(polynomials.len(), 1 << i);
             bases.advance_by(delta).expect(LENGTH_MISMATCH_MSG);
@@ -172,7 +172,7 @@ where
             pippengers.push(pippenger);
         }
 
-        for (i, coefficient) in polynomials.stream() {
+        for (i, coefficient) in polynomials.iter() {
             let base = folded_bases[i - 1].next().unwrap();
             pippengers[i - 1].add(base.borrow(), coefficient.into_repr());
         }
@@ -194,8 +194,8 @@ where
         etas: &[E::Fr],
     ) -> (Vec<Vec<E::Fr>>, EvaluationProof<E>)
     where
-        SG: Streamer,
-        SF: Streamer,
+        SG: Iterable,
+        SF: Iterable,
         E: PairingEngine,
         SG::Item: Borrow<E::G1Affine>,
         SF::Item: Borrow<E::Fr> + Copy,
@@ -207,7 +207,7 @@ where
         let mut remainders = vec![VecDeque::new(); n];
 
         for i in 1..n + 1 {
-            let mut bases = self.powers_of_g.stream();
+            let mut bases = self.powers_of_g.iter();
             let delta = self.powers_of_g.len() - ceil_div(polynomials.len(), 1 << i);
             bases.advance_by(delta).expect(LENGTH_MISMATCH_MSG);
 
@@ -218,7 +218,7 @@ where
             folded_bases.push(bases);
         }
 
-        for (i, coefficient) in polynomials.stream() {
+        for (i, coefficient) in polynomials.iter() {
             if i == 0 {
                 continue;
             } // XXX. skip the 0th elements automatically
@@ -262,7 +262,7 @@ impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
 impl<E, SG> From<&CommitterKeyStream<E, SG>> for VerifierKey<E>
 where
     E: PairingEngine,
-    SG: Streamer,
+    SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
     fn from(ck: &CommitterKeyStream<E, SG>) -> Self {
@@ -270,7 +270,7 @@ where
         // take the first element from the stream
         let g = *ck
             .powers_of_g
-            .stream()
+            .iter()
             .last()
             .expect(LENGTH_MISMATCH_MSG)
             .borrow();

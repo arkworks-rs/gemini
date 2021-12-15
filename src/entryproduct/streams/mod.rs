@@ -11,7 +11,7 @@ pub fn entry_product_streams<'a, S, F>(
     streamer: &'a S,
 ) -> (RightRotationStreamer<'a, F, S>, ProductStream<'a, F, S>)
 where
-    S: crate::stream::Streamer<Item = F>,
+    S: crate::iterable::Iterable<Item = F>,
     F: Field,
 {
     (

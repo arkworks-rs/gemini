@@ -1,7 +1,7 @@
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 
 struct AlgebraicHash<'a, F, EltS, IdxS> {
     chal: F,
@@ -17,9 +17,9 @@ struct AlgebraicHashIterator<EltI, IdxI, F> {
 
 impl<'a, F, EltS, IdxS> AlgebraicHash<'a, F, EltS, IdxS>
 where
-    IdxS: Streamer,
+    IdxS: Iterable,
     IdxS::Item: Borrow<usize>,
-    EltS: Streamer,
+    EltS: Iterable,
     EltS::Item: Borrow<F>,
     F: Field,
 {
@@ -33,11 +33,11 @@ where
     }
 }
 
-impl<'a, F, EltS, IdxS> Streamer for AlgebraicHash<'a, F, EltS, IdxS>
+impl<'a, F, EltS, IdxS> Iterable for AlgebraicHash<'a, F, EltS, IdxS>
 where
-    IdxS: Streamer,
+    IdxS: Iterable,
     IdxS::Item: Borrow<usize>,
-    EltS: Streamer,
+    EltS: Iterable,
     EltS::Item: Borrow<F>,
     F: Field,
 {
@@ -45,9 +45,9 @@ where
 
     type Iter = AlgebraicHashIterator<EltS::Iter, IdxS::Iter, F>;
 
-    fn stream(&self) -> Self::Iter {
-        let elt_it = self.elt_stream.stream();
-        let idx_it = self.idx_stream.stream();
+    fn iter(&self) -> Self::Iter {
+        let elt_it = self.elt_stream.iter();
+        let idx_it = self.idx_stream.iter();
         let chal = self.chal;
         AlgebraicHashIterator {
             elt_it,

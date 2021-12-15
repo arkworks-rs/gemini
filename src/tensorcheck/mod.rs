@@ -53,7 +53,7 @@ use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
 use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, scalar_prod};
-use crate::stream::Streamer;
+use crate::iterable::Iterable;
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;
@@ -73,11 +73,11 @@ const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
 {
     let mut result = vec![F::zero(); polynomials.depth()];
-    for (i, c) in polynomials.stream() {
+    for (i, c) in polynomials.iter() {
         // foldings are in the interval [[1, n-1]].
         // Align the level with the index in result.
         let i = i - 1;
@@ -138,13 +138,13 @@ pub(crate) fn transcribe_foldings<F, S>(
 ) -> Vec<Vec<F>>
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
 {
     let mut transcribed_foldings = vec![Vec::new(); foldings.depth() - threshold_level];
     // Filter elements in the stream that have a certain threshold and shift the index to match the vector element.
     foldings
-        .stream()
+        .iter()
         .filter_map(|(i, item)| {
             (i != 0 && i > threshold_level).then(|| (i - threshold_level - 1, item))
         })
@@ -162,7 +162,7 @@ pub(crate) fn partially_foldtree<'a, F, S>(
 ) -> (FoldedPolynomialTree<'a, F, S>, Vec<Vec<F>>)
 where
     F: Field,
-    S: Streamer,
+    S: Iterable,
     S::Item: Borrow<F>,
 {
     let full_foldings = FoldedPolynomialTree::new(stream, challenges);
