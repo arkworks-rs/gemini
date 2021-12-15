@@ -36,7 +36,7 @@ pub struct R1csStream<SM, SZ, SW> {
 /// Represents a matrix.
 pub type Matrix<F> = Vec<Vec<(F, usize)>>;
 
-pub struct R1CS<F: PrimeField> {
+pub struct R1CS<F: Field> {
     pub a: Matrix<F>,
     pub b: Matrix<F>,
     pub c: Matrix<F>,
@@ -200,5 +200,27 @@ pub fn random_circuit<F: Field>(
         b: Some(b),
         num_constraints,
         num_variables,
+    }
+}
+
+
+pub fn dummy_r1cs<F: Field>(
+    rng: &mut impl RngCore,
+    n: usize
+) -> R1CS<F> {
+    let e = F::rand(rng);
+    let inv_e = e.inverse().expect("Buy a lottery ticket and retry");
+    let z = vec![e; n];
+    let w = vec![e; n-1];
+    let x = vec![e];
+
+    let diagonal_matrix = (0..n).map(|i| vec![(inv_e, i)]).collect::<Vec<_>>();
+    R1CS {
+        a: diagonal_matrix.clone(),
+        b: diagonal_matrix.clone(),
+        c: diagonal_matrix.clone(),
+        z,
+        w,
+        x,
     }
 }

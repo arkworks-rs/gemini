@@ -1,6 +1,6 @@
 use ark_ec::bls12::Bls12;
 use ark_ec::{AffineCurve, PairingEngine};
-use ark_gemini::iterable::dummy::{dumym_r1cs_relation, DummyStreamer};
+use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
 use ark_gemini::kzg::CommitterKeyStream;
 use ark_gemini::snark::Proof;
 use ark_std::rand::Rng;
@@ -47,7 +47,7 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
 
     let g1 = G1::prime_subgroup_generator();
     let g2 = G2::prime_subgroup_generator();
-    let r1cs_stream = dumym_r1cs_relation(rng, instance_size);
+    let r1cs_stream = dummy_r1cs_stream(rng, instance_size);
     let ck = CommitterKeyStream::<PE, _> {
         powers_of_g: DummyStreamer::new(g1, instance_size + 1),
         powers_of_g2: vec![g2; 4],
@@ -60,8 +60,9 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let num_constraints = 1 << instance_logsize;
     let num_variables = 1 << instance_logsize;
 
-    let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
-    let r1cs = ark_gemini::circuit::generate_relation(circuit);
+    // let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
+    // let r1cs = ark_gemini::circuit::generate_relation(circuit);
+    let r1cs = ark_gemini::circuit::dummy_r1cs(rng,num_constraints);
     let ck = ark_gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(
         num_constraints + num_variables,
         5,
