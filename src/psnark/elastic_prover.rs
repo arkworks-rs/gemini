@@ -10,11 +10,11 @@ use crate::kzg::CommitterKeyStream;
 use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
+use crate::iterable::Iterable;
 use crate::misc::{expand_tensor, hadamard, powers2, MatrixElement};
 use crate::psnark::streams::{
     IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer, ValStream,
 };
-use crate::iterable::Iterable;
 use crate::sumcheck::proof::Sumcheck;
 
 use crate::transcript::GeminiTranscript;

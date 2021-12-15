@@ -1,5 +1,5 @@
-use crate::misc::MatrixElement;
 use crate::iterable::Iterable;
+use crate::misc::MatrixElement;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;

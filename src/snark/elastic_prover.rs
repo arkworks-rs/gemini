@@ -7,11 +7,11 @@ use log::debug;
 use merlin::Transcript;
 
 use crate::circuit::R1csStream;
+use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
-use crate::iterable::Iterable;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorCheckProof};
@@ -67,7 +67,7 @@ where
     ];
     evaluations_w
         .iter()
-        .for_each(|e| transcript.append_scalar(b"eval", e));
+        .for_each(|e| transcript.append_scalar(b"eval", &e));
     folded_polynomials_evaluations
         .iter()
         .flatten()
@@ -133,7 +133,7 @@ where
     ];
     evaluations_w
         .iter()
-        .for_each(|e| transcript.append_scalar(b"eval", e));
+        .for_each(|e| transcript.append_scalar(b"eval", &e));
     folded_polynomials_evaluations
         .iter()
         .flatten()

@@ -1,7 +1,8 @@
-use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
+
+use crate::iterable::Iterable;
 
 #[derive(Clone, Copy)]
 pub struct HadamardStreamer<F, S0, S1>(S0, S1, PhantomData<F>);

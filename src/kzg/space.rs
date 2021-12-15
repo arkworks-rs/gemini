@@ -10,7 +10,7 @@ use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
 use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
 use crate::misc::ceil_div;
 
-use crate::iterable::{Reversed, Iterable};
+use crate::iterable::{Iterable, Reversed};
 use crate::sumcheck::streams::FoldedPolynomialTree;
 
 use super::{time::CommitterKey, VerifierKey};

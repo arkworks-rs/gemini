@@ -3,7 +3,7 @@
 use ark_ff::{PrimeField, Zero};
 use ark_std::{iter, rand::RngCore};
 
-use crate::{circuit::R1csStream, misc::MatrixElement, iterable::Iterable};
+use crate::{circuit::R1csStream, iterable::Iterable, misc::MatrixElement};
 
 /// A DummyStream is the stream that returns the same element `e`, `len` times.
 #[derive(Clone, Copy)]

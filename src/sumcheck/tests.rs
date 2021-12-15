@@ -6,11 +6,11 @@ use ark_poly::UVPolynomial;
 use ark_bls12_381::Fr as F;
 use merlin::Transcript;
 
+use crate::iterable::Reversed;
 use crate::misc::fold_polynomial;
 use crate::misc::hadamard;
 use crate::misc::powers;
 use crate::misc::scalar_prod;
-use crate::iterable::Reversed;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::prover::Prover;
 use crate::sumcheck::space_prover::SpaceProver;

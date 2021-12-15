@@ -16,9 +16,6 @@ use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, SerializationError
 use ark_std::io::{Read, Write};
 use derivative::Derivative;
 
-/* ************************************************************************* */
-/* ************************************************************************* */
-/* ************************************************************************* */
 
 pub(crate) fn balance_matrices<F: Field>(a_matrix: &mut Matrix<F>, b_matrix: &mut Matrix<F>) {
     let mut a_density: usize = a_matrix.iter().map(|row| row.len()).sum();

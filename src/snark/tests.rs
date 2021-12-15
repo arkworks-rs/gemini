@@ -2,13 +2,13 @@ use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
 
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
+use crate::iterable::Reversed;
 use crate::kzg::CommitterKey;
 use crate::kzg::CommitterKeyStream;
+use crate::misc::matrix_into_col_major_slice;
 use crate::misc::matrix_into_row_major_slice;
 use crate::misc::product_matrix_vector;
-use crate::misc::matrix_into_col_major_slice;
 use crate::snark::Proof;
-use crate::iterable::Reversed;
 
 #[test]
 fn test_snark_consistency() {

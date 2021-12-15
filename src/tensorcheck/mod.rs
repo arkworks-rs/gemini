@@ -45,6 +45,7 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::One;
 
+use crate::iterable::Iterable;
 use crate::kzg::Commitment;
 use crate::kzg::CommitterKey;
 use crate::kzg::EvaluationProof;
@@ -53,7 +54,6 @@ use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
 use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, scalar_prod};
-use crate::iterable::Iterable;
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;

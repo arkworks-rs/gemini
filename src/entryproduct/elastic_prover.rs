@@ -4,9 +4,9 @@ use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
+use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::evaluate_be;
-use crate::iterable::Iterable;
 use crate::sumcheck::{ElasticProver, Prover, SpaceProver, TimeProver};
 
 use super::streams::{entry_product_streams, ProductStream, RightRotationStreamer};

@@ -1,15 +1,14 @@
+use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
-use ark_ff::PrimeField;
-
-use crate::misc::{MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 use crate::iterable::Iterable;
+use crate::misc::{MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 
 /// Streaming struct for producing tensor product of the matrix polynomial.
 #[derive(Clone, Copy)]
 pub(crate) struct MatrixTensor<'a, F, SC>
 where
-    F: PrimeField,
+    F: Field,
     SC: Iterable,
     SC::Item: Borrow<MatrixElement<F>>,
 {
@@ -20,7 +19,7 @@ where
 
 impl<'a, F, SC> MatrixTensor<'a, F, SC>
 where
-    F: PrimeField,
+    F: Field,
     SC: Iterable,
     SC::Item: Borrow<MatrixElement<F>>,
 {
@@ -38,7 +37,7 @@ where
 
 impl<'a, F, SC> Iterable for MatrixTensor<'a, F, SC>
 where
-    F: PrimeField,
+    F: Field,
     SC: Iterable,
     SC::Item: Borrow<MatrixElement<F>>,
 {
@@ -59,7 +58,7 @@ where
 
 pub(crate) struct MatrixTensorIter<'a, F, I>
 where
-    F: PrimeField,
+    F: Field,
     I: Iterator,
     I::Item: Borrow<MatrixElement<F>>,
 {
@@ -69,7 +68,7 @@ where
 
 impl<'a, F, I> Iterator for MatrixTensorIter<'a, F, I>
 where
-    F: PrimeField,
+    F: Field,
     I: Iterator,
     I::Item: Borrow<MatrixElement<F>>,
 {
@@ -102,8 +101,8 @@ where
 
 #[test]
 fn test_matrix_tensor_stream() {
-    use crate::misc::expand_tensor;
     use crate::iterable::dummy::DiagonalMatrixStreamer;
+    use crate::misc::expand_tensor;
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;

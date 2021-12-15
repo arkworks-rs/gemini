@@ -1,7 +1,7 @@
 use ark_ff::Field;
 
-use crate::misc::{PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 use crate::iterable::Iterable;
+use crate::misc::{PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 
 const T: usize = TENSOR_EXPANSION;
 

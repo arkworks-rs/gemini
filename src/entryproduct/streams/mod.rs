@@ -3,7 +3,6 @@ mod rrot_stream;
 
 use ark_ff::Field;
 
-
 pub use product_stream::ProductStream;
 pub use rrot_stream::RightRotationStreamer;
 

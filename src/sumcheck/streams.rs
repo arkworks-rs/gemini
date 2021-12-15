@@ -1,5 +1,4 @@
-//! Stream utilities for the scalar-product protocol.
-use crate::{misc::ceil_div, iterable::Iterable};
+use crate::{iterable::Iterable, misc::ceil_div};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 

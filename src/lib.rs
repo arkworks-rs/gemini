@@ -42,13 +42,13 @@ pub(crate) const PROTOCOL_NAME: &[u8] = b"GEMINI-v0";
 pub mod circuit;
 mod misc;
 
+/// Data structures for the streaming model.
+pub mod iterable;
 pub mod kzg;
 /// Preprocessing SNARK for R1CS.
 #[allow(dead_code)]
 pub mod psnark;
 pub mod snark;
-/// Data structures for the streaming model.
-pub mod iterable;
 pub mod sumcheck;
 
 pub mod entryproduct;

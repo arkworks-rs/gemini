@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use crate::{misc::MatrixElement, iterable::Iterable};
+use crate::{iterable::Iterable, misc::MatrixElement};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 

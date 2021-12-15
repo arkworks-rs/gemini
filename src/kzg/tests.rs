@@ -6,11 +6,11 @@ use ark_std::UniformRand;
 
 use ark_std::test_rng;
 
+use crate::iterable::{Iterable, Reversed};
 use crate::kzg::space::CommitterKeyStream;
 use crate::kzg::time::CommitterKey;
 use crate::kzg::VerifierKey;
 use crate::misc::evaluate_le;
-use crate::iterable::{Reversed, Iterable};
 
 #[test]
 fn test_commitment_consistency() {
