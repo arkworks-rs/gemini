@@ -144,7 +144,7 @@ fn test_matrix_tensor_len() {
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
     use crate::misc::expand_tensor;
-    use crate::misc::matrix_into_row_major_slice;
+    use crate::misc::{matrix_into_row_major_slice, matrix_into_col_major_slice};
 
     let rng = &mut test_rng();
     let r = F::rand(rng);
@@ -163,9 +163,18 @@ fn test_matrix_tensor_len() {
     let expanded_one_tensor = expand_tensor(&one_tensor);
     let circuit = random_circuit(rng, n, n);
     let r1cs = generate_relation(circuit);
-    let matrix = matrix_into_row_major_slice(&r1cs.a, n);
-    let matrix_tensor = MatrixTensor::new(matrix.as_slice(), &expanded_one_tensor, n);
-    assert_eq!(matrix_tensor.len(), matrix_tensor.iter().count());
+    let matrix_rowm = matrix_into_row_major_slice(&r1cs.a, r1cs.z.len());
+    let matrix_colm = matrix_into_col_major_slice(&r1cs.a);
+    let matrix_tensor = MatrixTensor::new(matrix_rowm.as_slice(), &expanded_one_tensor, r1cs.z.len());
+    let matrix_cols = matrix_rowm.iter().filter(|x| x.is_eol()).count();
+    let matrix_rows = matrix_colm.iter().filter(|x| x.is_eol()).count();
+    // make sure that rA has the same number of elements of z
+    // and that the length claimed coincides with the actual number of elements produced.
+    assert_eq!(matrix_tensor.iter().count(), matrix_tensor.len());
+    assert_eq!(matrix_tensor.iter().count(), r1cs.z.len());
+    // make sure that the dimensions are respected in the row-major and the column-major utilities.
+    assert_eq!(matrix_cols, r1cs.z.len());
+    assert_eq!(matrix_rows, r1cs.a.len());
 }
 
 #[test]

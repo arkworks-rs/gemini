@@ -112,6 +112,10 @@ macro_rules! impl_lincomb_iter {
                 let ($(ref mut $B,)*) = self.t;
                 let mut i = 0;
                 $(
+                    // The padding in first clause guarantees that:
+                    // - either the next element is Some(elt)
+                    // - all elements are None
+                    // Hence, here we can immediately return if the next element is None.
                     if self.pads[i] != 0 {
                         self.pads[i] -= 1
                     } else {

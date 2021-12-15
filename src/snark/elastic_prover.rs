@@ -163,7 +163,7 @@ impl<E: PairingEngine> Proof<E> {
     ) -> Proof<E>
     where
         E: PairingEngine,
-        SM: Iterable,
+        SM: Iterable + Copy,
         SZ: Iterable + Copy,
         SW: Iterable,
         SG: Iterable,

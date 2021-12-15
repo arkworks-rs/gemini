@@ -97,9 +97,18 @@ pub(crate) fn powers2<F: Field>(element: F, len: usize) -> Vec<F> {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
-pub enum MatrixElement<F: Field> {
+pub enum MatrixElement<T> {
     EOL,
-    Element((F, usize)),
+    Element((T, usize)),
+}
+
+impl<T> MatrixElement<T> {
+    pub fn is_eol(&self) -> bool {
+        match self {
+            Self::EOL => true,
+            Self::Element(_) => false,
+        }
+    }
 }
 
 pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> Vec<F> {
@@ -156,6 +165,9 @@ pub(crate) type PartialTensor<F> = Vec<Vec<F>>;
 
 /// Partially expand the tensor product
 /// \\(\otimes (1, \rho_j)\\)
+/// XXX TODO: This function is pub(crate) as in a previous version of this library,
+/// Iterable: Copy and hence couldn't store vectors itself.
+/// This is not anymore the case thus it can be moved inside init.
 pub fn expand_tensor<F: Field>(elements: &[F]) -> PartialTensor<F> {
     // expected_len = ceil(tensor_len / N)
     let expected_len = ceil_div(elements.len(), TENSOR_EXPANSION_LOG);
@@ -218,16 +230,17 @@ pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).sum()
 }
 
-// Return a matrix stream, row major.
+/// Return a matrix stream, row major.
+/// XXX. can this be done without the hint for the number of columns?
 #[cfg(test)]
 pub(crate) fn matrix_into_row_major_slice<F: Field>(
     a: &[Vec<(F, usize)>],
-    n: usize,
+    col_number: usize,
 ) -> Vec<MatrixElement<F>> {
     use ark_std::cmp::Ordering;
     let mut a_row_flat = Vec::new();
 
-    for column in (0..n).rev() {
+    for column in (0..col_number).rev() {
         for (row, elements) in a.iter().enumerate().rev() {
             for &(val, col) in elements.iter().rev() {
                 match col.cmp(&column) {
@@ -244,17 +257,14 @@ pub(crate) fn matrix_into_row_major_slice<F: Field>(
             }
         }
         a_row_flat.push(MatrixElement::EOL);
-    }
 
+    }
     a_row_flat
 }
 
 // Return a matrix striam, column major.
 #[cfg(test)]
-pub fn matrix_into_col_major_slice<F: Field>(
-    a: &[Vec<(F, usize)>],
-    _n: usize,
-) -> Vec<MatrixElement<F>> {
+pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
     let mut a_row_flat = Vec::new();
 
     for (_row, elements) in a.iter().enumerate().rev() {

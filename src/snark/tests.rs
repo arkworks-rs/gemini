@@ -24,16 +24,15 @@ fn test_snark_consistency() {
     let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
     let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
 
-    let n = z_a.len();
-
+    let rows = r1cs.z.len();
     let time_proof = Proof::new_time(&r1cs, &ck);
 
-    let a_rowm = matrix_into_row_major_slice(&r1cs.a, n);
-    let b_rowm = matrix_into_row_major_slice(&r1cs.b, n);
-    let c_rowm = matrix_into_row_major_slice(&r1cs.c, n);
-    let a_colm = matrix_into_col_major_slice(&r1cs.a, n);
-    let b_colm = matrix_into_col_major_slice(&r1cs.b, n);
-    let c_colm = matrix_into_col_major_slice(&r1cs.c, n);
+    let a_rowm = matrix_into_row_major_slice(&r1cs.a, rows);
+    let b_rowm = matrix_into_row_major_slice(&r1cs.b, rows);
+    let c_rowm = matrix_into_row_major_slice(&r1cs.c, rows);
+    let a_colm = matrix_into_col_major_slice(&r1cs.a);
+    let b_colm = matrix_into_col_major_slice(&r1cs.b);
+    let c_colm = matrix_into_col_major_slice(&r1cs.c);
 
     let r1cs_stream = R1csStream {
         z: Reversed::new(r1cs.z.as_slice()),
@@ -76,65 +75,4 @@ fn test_snark_correctness() {
 
     let time_proof = Proof::new_time(&r1cs, &ck);
     assert!(time_proof.verify(&r1cs, &vk).is_ok())
-}
-
-#[test]
-fn test_relation() {
-    use ark_bls12_381::Fr as F;
-    use ark_ff::Zero;
-    use ark_std::test_rng;
-
-    use crate::circuit::generate_relation;
-    use crate::circuit::random_circuit;
-    use crate::circuit::R1CS;
-    use crate::misc::matrix_into_row_major_slice;
-    use crate::misc::matrix_slice_naive;
-
-    let rng = &mut test_rng();
-    let num_constraints = 1 << 13;
-    let num_variables = 1 << 12;
-    let circuit = random_circuit(rng, num_constraints, num_variables);
-
-    let R1CS {
-        a,
-        b,
-        c,
-        z,
-        w: _w,
-        x: _,
-    } = generate_relation::<F, _>(circuit);
-    let mut z_a = vec![F::zero(); a.len()];
-
-    for (row, elements) in a.iter().enumerate() {
-        for &(val, col) in elements {
-            z_a[row] += val * z[col];
-        }
-    }
-
-    let mut z_b = vec![F::zero(); a.len()];
-    for (row, elements) in b.iter().enumerate() {
-        for &(val, col) in elements {
-            z_b[row] += val * z[col];
-        }
-    }
-
-    let mut z_c = vec![F::zero(); a.len()];
-    for (row, elements) in c.iter().enumerate() {
-        for &(val, col) in elements {
-            z_c[row] += val * z[col];
-        }
-    }
-
-    let aa_row_flat = matrix_into_row_major_slice(&a, a.len());
-
-    let a_row_flat = matrix_slice_naive(&a, a.len());
-    assert_eq!(
-        a_row_flat
-            .iter()
-            .zip(&aa_row_flat)
-            .filter(|&(x, y)| x != y)
-            .count(),
-        0
-    );
-    assert_eq!(z_a[1] * z_b[1], z_c[1]);
 }
