@@ -1,6 +1,9 @@
 //! Implementation of entry product.
 //!
-//! The entry product argument reduces a claim of the form
+//! The entry product argument, also called _grand product argument_ in
+//! [plookup](https://eprint.iacr.org/2020/315.pdf),
+//! [spartan](https://github.com/microsoft/Spartan),
+//! reduces a claim of the form
 //! \\[
 //! \prod \vec f = t
 //! \\]
@@ -23,7 +26,7 @@ pub struct ProverMsgs<E: PairingEngine> {
     claimed_sumchecks: Vec<E::Fr>,
 }
 
-pub struct GrandProduct<E: PairingEngine, P: Prover<E::Fr>> {
+pub struct EntryProduct<E: PairingEngine, P: Prover<E::Fr>> {
     pub msgs: ProverMsgs<E>,
     pub provers: Vec<P>,
 }

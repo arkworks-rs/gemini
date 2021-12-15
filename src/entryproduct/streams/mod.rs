@@ -3,7 +3,6 @@ mod rrot_stream;
 
 use ark_ff::Field;
 
-use crate::stream::Streamer;
 
 pub use product_stream::ProductStream;
 pub use rrot_stream::RightRotationStreamer;
@@ -12,7 +11,7 @@ pub fn entry_product_streams<'a, S, F>(
     streamer: &'a S,
 ) -> (RightRotationStreamer<'a, F, S>, ProductStream<'a, F, S>)
 where
-    S: Streamer<Item = F>,
+    S: crate::stream::Streamer<Item = F>,
     F: Field,
 {
     (

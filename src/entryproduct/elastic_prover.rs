@@ -10,11 +10,11 @@ use crate::stream::Streamer;
 use crate::sumcheck::{ElasticProver, Prover, SpaceProver, TimeProver};
 
 use super::streams::{entry_product_streams, ProductStream, RightRotationStreamer};
-use super::{GrandProduct, ProverMsgs};
+use super::{EntryProduct, ProverMsgs};
 use crate::transcript::GeminiTranscript;
 
 impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
-    GrandProduct<
+    EntryProduct<
         E,
         ElasticProver<
             SpaceProver<E::Fr, RightRotationStreamer<'a, E::Fr, S>, ProductStream<'a, E::Fr, S>>,
@@ -49,7 +49,7 @@ impl<'a, E: PairingEngine, S: Streamer<Item = E::Fr>>
             acc_v_commitments,
             claimed_sumchecks,
         };
-        GrandProduct { provers, msgs }
+        EntryProduct { provers, msgs }
     }
 }
 
@@ -113,12 +113,12 @@ macro_rules! impl_elastic_batch {
                 claimed_sumchecks
 
             };
-            GrandProduct { msgs, provers }
+            EntryProduct { msgs, provers }
         }
     };
 }
 
-impl<'a, E: PairingEngine> GrandProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
+impl<'a, E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
     // lets gooooo
     // impl_elastic_batch!(A0, A1, A2);
     // impl_elastic_batch!(A0, A1, A2, A3);

@@ -2,7 +2,7 @@ use ark_ec::PairingEngine;
 use ark_ff::Field;
 use merlin::Transcript;
 
-use super::{GrandProduct, ProverMsgs};
+use super::{EntryProduct, ProverMsgs};
 use crate::misc::evaluate_le;
 use crate::sumcheck::time_prover::Witness;
 use crate::transcript::GeminiTranscript;
@@ -50,7 +50,7 @@ fn monic<F: Field>(v: &[F]) -> Vec<F> {
     monic_v
 }
 
-impl<E: PairingEngine> GrandProduct<E, TimeProver<E::Fr>> {
+impl<E: PairingEngine> EntryProduct<E, TimeProver<E::Fr>> {
     /// Creates a new grand product argument using the time prover.
     pub fn new_time(
         transcript: &mut Transcript,
@@ -77,6 +77,6 @@ impl<E: PairingEngine> GrandProduct<E, TimeProver<E::Fr>> {
             acc_v_commitments,
             claimed_sumchecks,
         };
-        GrandProduct { msgs, provers }
+        EntryProduct { msgs, provers }
     }
 }
