@@ -144,7 +144,7 @@ fn test_matrix_tensor_len() {
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
     use crate::misc::expand_tensor;
-    use crate::misc::{matrix_into_row_major_slice, matrix_into_col_major_slice};
+    use crate::misc::{matrix_into_col_major_slice, matrix_into_row_major_slice};
 
     let rng = &mut test_rng();
     let r = F::rand(rng);
@@ -165,7 +165,8 @@ fn test_matrix_tensor_len() {
     let r1cs = generate_relation(circuit);
     let matrix_rowm = matrix_into_row_major_slice(&r1cs.a, r1cs.z.len());
     let matrix_colm = matrix_into_col_major_slice(&r1cs.a);
-    let matrix_tensor = MatrixTensor::new(matrix_rowm.as_slice(), &expanded_one_tensor, r1cs.z.len());
+    let matrix_tensor =
+        MatrixTensor::new(matrix_rowm.as_slice(), &expanded_one_tensor, r1cs.z.len());
     let matrix_cols = matrix_rowm.iter().filter(|x| x.is_eol()).count();
     let matrix_rows = matrix_colm.iter().filter(|x| x.is_eol()).count();
     // make sure that rA has the same number of elements of z

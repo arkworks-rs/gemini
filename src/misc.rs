@@ -257,7 +257,6 @@ pub(crate) fn matrix_into_row_major_slice<F: Field>(
             }
         }
         a_row_flat.push(MatrixElement::EOL);
-
     }
     a_row_flat
 }

@@ -203,15 +203,11 @@ pub fn random_circuit<F: Field>(
     }
 }
 
-
-pub fn dummy_r1cs<F: Field>(
-    rng: &mut impl RngCore,
-    n: usize
-) -> R1CS<F> {
+pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1CS<F> {
     let e = F::rand(rng);
     let inv_e = e.inverse().expect("Buy a lottery ticket and retry");
     let z = vec![e; n];
-    let w = vec![e; n-1];
+    let w = vec![e; n - 1];
     let x = vec![e];
 
     let diagonal_matrix = (0..n).map(|i| vec![(inv_e, i)]).collect::<Vec<_>>();

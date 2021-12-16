@@ -62,7 +62,7 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
 
     // let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
     // let r1cs = ark_gemini::circuit::generate_relation(circuit);
-    let r1cs = ark_gemini::circuit::dummy_r1cs(rng,num_constraints);
+    let r1cs = ark_gemini::circuit::dummy_r1cs(rng, num_constraints);
     let ck = ark_gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(
         num_constraints + num_variables,
         5,
