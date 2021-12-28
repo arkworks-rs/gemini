@@ -89,6 +89,7 @@ pub trait Iterable {
     }
 }
 
+
 impl<I> Iterable for I
 where
     I: IntoIterator + Copy,

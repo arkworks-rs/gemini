@@ -123,8 +123,8 @@ impl<'a, E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
     // impl_elastic_batch!(A0, A1, A2);
     // impl_elastic_batch!(A0, A1, A2, A3);
     // impl_elastic_batch!(A0, A1, A2, A3, A4);
-    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5);
+    impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5);
     // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6);
     // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6, A7);
-    impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6, A7, A8);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6, A7, A8);
 }

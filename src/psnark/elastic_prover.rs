@@ -1,9 +1,12 @@
 //! Space-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
+use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
+use crate::entryproduct::streams::entry_product_streams;
+use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKeyStream;
 // use crate::psnark::streams::memcheck::memcheck_streams;
 // use crate::psnark::streams::plookup::plookup_streams;
@@ -11,14 +14,21 @@ use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
-use crate::misc::{expand_tensor, hadamard, powers2, MatrixElement};
+use crate::misc::{
+    evaluate_be, expand_tensor, hadamard, powers, powers2, strip_last, MatrixElement,
+};
+use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
-    IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer, ValStream,
+    HadamardStreamer, IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer,
+    ValStream,
 };
 use crate::sumcheck::proof::Sumcheck;
+use crate::sumcheck::ElasticProver;
 
+use crate::sumcheck::streams::FoldedPolynomialTree;
+use crate::tensorcheck::evaluate_folding;
 use crate::transcript::GeminiTranscript;
-use crate::PROTOCOL_NAME;
+use crate::{lincomb, PROTOCOL_NAME};
 
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
@@ -31,13 +41,12 @@ impl<E: PairingEngine> Proof<E> {
     ) -> Proof<E>
     where
         SM: Iterable + Copy,
-        SZ: Iterable + Copy,
-        SW: Iterable,
+        SZ: Iterable<Item = E::Fr> + Copy,
+        SW: Iterable + Copy,
         SG: Iterable,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
         SZ::Item: Borrow<E::Fr> + Copy,
         SW::Item: Borrow<E::Fr> + Copy,
-        SZ::Item: Borrow<E::Fr> + Copy,
         SZ::Item: Borrow<E::Fr> + Copy,
         SG::Item: Borrow<E::G1Affine>,
     {
@@ -94,178 +103,187 @@ impl<E: PairingEngine> Proof<E> {
         let val_c = ValStream::new(r1cs.c_colm, r1cs.nonzero);
         // XXX derive val GENERIC
 
-        todo!();
+        let r_a_star_val_a = HadamardStreamer::new(r_a_star, val_a);
+        let r_b_star_val_b = HadamardStreamer::new(r_b_star, val_b);
+        let r_c_star_val_c = HadamardStreamer::new(r_c_star, val_c);
 
-        // let rz_a_star = HadamardStreamer::new(r_a_star, z_a_star);
-        // let rz_b_star = HadamardStreamer::new(r_b_star, z_b_star);
-        // let rz_c_star = HadamardStreamer::new(r_c_star, z_c_star);
+        let r_b_star_commitment = ck.commit(&r_b_star);
+        let r_c_star_commitment = ck.commit(&r_c_star);
+        let z_star_commitment = ck.commit(&z_star);
+        // send s0 s1 s2
+        let s0 = z_star
+            .iter()
+            .zip(r_a_star.iter())
+            .map(|(x, y)| y * x.borrow())
+            .sum::<E::Fr>();
+        let s1 = z_star
+            .iter()
+            .zip(r_b_star.iter())
+            .map(|(x, y)| y * x.borrow())
+            .sum::<E::Fr>();
+        let s2 = z_star
+            .iter()
+            .zip(r_c_star.iter())
+            .map(|(x, y)| y * x.borrow())
+            .sum::<E::Fr>();
 
-        // let ip_val_rz_a = SpaceProver::new(z_star, rz_a_star, one);
-        // let ip_val_rz_b = SpaceProver::new(val_b, rz_b_star, one);
-        // let ip_val_rz_c = SpaceProver::new(val_c, rz_c_star, one);
+        transcript.append_commitment(b"rb*", &r_b_star_commitment);
+        transcript.append_commitment(b"rb*", &r_c_star_commitment);
+        transcript.append_commitment(b"rb*", &z_star_commitment);
+        transcript.append_scalar(b"s0", &s0);
+        transcript.append_scalar(b"s1", &s1);
+        transcript.append_scalar(b"s2", &s2);
 
-        // let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        // let second_sumcheck =
-        //     Sumcheck::prove_batch(&mut transcript, vec![ip_val_rz_a, ip_val_rz_b, ip_val_rz_c]);
-        // end_timer!(second_sumcheck_time);
-        // let second_sumcheck_messages = second_sumcheck.prover_messages();
+        let challenge = transcript.get_challenge::<E::Fr>(b"chal");
+        let challenges = powers(challenge, 3);
+        let rhs = lincomb!(
+            (r_a_star_val_a, r_b_star_val_b, r_c_star_val_c),
+            &challenges
+        );
 
-        // let ip_r_z_star_a = SpaceProver::new(r_a_star, z_a_star, one).boxed();
-        // let ip_r_z_star_b = SpaceProver::new(r_a_star, z_a_star, one).boxed();
-        // let ip_r_z_star_c = SpaceProver::new(r_c_star, z_c_star, one).boxed();
+        let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
 
-        // let third_sumcheck_time = start_timer!(|| "Third sumcheck");
-        // let third_sumcheck = Sumcheck::prove_batch(
-        //     &mut transcript,
-        //     vec![ip_r_z_star_a, ip_r_z_star_b, ip_r_z_star_c],
-        // );
-        // end_timer!(third_sumcheck_time);
-        // let third_sumcheck_messages = third_sumcheck.prover_messages();
+        let mu = transcript.get_challenge(b"chal");
+        let r_c_star_mu = evaluate_be(r_c_star.iter(), &mu);
 
         // // PLOOKUP PROTOCOL
-        // let y = transcript.get_challenge(b"y");
-        // let z = transcript.get_challenge(b"zeta");
-
-        // let entry_product_time = start_timer!(|| "Entry product");
-
+        let y = transcript.get_challenge(b"y");
+        let z = transcript.get_challenge(b"zeta");
         // // ENTRY PRODUCT FOR rA rB rC
-        // let (pl_set_ra, pl_subset_ra, pl_sorted_ra) =
-        //     plookup_streams(&r_a, &r_a_star, &row_a, y, z);
-        //     let (pl_set_rb, pl_subset_rb, pl_sorted_rb) =
-        //     plookup_streams(&r_b, &r_b_star, &row_b, y, z);
-        // let (pl_set_rc, pl_subset_rc, pl_sorted_rc) =
-        //     plookup_streams(&r_c, &r_c_star, &row_c, y, z);
+        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_c, &r_c_star, &row, y, z);
+        let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &col, y, z);
 
-        // let gp_set_ra = pl_set_ra.stream().product();
-        // let gp_subset_ra = pl_subset_ra.stream().product();
-        // let gp_sorted_ra = pl_sorted_ra.stream().product();
+        // compute the products to send to the verifier.
+        // XXXX. There is no need to compute the sorted ones as they can be derived.
+        let gp_set_r = pl_set_r.iter().product();
+        let gp_subset_r = pl_subset_r.iter().product();
+        let gp_sorted_r = pl_sorted_r.iter().product();
+        let gp_set_z = pl_set_z.iter().product();
+        let gp_subset_z = pl_subset_z.iter().product();
+        let gp_sorted_z = pl_sorted_r.iter().product();
 
-        // let GrandProduct { msgs, provers } = GrandProduct::new_elastic_batch(
-        //     &mut transcript,
-        //     &ck,
-        //     (
-        //         &pl_set_ra,
-        //         &pl_subset_ra,
-        //         &pl_sorted_ra,
-        //         &pl_set_rb,
-        //         &pl_subset_rb,
-        //         &pl_sorted_rb,
-        //         &pl_set_rc,
-        //         &pl_subset_rc,
-        //         &pl_sorted_rc,
-        //     ),
-        //     &vec![gp_set_ra, gp_subset_ra, gp_sorted_ra],
-        // );
+        // compute the commitments to the sorted polynomials
+        let comm_sorted_r = ck.commit(&pl_sorted_r);
+        let comm_sorted_z = ck.commit(&pl_sorted_z);
 
-        // let ep_sumcheck = Sumcheck::prove_batch(&mut transcript, provers);
-        // let ep_sumcheck_messages = ep_sumcheck.prover_messages();
+        transcript.append_scalar(b"r_c_star_mu", &r_c_star_mu);
+        transcript.append_scalar(b"gp_set_r", &gp_set_r);
+        transcript.append_scalar(b"gp_subset_r", &gp_subset_r);
+        transcript.append_scalar(b"gp_set_z", &gp_set_z);
+        transcript.append_scalar(b"gp_subset_z", &gp_subset_z);
+        transcript.append_commitment(b"pl_sorted_r", &comm_sorted_r);
+        transcript.append_commitment(b"pl_sorted_z", &comm_sorted_z);
 
-        // end_timer!(entry_product_time);
+        let EntryProduct { msgs, mut provers } = EntryProduct::new_elastic_batch(
+            &mut transcript,
+            &ck,
+            (
+                &pl_set_r,
+                &pl_subset_r,
+                &pl_sorted_r,
+                &pl_set_z,
+                &pl_subset_z,
+                &pl_sorted_z,
+            ),
+            &vec![
+                gp_set_r,
+                gp_subset_r,
+                gp_sorted_r,
+                gp_set_z,
+                gp_subset_z,
+                gp_sorted_z,
+            ],
+        );
+        // XXX missing the twists?
+        provers.push(Box::new(ElasticProver::new(r_a_star, val_a, E::Fr::one())));
+        provers.push(Box::new(ElasticProver::new(r_b_star, val_b, E::Fr::one())));
+        provers.push(Box::new(ElasticProver::new(r_c_star, val_c, E::Fr::one())));
 
-        // // let (
-        // //     (memcheck_init_sh_a, memcheck_init_acc_a),
-        // //     (memcheck_read_sh_a, memcheck_read_acc_a),
-        // //     (memcheck_write_sh_a, memcheck_write_acc_a),
-        // //     (memcheck_audit_sh_a, memcheck_audit_acc_a),
-        // // ) = memcheck_streams(r1cs.z_a, z_a_star, col_a, y, z);
-        // // let (
-        // //     (memcheck_init_sh_b, memcheck_init_acc_b),
-        // //     (memcheck_read_sh_b, memcheck_read_acc_b),
-        // //     (memcheck_write_sh_b, memcheck_write_acc_b),
-        // //     (memcheck_audit_sh_b, memcheck_audit_acc_b),
-        // // ) = memcheck_streams(r1cs.z_b, z_b_star, col_b, y, z);
-        // // let (
-        // //     (memcheck_init_sh_c, memcheck_init_acc_c),
-        // //     (memcheck_read_sh_c, memcheck_read_acc_c),
-        // //     (memcheck_write_sh_c, memcheck_write_acc_c),
-        // //     (memcheck_audit_sh_c, memcheck_audit_acc_c),
-        // // ) = memcheck_streams(r1cs.z_c, z_c_star, col_c, y, z);
+        let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
 
-        // let eta = transcript.get_challenge(b"eta");
-        // let eta_batch_challenges = powers(eta, 3);
-        // let vals_stream = lincomb!((val_a, val_b, val_c), &eta_batch_challenges);
-        // let vals_challenges = &first_sumcheck.challenges;
+        ////
+        // TENSORCHECK
+        ////
+        let (pl_set_sh_r, pl_set_acc_r) = entry_product_streams(&pl_set_r);
+        let (pl_subset_sh_r, pl_subset_acc_r) = entry_product_streams(&pl_subset_r);
+        let (pl_sorted_sh_r, pl_sorted_acc_r) = entry_product_streams(&pl_sorted_r);
+        let (pl_set_sh_z, pl_set_acc_z) = entry_product_streams(&pl_set_z);
+        let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
+        let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
+        let tc_chal = transcript.get_challenge::<E::Fr>(b"tc");
+        let tc_challenges = powers(tc_chal, 2 * 3 * 2);
 
-        // let rstars_stream = lincomb!((r_a_star, r_b_star, r_c_star), &eta_batch_challenges);
-        // let rstars_challenges = &first_sumcheck.challenges;
+        let body_polynomials = lincomb!(
+            (
+                pl_set_sh_r,
+                pl_subset_sh_r,
+                pl_sorted_sh_r,
+                pl_set_acc_r,
+                pl_subset_acc_r,
+                pl_sorted_acc_r,
+                pl_set_sh_z,
+                pl_subset_sh_z,
+                pl_sorted_sh_z,
+                pl_set_acc_z,
+                pl_subset_acc_z,
+                pl_sorted_acc_z
+            ),
+            &tc_challenges
+        );
+        let tensorcheck_challenges = strip_last(&sumcheck3.challenges);
+        let tensorcheck_foldings =
+            FoldedPolynomialTree::new(&body_polynomials, tensorcheck_challenges);
+        let folded_polynomials_commitments = ck.commit_folding(&tensorcheck_foldings);
 
-        // let zstars_stream = lincomb!((z_a_star, z_b_star, z_c_star), &eta_batch_challenges);
-        // let zstars_challenges = &first_sumcheck.challenges;
+        // add commitments to transcript
+        folded_polynomials_commitments
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+        let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
-        // let gamma = transcript.get_challenge::<E::Fr>(b"gamma");
-        // let gammas = powers(gamma, vals_challenges.len() * 2000);
-        // let beta = transcript.get_challenge::<E::Fr>(b"beta");
+        fn evaluate_base_polynomial<I, F>(transcript: &mut Transcript, base_polynomial: I, eval_points: &[F; 3]) -> [F; 3] where  F: Field, I: Iterable, I::Item: Borrow<F> {
+            let evaluations_w = [
+                    evaluate_be(base_polynomial.iter(), &eval_points[0]),
+                    evaluate_be(base_polynomial.iter(), &eval_points[1]),
+                    evaluate_be(base_polynomial.iter(), &eval_points[2]),
+                ];
+            evaluations_w
+                    .iter()
+                    .for_each(|e| transcript.append_scalar(b"eval", &e));
+            evaluations_w
+        }
 
-        // let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        // let tensorcheck_batch_challenges = powers(batch_challenge, 2);
-        // let tensorcheck_polynomials = lincomb!((lhs, r1cs.z), &tensorcheck_batch_challenges);
-        // let tensor_check_proof = tensorcheck(
-        //     &mut transcript,
-        //     ck,
-        //     &r1cs.witness,
-        //     (&tensorcheck_polynomials, &second_proof.challenges),
-        // );
+        let folded_polynomials_evaluations =
+            evaluate_folding(&tensorcheck_foldings, eval_points[1])
+                .into_iter()
+                .zip(evaluate_folding(&tensorcheck_foldings, eval_points[2]))
+                .map(|(x, y)| [x, y])
+                .collect::<Vec<_>>();
 
-        // let tc_lincomb = crate::lincomb!(
-        //     (
-        //         // memcheck_init_sh_a,
-        //         // memcheck_init_sh_b,
-        //         // memcheck_init_sh_c,
-        //         // memcheck_init_acc_a,
-        //         // memcheck_init_acc_b,
-        //         // memcheck_init_acc_c,
-        //         // memcheck_read_sh_a,
-        //         // memcheck_read_sh_b,
-        //         // memcheck_read_sh_c,
-        //         // memcheck_read_acc_a,
-        //         // memcheck_read_acc_b,
-        //         // memcheck_read_acc_c,
-        //         // memcheck_write_sh_a,
-        //         // memcheck_write_sh_b,
-        //         // memcheck_write_sh_c,
-        //         // memcheck_write_acc_a,
-        //         // memcheck_write_acc_b,
-        //         // memcheck_write_acc_c,
-        //         // memcheck_audit_sh_a,
-        //         // memcheck_audit_sh_b,
-        //         // memcheck_audit_sh_c,
-        //         // memcheck_audit_acc_a,
-        //         // memcheck_audit_acc_b,
-        //         // memcheck_audit_acc_c,
-        //         // pl_sorted_sh_a,
-        //         // pl_sorted_sh_b,
-        //         // pl_sorted_sh_c,
-        //         // pl_sorted_acc_a,
-        //         // pl_sorted_acc_b,
-        //         // pl_sorted_acc_c,
-        //         // pl_set_sh_a,
-        //         // pl_set_sh_b,
-        //         // pl_set_sh_c,
-        //         // pl_set_acc_a,
-        //         // pl_set_acc_b,
-        //         // pl_set_acc_c,
-        //         // pl_subset_sh_a,
-        //         // pl_subset_sh_b,
-        //         // pl_subset_sh_c,
-        //         // pl_subset_acc_a,
-        //         // pl_subset_acc_b,
-        //         // pl_subset_acc_c
-        //     ),
-        //     &gammas
-        // );
 
-        // // // XXX. check challenges here.
-        // // let ep_folds = FoldedPolynomialTree::new(&ep_lincomb, &ep_sumcheck.challenges);
-        // // let vals_folds = FoldedPolynomialTree::new(&vals_stream, vals_challenges);
-        // // let rstars_folds = FoldedPolynomialTree::new(&rstars_stream, rstars_challenges);
-        // // let zstars_folds = FoldedPolynomialTree::new(&zstars_stream, zstars_challenges);
+        let evaluations_w = vec![
+            // evaluate_base_polynomial(&mut transcript, row.iter().map(|x| E::Fr::from(*x.borrow() as u64)), &eval_points),
+            // evaluate_base_polynomial(&mut transcript, col.iter().map(|x| E::Fr::from(*x.borrow() as u64)), &eval_points),
+            evaluate_base_polynomial(&mut transcript, r1cs.witness, &eval_points),
+        ];
+        folded_polynomials_evaluations
+        .iter()
+        .flatten()
+        .for_each(|e| transcript.append_scalar(b"eval", e));
 
-        // // let evaluation_points = [beta.square(), beta, -beta];
-        // // let (_reminders, ep_proof) = ck.open_folding(ep_folds, &evaluation_points, &gammas);
-        // // let (_reminders, vals_proof) = ck.open_folding(vals_folds, &evaluation_points, &gammas);
-        // // let (_reminders, zstars_proof) = ck.open_folding(zstars_folds, &evaluation_points, &gammas);
-        // // let (_reminders, rstars_proof) = ck.open_folding(rstars_folds, &evaluation_points, &gammas);
-        // // let proofs = ep_proof + vals_proof + zstars_proof + rstars_proof;
+        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal_len = tensorcheck_challenges.len() + 3; // adjuct with the numebr of base polynomials
+
+        // do this for every base polynomial
+        let open_chals = powers(open_chal, open_chal_len);
+        // do this foe each element.
+        let (_, proof_w) = ck.open_multi_points(&r1cs.witness, &eval_points);
+        let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, &open_chals[3..]);
+        let evaluation_proof = proof_w + proof;
+
+        todo!();
+
 
         // // let commitments = Vec::new();
         // // let evaluations = Vec::new();
