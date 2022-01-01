@@ -261,7 +261,7 @@ pub(crate) fn matrix_into_row_major_slice<F: Field>(
     a_row_flat
 }
 
-// Return a matrix striam, column major.
+// Return a matrix stream, column major.
 #[cfg(test)]
 pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
     let mut a_row_flat = Vec::new();
