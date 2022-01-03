@@ -24,7 +24,7 @@ pub mod time_prover;
 mod subclaim;
 
 pub use elastic_prover::ElasticProver;
-pub use prover::Prover;
+pub use prover::{Prover, ProverMsgs};
 pub use space_prover::SpaceProver;
 pub use subclaim::Subclaim;
 pub use time_prover::TimeProver;

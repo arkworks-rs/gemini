@@ -12,6 +12,7 @@ mod streams;
 
 use ark_ec::PairingEngine;
 
+use crate::entryproduct;
 use crate::kzg::Commitment;
 use crate::sumcheck::prover::ProverMsgs;
 use crate::tensorcheck::TensorCheckProof;
@@ -21,16 +22,20 @@ pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,
     first_sumcheck_msgs: ProverMsgs<E::Fr>,
-    com_rb_star: Commitment<E>,
-    com_rc_star: Commitment<E>,
-    com_z_star: Commitment<E>,
+    rb_star_commitment: Commitment<E>,
+    rc_star_commitment: Commitment<E>,
+    z_star_commitment: Commitment<E>,
+    z_star_rs: [E::Fr; 3],
     second_sumcheck_msgs: ProverMsgs<E::Fr>,
-    pl_r_set_ep: E::Fr,
-    pl_r_subset_ep: E::Fr,
-    pl_r_sorted_ep: E::Fr,
-    pl_z_set_ep: E::Fr,
-    pl_z_subset_ep: E::Fr,
-    pl_z_sorted_ep: E::Fr,
+    set_r_ep: E::Fr,
+    subset_r_ep: E::Fr,
+    sorted_r_ep: E::Fr,
+    sorted_r_commitment: Commitment<E>,
+    set_z_ep: E::Fr,
+    subset_z_ep: E::Fr,
+    sorted_z_ep: E::Fr,
+    sorted_z_commitment: Commitment<E>,
+    ep_msgs: entryproduct::ProverMsgs<E>,
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
     tensor_check_proof: TensorCheckProof<E>,
 }

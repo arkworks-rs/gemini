@@ -1,46 +1,47 @@
 use ark_ff::Field;
 
 use crate::iterable::Iterable;
-use crate::misc::{PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
+use crate::misc::{expand_tensor, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 
 const T: usize = TENSOR_EXPANSION;
 
 #[derive(Clone)]
-pub struct TensorStreamer<'a, F>
+pub struct TensorStreamer<F>
 where
     F: Field,
 {
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
     len: usize,
 }
 
-pub struct TensorIter<'a, F>
+pub struct TensorIter<F>
 where
     F: Field,
 {
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
     index: usize,
 }
-impl<'a, F> TensorStreamer<'a, F>
+impl<F> TensorStreamer<F>
 where
     F: Field,
 {
-    pub fn new(tensor: &'a PartialTensor<F>, len: usize) -> Self {
+    pub fn new(v: &[F], len: usize) -> Self {
+        let tensor = expand_tensor(v);
         Self { tensor, len }
     }
 }
 
-impl<'a, F> Iterable for TensorStreamer<'a, F>
+impl<F> Iterable for TensorStreamer<F>
 where
     F: Field,
 {
     type Item = F;
-    type Iter = TensorIter<'a, F>;
+    type Iter = TensorIter<F>;
 
     fn iter(&self) -> Self::Iter {
         TensorIter {
             index: self.len(),
-            tensor: self.tensor,
+            tensor: self.tensor.clone(),
         }
     }
 
@@ -49,7 +50,7 @@ where
     }
 }
 
-impl<'a, F> Iterator for TensorIter<'a, F>
+impl<F> Iterator for TensorIter<F>
 where
     F: Field,
 {
@@ -82,51 +83,52 @@ where
 
 use ark_std::borrow::Borrow;
 
-#[derive(Clone, Copy)]
-pub struct TensorIStreamer<'a, F, S>
+#[derive(Clone)]
+pub struct TensorIStreamer<F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
     index: S,
     len: usize,
 }
 
-pub struct TensorIIter<'a, F, I>
+pub struct TensorIIter<F, I>
 where
     F: Field,
     I: Iterator,
     I::Item: Borrow<usize>,
 {
     index: I,
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
 }
-impl<'a, F, S> TensorIStreamer<'a, F, S>
+impl<'a, F, S> TensorIStreamer<F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
-    pub fn new(tensor: &'a PartialTensor<F>, index: S, len: usize) -> Self {
+    pub fn new(v: &[F], index: S, len: usize) -> Self {
+        let tensor = expand_tensor(v);
         Self { tensor, index, len }
     }
 }
 
-impl<'a, F, S> Iterable for TensorIStreamer<'a, F, S>
+impl<'a, F, S> Iterable for TensorIStreamer<F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
     type Item = F;
-    type Iter = TensorIIter<'a, F, S::Iter>;
+    type Iter = TensorIIter<F, S::Iter>;
 
     fn iter(&self) -> Self::Iter {
         Self::Iter {
             index: self.index.iter(),
-            tensor: self.tensor,
+            tensor: self.tensor.clone(),
         }
     }
 
@@ -135,7 +137,7 @@ where
     }
 }
 
-impl<'a, F, I> Iterator for TensorIIter<'a, F, I>
+impl<'a, F, I> Iterator for TensorIIter<F, I>
 where
     F: Field,
     I: Iterator,
@@ -163,7 +165,7 @@ where
 
 #[test]
 fn test_tensor() {
-    use crate::misc::{expand_tensor, powers};
+    use crate::misc::powers;
     use ark_bls12_381::Fr;
     use ark_ff::One;
     use ark_std::test_rng;
@@ -179,7 +181,6 @@ fn test_tensor() {
         a.square().square().square(),
     ];
     let len = 1 << v.len();
-    let v = expand_tensor(&v);
     let tensor_streamer = TensorStreamer::new(&v, len);
     let mut tensor = tensor_streamer.iter().collect::<Vec<_>>();
     tensor.reverse();

@@ -144,7 +144,7 @@ impl<E: PairingEngine> Add for EvaluationProof<E> {
 impl<E: PairingEngine> core::iter::Sum for EvaluationProof<E> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         let zero = EvaluationProof(E::G1Affine::zero());
-        iter.fold(zero, |x, y| x+y)
+        iter.fold(zero, |x, y| x + y)
     }
 }
 
