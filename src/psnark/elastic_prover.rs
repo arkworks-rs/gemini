@@ -30,6 +30,23 @@ use crate::tensorcheck::evaluate_folding;
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
 
+fn inner_product_uncheck<F: Field, I, J>(lhs: I, rhs: J) -> F where I: Iterator, J: Iterator,I::Item: Borrow<F>, J::Item: Borrow<F> {
+    lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
+}
+
+fn evaluate_base_polynomial<I, F>(transcript: &mut Transcript, base_polynomial: I, eval_points: &[F; 3]) -> [F; 3] where  F: Field, I: Iterable, I::Item: Borrow<F> {
+    let evaluations_w = [
+            evaluate_be(base_polynomial.iter(), &eval_points[0]),
+            evaluate_be(base_polynomial.iter(), &eval_points[1]),
+            evaluate_be(base_polynomial.iter(), &eval_points[2]),
+        ];
+    evaluations_w
+            .iter()
+            .for_each(|e| transcript.append_scalar(b"eval", &e));
+    evaluations_w
+}
+
+
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
     /// and the _streaming_ committer key `ck`,
@@ -59,6 +76,10 @@ impl<E: PairingEngine> Proof<E> {
 
         // obtain the challenge from the verifier.
         let alpha = transcript.get_challenge(b"alpha");
+
+        // send evaluation of zc(alpha)
+        let zc_alpha = evaluate_be(r1cs.z_c.iter(), &alpha);
+        transcript.append_scalar(b"zc(alpha)", &zc_alpha);
 
         // run the sumcheck for z_a and z_b with twist alpha
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
@@ -110,22 +131,11 @@ impl<E: PairingEngine> Proof<E> {
         let r_b_star_commitment = ck.commit(&r_b_star);
         let r_c_star_commitment = ck.commit(&r_c_star);
         let z_star_commitment = ck.commit(&z_star);
+
         // send s0 s1 s2
-        let s0 = z_star
-            .iter()
-            .zip(r_a_star.iter())
-            .map(|(x, y)| y * x.borrow())
-            .sum::<E::Fr>();
-        let s1 = z_star
-            .iter()
-            .zip(r_b_star.iter())
-            .map(|(x, y)| y * x.borrow())
-            .sum::<E::Fr>();
-        let s2 = z_star
-            .iter()
-            .zip(r_c_star.iter())
-            .map(|(x, y)| y * x.borrow())
-            .sum::<E::Fr>();
+        let s0 = inner_product_uncheck(z_star.iter(), r_a_star.iter());
+        let s1 = inner_product_uncheck(z_star.iter(), r_b_star.iter());
+        let s2 = inner_product_uncheck(z_star.iter(), r_c_star.iter());
 
         transcript.append_commitment(b"rb*", &r_b_star_commitment);
         transcript.append_commitment(b"rb*", &r_c_star_commitment);
@@ -144,7 +154,7 @@ impl<E: PairingEngine> Proof<E> {
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
 
         let mu = transcript.get_challenge(b"chal");
-        let r_c_star_mu = evaluate_be(r_c_star.iter(), &mu);
+        let r_a_star_mu = evaluate_be(r_a_star.iter(), &mu);
 
         // // PLOOKUP PROTOCOL
         let y = transcript.get_challenge(b"y");
@@ -166,7 +176,7 @@ impl<E: PairingEngine> Proof<E> {
         let comm_sorted_r = ck.commit(&pl_sorted_r);
         let comm_sorted_z = ck.commit(&pl_sorted_z);
 
-        transcript.append_scalar(b"r_c_star_mu", &r_c_star_mu);
+        transcript.append_scalar(b"r_a_star_mu", &r_a_star_mu);
         transcript.append_scalar(b"gp_set_r", &gp_set_r);
         transcript.append_scalar(b"gp_subset_r", &gp_subset_r);
         transcript.append_scalar(b"gp_set_z", &gp_set_z);
@@ -195,9 +205,16 @@ impl<E: PairingEngine> Proof<E> {
             ],
         );
         // XXX missing the twists?
-        provers.push(Box::new(ElasticProver::new(r_a_star, val_a, E::Fr::one())));
-        provers.push(Box::new(ElasticProver::new(r_b_star, val_b, E::Fr::one())));
-        provers.push(Box::new(ElasticProver::new(r_c_star, val_c, E::Fr::one())));
+        let sumcheck2_chals_expanded = expand_tensor(&sumcheck2.challenges);
+        let ep_r = TensorStreamer::new(&sumcheck2_chals_expanded, r_a_star.len());
+        let lhs_r_a_star = HadamardStreamer::new(r_a_star, ep_r.clone());
+        let lhs_r_b_star = HadamardStreamer::new(r_b_star, ep_r.clone());
+        let lhs_r_c_star = HadamardStreamer::new(r_c_star, ep_r);
+        provers.push(Box::new(ElasticProver::new(lhs_r_a_star, val_a, E::Fr::one())));
+        provers.push(Box::new(ElasticProver::new(lhs_r_b_star, val_b, E::Fr::one())));
+        provers.push(Box::new(ElasticProver::new(lhs_r_c_star, val_c, E::Fr::one())));
+        provers.push(Box::new(ElasticProver::new(r_b_star, r_c_star, mu)));
+
 
         let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
 
@@ -211,61 +228,152 @@ impl<E: PairingEngine> Proof<E> {
         let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
         let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
         let tc_chal = transcript.get_challenge::<E::Fr>(b"tc");
-        let tc_challenges = powers(tc_chal, 2 * 3 * 2);
+        let tc_challenges = powers(tc_chal, 2 * 3 + 4);
 
-        let body_polynomials = lincomb!(
+        let body_polynomials_0 = lincomb!(
             (
-                pl_set_sh_r,
-                pl_subset_sh_r,
-                pl_sorted_sh_r,
                 pl_set_acc_r,
                 pl_subset_acc_r,
                 pl_sorted_acc_r,
-                pl_set_sh_z,
-                pl_subset_sh_z,
-                pl_sorted_sh_z,
+                pl_set_acc_z,
+                pl_subset_acc_z,
+                pl_sorted_acc_z,
                 pl_set_acc_z,
                 pl_subset_acc_z,
                 pl_sorted_acc_z
             ),
             &tc_challenges
         );
-        let tensorcheck_challenges = strip_last(&sumcheck3.challenges);
-        let tensorcheck_foldings =
-            FoldedPolynomialTree::new(&body_polynomials, tensorcheck_challenges);
-        let folded_polynomials_commitments = ck.commit_folding(&tensorcheck_foldings);
+        let body_polynomials_1 = lincomb!(
+            (
+                pl_set_sh_r,
+                pl_subset_sh_r,
+                pl_sorted_sh_r,
+                pl_set_sh_z,
+                pl_subset_sh_z,
+                pl_sorted_sh_z,
+                val_a,
+                val_b,
+                val_c,
+                r_c_star
+            ),
+            &tc_challenges
+        );
+        let body_polynomials_2 = z_star;
+        let body_polynomials_3 = lincomb!(
+            (r_b_star, r_c_star),
+            &tc_challenges
+        );
+        let body_polynomials_4  = r_b_star;
 
+        let psi_squares = powers2(E::Fr::one(), sumcheck3.challenges.len());
+        let mu_squares = powers2(mu, sumcheck3.challenges.len());
+
+        let tensorcheck_challenges_0 = hadamard(&sumcheck3.challenges, &psi_squares);
+        let tensorcheck_challenges_0 = strip_last(&tensorcheck_challenges_0);
+
+        let tensorcheck_challenges_1 = strip_last(&sumcheck3.challenges);
+
+        let tensorcheck_challenges_2 = strip_last(&sumcheck2.challenges);
+
+        let tensorcheck_challenges_3 = hadamard(&sumcheck2.challenges, &sumcheck3.challenges);
+        let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
+
+        let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &sumcheck2.challenges);
+        let tensorcheck_challenges_4 = strip_last(&tensorcheck_challenges_4);
+
+        let tensorcheck_foldings_0 =
+            FoldedPolynomialTree::new(&body_polynomials_0, tensorcheck_challenges_0);
+        let folded_polynomials_commitments_0 = ck.commit_folding(&tensorcheck_foldings_0);
         // add commitments to transcript
-        folded_polynomials_commitments
+        folded_polynomials_commitments_0
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
+
+        let tensorcheck_foldings_1 =
+            FoldedPolynomialTree::new(&body_polynomials_1, tensorcheck_challenges_1);
+        let folded_polynomials_commitments_1 = ck.commit_folding(&tensorcheck_foldings_1);
+        // add commitments to transcript
+        folded_polynomials_commitments_1
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+
+        let tensorcheck_foldings_2 =
+            FoldedPolynomialTree::new(&body_polynomials_2, tensorcheck_challenges_2);
+        let folded_polynomials_commitments_2 = ck.commit_folding(&tensorcheck_foldings_2);
+        // add commitments to transcript
+        folded_polynomials_commitments_2
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+
+        let tensorcheck_foldings_3 =
+            FoldedPolynomialTree::new(&body_polynomials_3, tensorcheck_challenges_3);
+        let folded_polynomials_commitments_3 = ck.commit_folding(&tensorcheck_foldings_3);
+        // add commitments to transcript
+        folded_polynomials_commitments_3
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+
+        let tensorcheck_foldings_4 =
+            FoldedPolynomialTree::new(&body_polynomials_4, tensorcheck_challenges_4);
+        let folded_polynomials_commitments_4 = ck.commit_folding(&tensorcheck_foldings_4);
+        // add commitments to transcript
+        folded_polynomials_commitments_4
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
-        fn evaluate_base_polynomial<I, F>(transcript: &mut Transcript, base_polynomial: I, eval_points: &[F; 3]) -> [F; 3] where  F: Field, I: Iterable, I::Item: Borrow<F> {
-            let evaluations_w = [
-                    evaluate_be(base_polynomial.iter(), &eval_points[0]),
-                    evaluate_be(base_polynomial.iter(), &eval_points[1]),
-                    evaluate_be(base_polynomial.iter(), &eval_points[2]),
-                ];
-            evaluations_w
-                    .iter()
-                    .for_each(|e| transcript.append_scalar(b"eval", &e));
-            evaluations_w
-        }
 
-        let folded_polynomials_evaluations =
-            evaluate_folding(&tensorcheck_foldings, eval_points[1])
+        let mut folded_polynomials_evaluations = vec![];
+
+        folded_polynomials_evaluations.extend(
+            evaluate_folding(&tensorcheck_foldings_0, eval_points[1])
                 .into_iter()
-                .zip(evaluate_folding(&tensorcheck_foldings, eval_points[2]))
+                .zip(evaluate_folding(&tensorcheck_foldings_0, eval_points[2]))
                 .map(|(x, y)| [x, y])
-                .collect::<Vec<_>>();
+        );
+
+        folded_polynomials_evaluations.extend(
+            evaluate_folding(&tensorcheck_foldings_1, eval_points[1])
+                .into_iter()
+                .zip(evaluate_folding(&tensorcheck_foldings_1, eval_points[2]))
+                .map(|(x, y)| [x, y])
+        );
+        folded_polynomials_evaluations.extend(
+            evaluate_folding(&tensorcheck_foldings_2, eval_points[1])
+                .into_iter()
+                .zip(evaluate_folding(&tensorcheck_foldings_2, eval_points[2]))
+                .map(|(x, y)| [x, y])
+        );
+        folded_polynomials_evaluations.extend(
+            evaluate_folding(&tensorcheck_foldings_3, eval_points[1])
+                .into_iter()
+                .zip(evaluate_folding(&tensorcheck_foldings_3, eval_points[2]))
+                .map(|(x, y)| [x, y])
+        );
+        folded_polynomials_evaluations.extend(
+            evaluate_folding(&tensorcheck_foldings_4, eval_points[1])
+                .into_iter()
+                .zip(evaluate_folding(&tensorcheck_foldings_4, eval_points[2]))
+                .map(|(x, y)| [x, y])
+        );
 
 
         let evaluations_w = vec![
-            // evaluate_base_polynomial(&mut transcript, row.iter().map(|x| E::Fr::from(*x.borrow() as u64)), &eval_points),
-            // evaluate_base_polynomial(&mut transcript, col.iter().map(|x| E::Fr::from(*x.borrow() as u64)), &eval_points),
             evaluate_base_polynomial(&mut transcript, r1cs.witness, &eval_points),
+            evaluate_base_polynomial(&mut transcript, r_a_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, r_b_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, r_c_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, z_star, &eval_points),
+            // evaluate_base_polynomial(&mut transcript, row, &eval_points),
+            // evaluate_base_polynomial(&mut transcript, col, &eval_points),
+            evaluate_base_polynomial(&mut transcript, val_a, &eval_points),
+            evaluate_base_polynomial(&mut transcript, val_b, &eval_points),
+            evaluate_base_polynomial(&mut transcript, val_c, &eval_points),
+            evaluate_base_polynomial(&mut transcript, pl_sorted_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, pl_sorted_z, &eval_points),
         ];
         folded_polynomials_evaluations
         .iter()
@@ -273,30 +381,39 @@ impl<E: PairingEngine> Proof<E> {
         .for_each(|e| transcript.append_scalar(b"eval", e));
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chal_len = tensorcheck_challenges.len() + 3; // adjuct with the numebr of base polynomials
-
-        // do this for every base polynomial
+        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_4.len() + 3 * evaluations_w.len(); // adjuct with the numebr of base polynomials
         let open_chals = powers(open_chal, open_chal_len);
+
         // do this foe each element.
-        let (_, proof_w) = ck.open_multi_points(&r1cs.witness, &eval_points);
-        let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, &open_chals[3..]);
-        let evaluation_proof = proof_w + proof;
+        let evaluation_proof: crate::kzg::EvaluationProof<E> = [
+            ck.open_multi_points(&r1cs.witness, &eval_points).1,
+            ck.open_multi_points(&r_a_star, &eval_points).1,
+            ck.open_multi_points(&r_b_star, &eval_points).1,
+            ck.open_multi_points(&r_c_star, &eval_points).1,
+            ck.open_multi_points(&z_star, &eval_points).1,
+            ck.open_multi_points(&val_a, &eval_points).1,
+            ck.open_multi_points(&val_b, &eval_points).1,
+            ck.open_multi_points(&val_c, &eval_points).1,
+            ck.open_multi_points(&pl_sorted_r, &eval_points).1,
+            ck.open_multi_points(&pl_sorted_z, &eval_points).1,
 
-        todo!();
+            ck.open_folding(tensorcheck_foldings_0, &eval_points, &open_chals[3..]).1,
+            ck.open_folding(tensorcheck_foldings_1, &eval_points, &open_chals[3..]).1,
+            ck.open_folding(tensorcheck_foldings_2, &eval_points, &open_chals[3..]).1,
+            ck.open_folding(tensorcheck_foldings_3, &eval_points, &open_chals[3..]).1,
+            ck.open_folding(tensorcheck_foldings_4, &eval_points, &open_chals[3..]).1,
+        ].into_iter().sum();
 
-
-        // // let commitments = Vec::new();
-        // // let evaluations = Vec::new();
-        // // end_timer!(consistency_check_time);
-
-        // // Proof {
-        // //     first_sumcheck_messages,
-        // //     second_sumcheck_messages,
-        // //     third_sumcheck_messages,
-        // //     ep_sumcheck_messages,
-        // //     commitments,
-        // //     proofs,
-        // //     evaluations,
-        // // }
+        // end_timer!(consistency_check_time);
+        todo!()
+        // Proof {
+        //     first_sumcheck_messages,
+        //     second_sumcheck_messages: sumcheck2.prover_messages(),
+        //     third_sumcheck_messages: sumcheck3.prover_messages(),
+        //     ep_sumcheck_messages: ep_sumcheck_messages,
+        //     commitments,
+        //     proofs : evaluation_proof,
+        //     evaluations: ,
+        // }
     }
 }

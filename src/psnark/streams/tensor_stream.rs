@@ -5,7 +5,7 @@ use crate::misc::{PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
 
 const T: usize = TENSOR_EXPANSION;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct TensorStreamer<'a, F>
 where
     F: Field,
