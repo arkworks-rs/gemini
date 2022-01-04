@@ -28,5 +28,6 @@ pub struct ProverMsgs<E: PairingEngine> {
 
 pub struct EntryProduct<E: PairingEngine, P: Prover<E::Fr>> {
     pub msgs: ProverMsgs<E>,
+    pub chal: E::Fr,
     pub provers: Vec<P>,
 }

@@ -192,7 +192,7 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
-        let EntryProduct { msgs, mut provers } = EntryProduct::new_elastic_batch(
+        let EntryProduct { msgs, chal: psi, mut provers } = EntryProduct::new_elastic_batch(
             &mut transcript,
             &ck,
             (
@@ -297,7 +297,7 @@ impl<E: PairingEngine> Proof<E> {
         let body_polynomials_3 = lincomb!((rb_star, rc_star), &tc_challenges);
         let body_polynomials_4 = rb_star.clone();
 
-        let psi_squares = powers2(E::Fr::one(), sumcheck3.challenges.len());
+        let psi_squares = powers2(psi, sumcheck3.challenges.len());
         let mu_squares = powers2(mu, sumcheck3.challenges.len());
 
         // 1st challenges:
