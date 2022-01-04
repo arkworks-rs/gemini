@@ -29,7 +29,11 @@ pub trait GeminiTranscript {
     );
 
     // Add an `EvaluationProof` with the given label.
-    fn append_evaluation_proof<E: PairingEngine>(&mut self, label: &'static [u8], proof: &EvaluationProof<E>);
+    fn append_evaluation_proof<E: PairingEngine>(
+        &mut self,
+        label: &'static [u8],
+        proof: &EvaluationProof<E>,
+    );
 }
 
 impl GeminiTranscript for Transcript {
@@ -63,7 +67,11 @@ impl GeminiTranscript for Transcript {
         }
     }
 
-    fn append_evaluation_proof<E: PairingEngine>(&mut self, label: &'static [u8], proof: &EvaluationProof<E>) {
+    fn append_evaluation_proof<E: PairingEngine>(
+        &mut self,
+        label: &'static [u8],
+        proof: &EvaluationProof<E>,
+    ) {
         self.append_message(label, &to_bytes!(proof.0).unwrap())
     }
 }

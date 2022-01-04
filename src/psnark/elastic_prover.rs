@@ -17,8 +17,8 @@ use crate::iterable::Iterable;
 use crate::misc::{evaluate_be, hadamard, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
-    HadamardStreamer, IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer,
-    ValStream, IntoField,
+    HadamardStreamer, IndexStream, IntoField, LineStream, LookupStreamer, TensorIStreamer,
+    TensorStreamer, ValStream, MergeStream,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -112,12 +112,14 @@ impl<E: PairingEngine> Proof<E> {
         let row_a = LineStream::new(r1cs.a_colm);
         let row_b = LineStream::new(r1cs.b_colm);
         let row_c = LineStream::new(r1cs.c_colm);
-        let row = row_a; //
+        let row_ab = MergeStream::new(&row_a, &row_b);
+        let row = MergeStream::new(&row_ab, &row_c);
 
         let col_a = IndexStream::new(r1cs.a_colm);
         let col_b = IndexStream::new(r1cs.b_colm);
         let col_c = IndexStream::new(r1cs.c_colm);
-        let col = col_a; // Changeme
+        let col_ab = MergeStream::new(&col_a, &col_b);
+        let col = MergeStream::new(&col_ab, &col_c);
 
         let z_star = LookupStreamer {
             items: r1cs.z,
@@ -149,7 +151,6 @@ impl<E: PairingEngine> Proof<E> {
         let s2 = inner_product_uncheck(z_star.iter(), rc_star.iter());
         let z_star_rs = [s0, s1, s2];
 
-
         transcript.append_commitment(b"ra*", &ra_star_commitment);
         transcript.append_commitment(b"rb*", &rb_star_commitment);
         transcript.append_commitment(b"rc*", &rc_star_commitment);
@@ -160,13 +161,9 @@ impl<E: PairingEngine> Proof<E> {
 
         let challenge = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(challenge, 3);
-        let rhs = lincomb!(
-            (ra_star_val_a, rb_star_val_b, rc_star_val_c),
-            &challenges
-        );
+        let rhs = lincomb!((ra_star_val_a, rb_star_val_b, rc_star_val_c), &challenges);
 
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
-
 
         // // PLOOKUP PROTOCOL
         let y = transcript.get_challenge(b"y");
@@ -219,12 +216,10 @@ impl<E: PairingEngine> Proof<E> {
         let mu = transcript.get_challenge(b"mu");
         let ra_star_mu = ck.open(&ra_star, &mu);
 
-
         let ep_r = TensorStreamer::new(&sumcheck2.challenges, ra_star.len());
         let lhs_ra_star = HadamardStreamer::new(ra_star.clone(), ep_r.clone());
         let lhs_rb_star = HadamardStreamer::new(rb_star.clone(), ep_r.clone());
         let lhs_rc_star = HadamardStreamer::new(rc_star.clone(), ep_r);
-
 
         let r_val_chal_a = inner_product_uncheck(lhs_ra_star.iter(), val_a.iter());
         let r_val_chal_b = inner_product_uncheck(lhs_rb_star.iter(), val_b.iter());
@@ -233,7 +228,6 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_scalar(b"r_val_chal_b", &r_val_chal_b);
         transcript.append_scalar(b"r_a_star_mu", &ra_star_mu.0);
         transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ra_star_mu.1);
-
 
         provers.push(Box::new(ElasticProver::new(
             lhs_ra_star,
@@ -386,8 +380,16 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &rb_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &rc_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &z_star, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &IntoField::<_, E::Fr>::new(&row), &eval_points),
-            evaluate_base_polynomial(&mut transcript, &IntoField::<_, E::Fr>::new(&col), &eval_points),
+            evaluate_base_polynomial(
+                &mut transcript,
+                &IntoField::<_, E::Fr>::new(&row),
+                &eval_points,
+            ),
+            evaluate_base_polynomial(
+                &mut transcript,
+                &IntoField::<_, E::Fr>::new(&col),
+                &eval_points,
+            ),
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
