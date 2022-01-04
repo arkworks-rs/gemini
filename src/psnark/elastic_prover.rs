@@ -18,7 +18,7 @@ use crate::misc::{evaluate_be, hadamard, powers, powers2, strip_last, MatrixElem
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, LineStream, LookupStreamer, TensorIStreamer, TensorStreamer,
-    ValStream,
+    ValStream, IntoField,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -386,8 +386,8 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &rb_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &rc_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &z_star, &eval_points),
-            // evaluate_base_polynomial(&mut transcript, row, &eval_points),
-            // evaluate_base_polynomial(&mut transcript, col, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &IntoField::<_, E::Fr>::new(&row), &eval_points),
+            evaluate_base_polynomial(&mut transcript, &IntoField::<_, E::Fr>::new(&col), &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
