@@ -4,7 +4,7 @@ use merlin::Transcript;
 use ark_ec::{group::Group, PairingEngine};
 use ark_ff::{to_bytes, Field};
 
-use crate::kzg::Commitment;
+use crate::kzg::{Commitment, EvaluationProof};
 use crate::sumcheck::prover::RoundMsg;
 
 /// A Transcript with some shorthands for feeding scalars, group elements, and obtaining challenges as field elements.
@@ -27,6 +27,9 @@ pub trait GeminiTranscript {
         label: &'static [u8],
         commitment: &Commitment<E>,
     );
+
+    // Add an `EvaluationProof` with the given label.
+    fn append_evaluation_proof<E: PairingEngine>(&mut self, label: &'static [u8], proof: &EvaluationProof<E>);
 }
 
 impl GeminiTranscript for Transcript {
@@ -58,5 +61,9 @@ impl GeminiTranscript for Transcript {
                 return e;
             }
         }
+    }
+
+    fn append_evaluation_proof<E: PairingEngine>(&mut self, label: &'static [u8], proof: &EvaluationProof<E>) {
+        self.append_message(label, &to_bytes!(proof.0).unwrap())
     }
 }

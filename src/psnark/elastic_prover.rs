@@ -100,11 +100,11 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(sumcheck_time);
 
         let len = sumcheck1.challenges.len();
-        let r_b_short = &sumcheck1.challenges;
-        let r_c_short = &powers2(alpha, len);
-        let r_a_short = &hadamard(r_b_short, r_c_short);
+        let rb_short = &sumcheck1.challenges;
+        let rc_short = &powers2(alpha, len);
+        let ra_short = &hadamard(rb_short, rc_short);
 
-        let r_a = TensorStreamer::new(&r_a_short, 1 << len);
+        let ra = TensorStreamer::new(&ra_short, 1 << len);
         // Never actually used, but in the mind of the prover.
         // let r_b = TensorStreamer::new(&r_b_short, 1 << len);
         // let r_c = TensorStreamer::new(&r_c_short, 1 << len);
@@ -124,31 +124,35 @@ impl<E: PairingEngine> Proof<E> {
             indices: col,
         };
 
-        let r_a_star = TensorIStreamer::new(&r_a_short, row, 1 << len);
-        let r_b_star = TensorIStreamer::new(&r_b_short, row, 1 << len);
-        let r_c_star = TensorIStreamer::new(&r_c_short, row, 1 << len);
+        let ra_star = TensorIStreamer::new(&ra_short, row, 1 << len);
+        let rb_star = TensorIStreamer::new(&rb_short, row, 1 << len);
+        let rc_star = TensorIStreamer::new(&rc_short, row, 1 << len);
 
         let val_a = ValStream::new(r1cs.a_colm, r1cs.nonzero);
         let val_b = ValStream::new(r1cs.b_colm, r1cs.nonzero);
         let val_c = ValStream::new(r1cs.c_colm, r1cs.nonzero);
         // XXX derive val GENERIC
 
-        let r_a_star_val_a = HadamardStreamer::new(r_a_star.clone(), val_a);
-        let r_b_star_val_b = HadamardStreamer::new(r_b_star.clone(), val_b);
-        let r_c_star_val_c = HadamardStreamer::new(r_c_star.clone(), val_c);
+        let ra_star_val_a = HadamardStreamer::new(ra_star.clone(), val_a);
+        let rb_star_val_b = HadamardStreamer::new(rb_star.clone(), val_b);
+        let rc_star_val_c = HadamardStreamer::new(rc_star.clone(), val_c);
 
-        let rb_star_commitment = ck.commit(&r_b_star);
-        let rc_star_commitment = ck.commit(&r_c_star);
+        let ra_star_commitment = ck.commit(&ra_star);
+        let rb_star_commitment = ck.commit(&rb_star);
+        let rc_star_commitment = ck.commit(&rc_star);
+        let r_star_commitments = [ra_star_commitment, rb_star_commitment, rc_star_commitment];
         let z_star_commitment = ck.commit(&z_star);
 
         // send s0 s1 s2
-        let s0 = inner_product_uncheck(z_star.iter(), r_a_star.iter());
-        let s1 = inner_product_uncheck(z_star.iter(), r_b_star.iter());
-        let s2 = inner_product_uncheck(z_star.iter(), r_c_star.iter());
+        let s0 = inner_product_uncheck(z_star.iter(), ra_star.iter());
+        let s1 = inner_product_uncheck(z_star.iter(), rb_star.iter());
+        let s2 = inner_product_uncheck(z_star.iter(), rc_star.iter());
         let z_star_rs = [s0, s1, s2];
 
+
+        transcript.append_commitment(b"ra*", &ra_star_commitment);
         transcript.append_commitment(b"rb*", &rb_star_commitment);
-        transcript.append_commitment(b"rb*", &rc_star_commitment);
+        transcript.append_commitment(b"rc*", &rc_star_commitment);
         transcript.append_commitment(b"rb*", &z_star_commitment);
         transcript.append_scalar(b"s0", &s0);
         transcript.append_scalar(b"s1", &s1);
@@ -157,20 +161,18 @@ impl<E: PairingEngine> Proof<E> {
         let challenge = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(challenge, 3);
         let rhs = lincomb!(
-            (r_a_star_val_a, r_b_star_val_b, r_c_star_val_c),
+            (ra_star_val_a, rb_star_val_b, rc_star_val_c),
             &challenges
         );
 
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
 
-        let mu = transcript.get_challenge(b"chal");
-        let r_a_star_mu = evaluate_be(r_a_star.iter(), &mu);
 
         // // PLOOKUP PROTOCOL
         let y = transcript.get_challenge(b"y");
         let z = transcript.get_challenge(b"zeta");
-        // // ENTRY PRODUCT FOR rA rB rC
-        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_a, &r_a_star, &row, y, z);
+        // // ENTRY PRODUCT FOR rA Z
+        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&ra, &ra_star, &row, y, z);
         let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &col, y, z);
 
         // compute the products to send to the verifier.
@@ -186,7 +188,6 @@ impl<E: PairingEngine> Proof<E> {
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
         let sorted_z_commitment = ck.commit(&pl_sorted_z);
 
-        transcript.append_scalar(b"r_a_star_mu", &r_a_star_mu);
         transcript.append_scalar(b"set_r_ep", &set_r_ep);
         transcript.append_scalar(b"subset_r_ep", &subset_r_ep);
         transcript.append_scalar(b"set_z_ep", &set_z_ep);
@@ -214,29 +215,44 @@ impl<E: PairingEngine> Proof<E> {
                 sorted_z_ep,
             ],
         );
-        // XXX missing the twists?
-        let ep_r = TensorStreamer::new(&sumcheck2.challenges, r_a_star.len());
-        let lhs_r_a_star = HadamardStreamer::new(r_a_star.clone(), ep_r.clone());
-        let lhs_r_b_star = HadamardStreamer::new(r_b_star.clone(), ep_r.clone());
-        let lhs_r_c_star = HadamardStreamer::new(r_c_star.clone(), ep_r);
+
+        let mu = transcript.get_challenge(b"mu");
+        let ra_star_mu = ck.open(&ra_star, &mu);
+
+
+        let ep_r = TensorStreamer::new(&sumcheck2.challenges, ra_star.len());
+        let lhs_ra_star = HadamardStreamer::new(ra_star.clone(), ep_r.clone());
+        let lhs_rb_star = HadamardStreamer::new(rb_star.clone(), ep_r.clone());
+        let lhs_rc_star = HadamardStreamer::new(rc_star.clone(), ep_r);
+
+
+        let r_val_chal_a = inner_product_uncheck(lhs_ra_star.iter(), val_a.iter());
+        let r_val_chal_b = inner_product_uncheck(lhs_rb_star.iter(), val_b.iter());
+
+        transcript.append_scalar(b"r_val_chal_a", &r_val_chal_a);
+        transcript.append_scalar(b"r_val_chal_b", &r_val_chal_b);
+        transcript.append_scalar(b"r_a_star_mu", &ra_star_mu.0);
+        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ra_star_mu.1);
+
+
         provers.push(Box::new(ElasticProver::new(
-            lhs_r_a_star,
+            lhs_ra_star,
             val_a,
             E::Fr::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
-            lhs_r_b_star,
+            lhs_rb_star,
             val_b,
             E::Fr::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
-            lhs_r_c_star,
+            lhs_rc_star,
             val_c,
             E::Fr::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
-            r_b_star.clone(),
-            r_c_star.clone(),
+            rb_star.clone(),
+            rc_star.clone(),
             mu,
         )));
 
@@ -279,27 +295,28 @@ impl<E: PairingEngine> Proof<E> {
                 val_a,
                 val_b,
                 val_c,
-                r_c_star
+                rc_star
             ),
             &tc_challenges
         );
         let body_polynomials_2 = z_star;
-        let body_polynomials_3 = lincomb!((r_b_star, r_c_star), &tc_challenges);
-        let body_polynomials_4 = r_b_star.clone();
+        let body_polynomials_3 = lincomb!((rb_star, rc_star), &tc_challenges);
+        let body_polynomials_4 = rb_star.clone();
 
         let psi_squares = powers2(E::Fr::one(), sumcheck3.challenges.len());
         let mu_squares = powers2(mu, sumcheck3.challenges.len());
 
+        // 1st challenges:
         let tensorcheck_challenges_0 = hadamard(&sumcheck3.challenges, &psi_squares);
         let tensorcheck_challenges_0 = strip_last(&tensorcheck_challenges_0);
-
+        // 2nd challenges:
         let tensorcheck_challenges_1 = strip_last(&sumcheck3.challenges);
-
+        // 3rd challenges:
         let tensorcheck_challenges_2 = strip_last(&sumcheck2.challenges);
-
+        // 4th challenges:
         let tensorcheck_challenges_3 = hadamard(&sumcheck2.challenges, &sumcheck3.challenges);
         let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
-
+        // 5th challenges:
         let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &mu_squares);
         let tensorcheck_challenges_4 = strip_last(&tensorcheck_challenges_4);
 
@@ -365,9 +382,9 @@ impl<E: PairingEngine> Proof<E> {
 
         let base_polynomials_evaluations = vec![
             evaluate_base_polynomial(&mut transcript, &r1cs.witness, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &r_a_star, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &r_b_star, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &r_c_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &ra_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &rb_star, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &rc_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &z_star, &eval_points),
             // evaluate_base_polynomial(&mut transcript, row, &eval_points),
             // evaluate_base_polynomial(&mut transcript, col, &eval_points),
@@ -396,9 +413,9 @@ impl<E: PairingEngine> Proof<E> {
         // do this foe each element.
         let evaluation_proof: crate::kzg::EvaluationProof<E> = [
             ck.open_multi_points(&r1cs.witness, &eval_points).1,
-            ck.open_multi_points(&r_a_star, &eval_points).1,
-            ck.open_multi_points(&r_b_star, &eval_points).1,
-            ck.open_multi_points(&r_c_star, &eval_points).1,
+            ck.open_multi_points(&ra_star, &eval_points).1,
+            ck.open_multi_points(&rb_star, &eval_points).1,
+            ck.open_multi_points(&rc_star, &eval_points).1,
             ck.open_multi_points(&z_star, &eval_points).1,
             ck.open_multi_points(&val_a, &eval_points).1,
             ck.open_multi_points(&val_b, &eval_points).1,
@@ -430,8 +447,7 @@ impl<E: PairingEngine> Proof<E> {
             witness_commitment,
             zc_alpha,
             first_sumcheck_msgs: sumcheck1.prover_messages(),
-            rb_star_commitment,
-            rc_star_commitment,
+            r_star_commitments,
             z_star_commitment,
             z_star_rs,
             second_sumcheck_msgs: sumcheck2.prover_messages(),
@@ -444,6 +460,8 @@ impl<E: PairingEngine> Proof<E> {
             sorted_z_ep,
             sorted_z_commitment,
             ep_msgs: msgs,
+            ra_star_mu,
+            rstars_vals: [r_val_chal_a, r_val_chal_b],
             third_sumcheck_msgs: sumcheck3.prover_messages(),
             tensor_check_proof,
         }
