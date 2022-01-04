@@ -9,7 +9,7 @@ use merlin::Transcript;
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
-use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
+use crate::misc::{evaluate_be, evaluate_le, powers, strip_last, MatrixElement, powers2, hadamard};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
@@ -206,32 +206,14 @@ impl<E: PairingEngine> Proof<E> {
         // after sumcheck, generate a new challenge
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         // run the second sumcheck
-        let mut a_tensors: Vec<E::Fr> = Vec::new();
-        let mut b_tensors = Vec::new();
-        let mut c_tensors = Vec::new();
-        let mut first_prover_randomness = first_proof.challenges.iter();
-        let r = first_prover_randomness.next().unwrap();
-        let mut acc = alpha;
+        let b_tensors = first_proof.challenges.clone();
+        let c_tensors = powers2(alpha, b_tensors.len()+1)[1..].to_vec();
+        let a_tensors = hadamard(&b_tensors, &c_tensors);
 
-        a_tensors.push(acc * r);
-        b_tensors.push(*r);
-        c_tensors.push(acc);
-
-        for r in first_prover_randomness {
-            acc = acc.square();
-
-            a_tensors.push(acc * r);
-            b_tensors.push(*r);
-            c_tensors.push(acc);
-        }
-
-        let a_tensors_expanded = expand_tensor(&a_tensors);
-        let b_tensors_expanded = expand_tensor(&b_tensors);
-        let c_tensors_expanded = expand_tensor(&c_tensors);
         let len = r1cs.z.len();
-        let a_alpha = MatrixTensor::new(r1cs.a_rowm, &a_tensors_expanded, len);
-        let b_alpha = MatrixTensor::new(r1cs.b_rowm, &b_tensors_expanded, len);
-        let c_alpha = MatrixTensor::new(r1cs.c_rowm, &c_tensors_expanded, len);
+        let a_alpha = MatrixTensor::new(r1cs.a_rowm, &a_tensors, len);
+        let b_alpha = MatrixTensor::new(r1cs.b_rowm, &b_tensors, len);
+        let c_alpha = MatrixTensor::new(r1cs.c_rowm, &c_tensors, len);
         let sumcheck_batch_challenges = powers(eta, 3);
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 
