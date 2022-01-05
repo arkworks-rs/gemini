@@ -24,7 +24,7 @@ use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
 
 use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, TensorCheckProof};
+use crate::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
 
@@ -438,7 +438,7 @@ impl<E: PairingEngine> Proof<E> {
         .into_iter()
         .sum();
 
-        let tensor_check_proof = TensorCheckProof {
+        let tensor_check_proof = TensorcheckProof {
             folded_polynomials_commitments,
             folded_polynomials_evaluations,
             evaluation_proof,

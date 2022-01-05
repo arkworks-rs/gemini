@@ -7,7 +7,7 @@ use ark_poly::UVPolynomial;
 
 use crate::kzg::CommitterKey;
 use crate::misc::{scalar_prod, tensor};
-use crate::tensorcheck::TensorCheckProof;
+use crate::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use ark_std::{log2, One, UniformRand, Zero};
 
@@ -36,7 +36,7 @@ fn test_tensor_check() {
     let tc_base_polynomials = base_polynomials;
     let tc_body_polynomials = [(&body_polynomials[..], randomnesses.as_slice())];
     let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
-    let tensor_check_proof = TensorCheckProof::new_time(
+    let tensor_check_proof = TensorcheckProof::new_time(
         &mut transcript,
         &ck,
         tc_base_polynomials,

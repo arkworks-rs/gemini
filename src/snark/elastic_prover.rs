@@ -14,7 +14,7 @@ use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorCheckProof};
+use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME, SPACE_TIME_THRESHOLD};
 
@@ -24,7 +24,7 @@ pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
-) -> TensorCheckProof<E>
+) -> TensorcheckProof<E>
 where
     F: Field,
     E: PairingEngine<Fr = F>,
@@ -85,7 +85,7 @@ where
     // let time_proof = time_ck.batch_open_multi_points(tensorcheck_tfoldings, &eval_points, open_time_chals);
     let evaluation_proof = proof_w + proof;
     end_timer!(tensorcheck_open_time);
-    TensorCheckProof {
+    TensorcheckProof {
         folded_polynomials_commitments,
         folded_polynomials_evaluations,
         evaluation_proof,
@@ -99,7 +99,7 @@ pub fn tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
-) -> TensorCheckProof<E>
+) -> TensorcheckProof<E>
 where
     F: Field,
     E: PairingEngine<Fr = F>,
@@ -145,7 +145,7 @@ where
     let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points);
     let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, &open_chals[1..]);
     let evaluation_proof = proof_w + proof;
-    TensorCheckProof {
+    TensorcheckProof {
         folded_polynomials_commitments,
         folded_polynomials_evaluations,
         evaluation_proof,

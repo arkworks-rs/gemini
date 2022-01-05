@@ -15,7 +15,7 @@ use ark_ec::PairingEngine;
 use crate::entryproduct;
 use crate::kzg::{Commitment, EvaluationProof};
 use crate::sumcheck::prover::ProverMsgs;
-use crate::tensorcheck::TensorCheckProof;
+use crate::tensorcheck::TensorcheckProof;
 
 /// The preprocessing SNARK proof, containing all prover's messages.
 pub struct Proof<E: PairingEngine> {
@@ -38,5 +38,5 @@ pub struct Proof<E: PairingEngine> {
     ra_star_mu: (E::Fr, EvaluationProof<E>),
     rstars_vals: [E::Fr; 2],
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
-    tensor_check_proof: TensorCheckProof<E>,
+    tensor_check_proof: TensorcheckProof<E>,
 }
