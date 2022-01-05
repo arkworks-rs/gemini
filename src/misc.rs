@@ -126,6 +126,7 @@ pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> V
     matrix.iter().map(|row| inner_prod_fn(row)).collect()
 }
 
+#[allow(unused)]
 pub fn product_vector_matrix<F: Field>(z: &[F], matrix: &[Vec<(F, usize)>]) -> Vec<F> {
     let mut res = vec![F::zero(); z.len()];
     for (row_index, row) in matrix.iter().enumerate() {

@@ -32,8 +32,6 @@ impl<E: PairingEngine> Proof<E> {
         let eta2 = eta.square();
 
         let num_constraints = r1cs.a.len();
-        // XXX why is this valiable not used?
-        let num_variables = r1cs.z.len();
         let tensor_challenges = tensor(&subclaim_1.challenges);
         let tensor_challenges_head = &tensor_challenges[..num_constraints];
         let alpha_powers = powers(alpha, num_constraints);
