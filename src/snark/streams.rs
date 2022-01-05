@@ -2,7 +2,9 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
-use crate::misc::{MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG, expand_tensor};
+use crate::misc::{
+    expand_tensor, MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG,
+};
 
 /// Streaming struct for producing tensor product of the matrix polynomial.
 #[derive(Clone)]
@@ -159,8 +161,7 @@ fn test_matrix_tensor_len() {
     let r1cs = generate_relation(circuit);
     let matrix_rowm = matrix_into_row_major_slice(&r1cs.a, r1cs.z.len());
     let matrix_colm = matrix_into_col_major_slice(&r1cs.a);
-    let matrix_tensor =
-        MatrixTensor::new(matrix_rowm.as_slice(), &one_tensor, r1cs.z.len());
+    let matrix_tensor = MatrixTensor::new(matrix_rowm.as_slice(), &one_tensor, r1cs.z.len());
     let matrix_cols = matrix_rowm.iter().filter(|x| x.is_eol()).count();
     let matrix_rows = matrix_colm.iter().filter(|x| x.is_eol()).count();
     // make sure that rA has the same number of elements of z

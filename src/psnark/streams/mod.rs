@@ -18,7 +18,7 @@ pub use tensor_stream::TensorIStreamer;
 
 pub use lookup_stream::LookupStreamer;
 
-pub use val_stream::ValStream;
+pub use val_stream::{JointValStream, ValStream};
 
 pub use intofield_stream::IntoField;
 

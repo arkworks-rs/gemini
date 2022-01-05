@@ -49,7 +49,11 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
             acc_v_commitments,
             claimed_sumchecks,
         };
-        EntryProduct { provers, chal, msgs }
+        EntryProduct {
+            provers,
+            chal,
+            msgs,
+        }
     }
 }
 

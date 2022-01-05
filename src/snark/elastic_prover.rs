@@ -9,7 +9,7 @@ use merlin::Transcript;
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
-use crate::misc::{evaluate_be, evaluate_le, powers, strip_last, MatrixElement, powers2, hadamard};
+use crate::misc::{evaluate_be, evaluate_le, hadamard, powers, powers2, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
@@ -206,14 +206,14 @@ impl<E: PairingEngine> Proof<E> {
         // after sumcheck, generate a new challenge
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         // run the second sumcheck
-        let b_tensors = first_proof.challenges.clone();
-        let c_tensors = powers2(alpha, b_tensors.len()+1)[1..].to_vec();
-        let a_tensors = hadamard(&b_tensors, &c_tensors);
+        let b_tensors = &first_proof.challenges;
+        let c_tensors = &powers2(alpha, b_tensors.len());
+        let a_tensors = &hadamard(&b_tensors, &c_tensors);
 
         let len = r1cs.z.len();
-        let a_alpha = MatrixTensor::new(r1cs.a_rowm, &a_tensors, len);
-        let b_alpha = MatrixTensor::new(r1cs.b_rowm, &b_tensors, len);
-        let c_alpha = MatrixTensor::new(r1cs.c_rowm, &c_tensors, len);
+        let a_alpha = MatrixTensor::new(r1cs.a_rowm, a_tensors, len);
+        let b_alpha = MatrixTensor::new(r1cs.b_rowm, b_tensors, len);
+        let c_alpha = MatrixTensor::new(r1cs.c_rowm, c_tensors, len);
         let sumcheck_batch_challenges = powers(eta, 3);
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 

@@ -91,9 +91,9 @@ pub(crate) fn powers<F: Field>(element: F, len: usize) -> Vec<F> {
 pub(crate) fn powers2<F: Field>(element: F, len: usize) -> Vec<F> {
     let mut powers = vec![F::one(); len];
     if len > 0 {
-        powers[1] = element;
+        powers[0] = element;
     }
-    for i in 2..len {
+    for i in 1..len {
         powers[i] = powers[i - 1].square();
     }
     powers
@@ -348,6 +348,7 @@ pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<Matri
     a_row_flat
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn matrix_slice_naive<F: Field>(a: &[Vec<(F, usize)>], n: usize) -> Vec<MatrixElement<F>> {
     let mut aa = vec![vec![F::zero(); n]; n];

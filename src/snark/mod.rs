@@ -11,8 +11,8 @@ mod tests;
 
 use ark_ec::PairingEngine;
 
-use crate::sumcheck::prover::ProverMsgs;
 use crate::kzg::Commitment;
+use crate::sumcheck::prover::ProverMsgs;
 use crate::tensorcheck::TensorcheckProof;
 
 /// The SNARK proof, composed of all prover's messages sent throughout the protocol.
@@ -24,8 +24,6 @@ pub struct Proof<E: PairingEngine> {
     second_sumcheck_msgs: ProverMsgs<E::Fr>,
     tensor_check_proof: TensorcheckProof<E>,
 }
-
-
 
 impl<E: PairingEngine> ark_std::fmt::Debug for Proof<E> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

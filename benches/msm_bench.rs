@@ -5,18 +5,18 @@ extern crate curve25519_dalek;
 use criterion::{BenchmarkId, Criterion};
 use rand_core::OsRng;
 
+use ark_ec::msm::VariableBaseMSM as ArkworksMSM;
 use ark_ec::ProjectiveCurve;
 use ark_ff::fields::PrimeField;
 use ark_std::test_rng;
 use ark_std::UniformRand;
-use ark_ec::msm::VariableBaseMSM as ArkworksMSM;
 
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::MultiscalarMul;
 
-use ark_gemini::kzg::msm::msm_chunks;
 use ark_gemini::kzg::msm::msm;
+use ark_gemini::kzg::msm::msm_chunks;
 use ark_gemini::kzg::msm::variable_base::VariableBaseMSM as MicheleMSM;
 
 type F = ark_bls12_381::Fr;

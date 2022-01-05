@@ -77,6 +77,10 @@ impl<E: PairingEngine> EntryProduct<E, TimeProver<E::Fr>> {
             acc_v_commitments,
             claimed_sumchecks,
         };
-        EntryProduct { msgs, chal, provers }
+        EntryProduct {
+            msgs,
+            chal,
+            provers,
+        }
     }
 }

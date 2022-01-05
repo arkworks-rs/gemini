@@ -17,8 +17,8 @@ use crate::iterable::Iterable;
 use crate::misc::{evaluate_be, hadamard, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
-    HadamardStreamer, IndexStream, IntoField, LineStream, LookupStreamer, TensorIStreamer,
-    TensorStreamer, ValStream, MergeStream,
+    HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
+    MergeStream, TensorIStreamer, TensorStreamer, ValStream,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -130,10 +130,9 @@ impl<E: PairingEngine> Proof<E> {
         let rb_star = TensorIStreamer::new(&rb_short, row, 1 << len);
         let rc_star = TensorIStreamer::new(&rc_short, row, 1 << len);
 
-        let val_a = ValStream::new(r1cs.a_colm, r1cs.nonzero);
-        let val_b = ValStream::new(r1cs.b_colm, r1cs.nonzero);
-        let val_c = ValStream::new(r1cs.c_colm, r1cs.nonzero);
-        // XXX derive val GENERIC
+        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero);
+        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
+        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
 
         let ra_star_val_a = HadamardStreamer::new(ra_star.clone(), val_a);
         let rb_star_val_b = HadamardStreamer::new(rb_star.clone(), val_b);
@@ -192,7 +191,11 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
-        let EntryProduct { msgs, chal: psi, mut provers } = EntryProduct::new_elastic_batch(
+        let EntryProduct {
+            msgs,
+            chal: psi,
+            mut provers,
+        } = EntryProduct::new_elastic_batch(
             &mut transcript,
             &ck,
             (
