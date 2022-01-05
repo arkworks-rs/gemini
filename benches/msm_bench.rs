@@ -3,20 +3,21 @@ extern crate criterion;
 extern crate curve25519_dalek;
 
 use criterion::{BenchmarkId, Criterion};
-use gemini::kzg::msm::msm_chunks;
+use rand_core::OsRng;
 
 use ark_ec::ProjectiveCurve;
 use ark_ff::fields::PrimeField;
 use ark_std::test_rng;
 use ark_std::UniformRand;
-
 use ark_ec::msm::VariableBaseMSM as ArkworksMSM;
+
 use curve25519_dalek::ristretto::RistrettoPoint;
 use curve25519_dalek::scalar::Scalar;
 use curve25519_dalek::traits::MultiscalarMul;
-use gemini::kzg::msm::msm;
-use gemini::kzg::msm::variable_base::VariableBaseMSM as MicheleMSM;
-use rand_core::OsRng;
+
+use ark_gemini::kzg::msm::msm_chunks;
+use ark_gemini::kzg::msm::msm;
+use ark_gemini::kzg::msm::variable_base::VariableBaseMSM as MicheleMSM;
 
 type F = ark_bls12_381::Fr;
 type G1Affine = ark_bls12_381::G1Affine;
@@ -55,13 +56,13 @@ fn bench_msm(c: &mut Criterion) {
         group
             .sample_size(10)
             .bench_with_input(BenchmarkId::new("chunks", d), &d, |b, _| {
-                b.iter(|| msm_chunks::<G1Affine, F, _, _>(bases.as_slice(), scalars.as_slice()))
+                b.iter(|| msm_chunks::<G1Affine, F, _, _>(&bases.as_slice(), &scalars.as_slice()))
             });
 
         group
             .sample_size(10)
             .bench_with_input(BenchmarkId::new("stream", d), &d, |b, _| {
-                b.iter(|| msm::<G1Affine, F, _, _>(bases.as_slice(), scalars.as_slice()))
+                b.iter(|| msm::<G1Affine, F, _, _>(bases.as_slice(), scalars.as_slice(), 10))
             });
 
         group.bench_with_input(BenchmarkId::new("dalek", d), &d, |b, &d| {
