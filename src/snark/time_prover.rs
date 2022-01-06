@@ -3,7 +3,7 @@ use ark_ec::PairingEngine;
 use ark_ff::{Field, One, Zero};
 use log::debug;
 
-use crate::circuit::R1CS;
+use crate::circuit::R1cs;
 use crate::kzg::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
@@ -16,7 +16,7 @@ use crate::PROTOCOL_NAME;
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the R1CS instance `r1cs` and the committer key `ck` for the polynomial commitment scheme,
     /// produce a new SNARK proof using the time-efficient prover.
-    pub fn new_time(r1cs: &R1CS<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
+    pub fn new_time(r1cs: &R1cs<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
     where
         E: PairingEngine,
     {

@@ -2,7 +2,7 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 
-use crate::circuit::R1CS;
+use crate::circuit::R1cs;
 use crate::kzg::VerifierKey;
 use crate::misc::{evaluate_le, scalar_prod};
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
@@ -15,7 +15,7 @@ impl<E: PairingEngine> Proof<E> {
     /// Verification function for SNARK proof.
     /// The input contains the R1CS instance and the verification key
     /// of polynomial commitment.
-    pub fn verify(&self, r1cs: &R1CS<E::Fr>, vk: &VerifierKey<E>) -> VerificationResult {
+    pub fn verify(&self, r1cs: &R1cs<E::Fr>, vk: &VerifierKey<E>) -> VerificationResult {
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
         let witness_commitment = self.witness_commitment;
 
