@@ -99,52 +99,55 @@ impl<E: PairingEngine> Proof<E> {
         let sumcheck1 = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(sumcheck_time);
 
-        let len = sumcheck1.challenges.len();
-        let rb_short = &sumcheck1.challenges;
-        let rc_short = &powers2(alpha, len);
-        let ra_short = &hadamard(rb_short, rc_short);
-
-        let ra = TensorStreamer::new(&ra_short, 1 << len);
-        // Never actually used, but in the mind of the prover.
-        // let r_b = TensorStreamer::new(&r_b_short, 1 << len);
-        // let r_c = TensorStreamer::new(&r_c_short, 1 << len);
-
+        // define the joint row polynomial
         let row_a = LineStream::new(r1cs.a_colm);
         let row_b = LineStream::new(r1cs.b_colm);
         let row_c = LineStream::new(r1cs.c_colm);
         let row_ab = MergeStream::new(&row_a, &row_b);
         let row = MergeStream::new(&row_ab, &row_c);
-
+        // define the joint col polynomial
         let col_a = IndexStream::new(r1cs.a_colm);
         let col_b = IndexStream::new(r1cs.b_colm);
         let col_c = IndexStream::new(r1cs.c_colm);
         let col_ab = MergeStream::new(&col_a, &col_b);
         let col = MergeStream::new(&col_ab, &col_c);
-
+        // define the joint val polynomials, one for each R1CS matrix
+        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero);
+        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
+        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
+        // lookup in z for the nonzero positions
         let z_star = LookupStreamer::new(&r1cs.z, &col);
-
+        // compose the randomness for the A-, B-, C-matrices
+        let len = sumcheck1.challenges.len();
+        let rb_short = &sumcheck1.challenges;
+        let rc_short = &powers2(alpha, len);
+        let ra_short = &hadamard(rb_short, rc_short);
+        // expand the randomness for each matrix
+        let ra = TensorStreamer::new(&ra_short, 1 << len);
+        // Never actually used, but in the mind of the prover
+        // let r_b = TensorStreamer::new(&r_b_short, 1 << len);
+        // let r_c = TensorStreamer::new(&r_c_short, 1 << len);
+        // lookup in the randomness for the nonzero positions
         let ra_star = TensorIStreamer::new(&ra_short, &row, 1 << len);
         let rb_star = TensorIStreamer::new(&rb_short, &row, 1 << len);
         let rc_star = TensorIStreamer::new(&rc_short, &row, 1 << len);
 
-        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero);
-        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
-        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
-
-        let ra_star_val_a = HadamardStreamer::new(&ra_star, &val_a);
-        let rb_star_val_b = HadamardStreamer::new(&rb_star, &val_b);
-        let rc_star_val_c = HadamardStreamer::new(&rc_star, &val_c);
-
+        // commit to the looked up vectors
         let ra_star_commitment = ck.commit(&ra_star);
         let rb_star_commitment = ck.commit(&rb_star);
         let rc_star_commitment = ck.commit(&rc_star);
         let r_star_commitments = [ra_star_commitment, rb_star_commitment, rc_star_commitment];
         let z_star_commitment = ck.commit(&z_star);
-
-        // send s0 s1 s2
-        let s0 = inner_product_uncheck(z_star.iter(), ra_star.iter());
-        let s1 = inner_product_uncheck(z_star.iter(), rb_star.iter());
-        let s2 = inner_product_uncheck(z_star.iter(), rc_star.iter());
+        // compute the inner products for the sub-claims:
+        // <z*, r_a* \odot val_a>
+        // <z*, r_b* \odot val_b>
+        // <z*, r_c* \odot val_c>
+        let ra_star_val_a = HadamardStreamer::new(&ra_star, &val_a);
+        let rb_star_val_b = HadamardStreamer::new(&rb_star, &val_b);
+        let rc_star_val_c = HadamardStreamer::new(&rc_star, &val_c);
+        let s0 = inner_product_uncheck(z_star.iter(), ra_star_val_a.iter());
+        let s1 = inner_product_uncheck(z_star.iter(), rb_star_val_b.iter());
+        let s2 = inner_product_uncheck(z_star.iter(), rc_star_val_c.iter());
         let z_star_rs = [s0, s1, s2];
 
         transcript.append_commitment(b"ra*", &ra_star_commitment);
@@ -155,19 +158,17 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_scalar(b"s1", &s1);
         transcript.append_scalar(b"s2", &s2);
 
+        // second sumcheck
+        // batch the randomness for the three matrices and invoke the sumcheck protocol.
         let challenge = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(challenge, 3);
         let rhs = lincomb!((ra_star_val_a, rb_star_val_b, rc_star_val_c), &challenges);
-
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
-
-        // // PLOOKUP PROTOCOL
+        // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let y = transcript.get_challenge(b"y");
         let z = transcript.get_challenge(b"zeta");
-        // // ENTRY PRODUCT FOR rA Z
         let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&ra, &ra_star, &row, y, z);
         let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &col, y, z);
-
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_r_ep = pl_set_r.iter().product();
@@ -176,7 +177,6 @@ impl<E: PairingEngine> Proof<E> {
         let set_z_ep = pl_set_z.iter().product();
         let subset_z_ep = pl_subset_z.iter().product();
         let sorted_z_ep = pl_sorted_r.iter().product();
-
         // compute the commitments to the sorted polynomials
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
         let sorted_z_commitment = ck.commit(&pl_sorted_z);
@@ -188,15 +188,14 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
-
         // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated, so that its lifetime
         // will not conflict with the lifetime of the `provers`.
         let ep_r = TensorStreamer::new(&sumcheck2.challenges, ra_star.len());
-
         let lhs_ra_star = HadamardStreamer::new(&ra_star, &ep_r);
         let lhs_rb_star = HadamardStreamer::new(&rb_star, &ep_r);
         let lhs_rc_star = HadamardStreamer::new(&rc_star, &ep_r);
 
+        // compute the entry product so to verify the lookup relation.
         let EntryProduct {
             msgs,
             chal: psi,
@@ -222,10 +221,15 @@ impl<E: PairingEngine> Proof<E> {
             ],
         );
 
+        // At the end of the entry product protocol, we have some inneer-product claims.
+        // We don't use them yet. Instead:
+        // ask an evaluation of r_a* at a random point
         let mu = transcript.get_challenge(b"mu");
         let ra_star_mu = ck.open(&ra_star, &mu);
-
-
+        // compute the claimed entry products for
+        // <r_a* \otimes (sumcheck chals), val_a>
+        // <r_b* \otimes (sumcheck chals), val_b>
+        // <r_c* \otimes (sumcheck chals), val_c> (not needed as it can be derived)
         let r_val_chal_a = inner_product_uncheck(lhs_ra_star.iter(), val_a.iter());
         let r_val_chal_b = inner_product_uncheck(lhs_rb_star.iter(), val_b.iter());
 
@@ -234,6 +238,8 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_scalar(b"r_a_star_mu", &ra_star_mu.0);
         transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ra_star_mu.1);
 
+        // Add to the list of inner-products claims (obtained from the entry product)
+        // additional inner products:
         provers.push(Box::new(ElasticProver::new(
             lhs_ra_star,
             val_a,
@@ -256,9 +262,7 @@ impl<E: PairingEngine> Proof<E> {
         )));
         let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
 
-        ////
-        // TENSORCHECK
-        ////
+        // tensorcheck protocol
         let (pl_set_sh_r, pl_set_acc_r) = entry_product_streams(&pl_set_r);
         let (pl_subset_sh_r, pl_subset_acc_r) = entry_product_streams(&pl_subset_r);
         let (pl_sorted_sh_r, pl_sorted_acc_r) = entry_product_streams(&pl_sorted_r);
