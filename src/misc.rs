@@ -3,6 +3,9 @@ use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 use ark_std::borrow::Borrow;
 
+use crate::circuit::Matrix;
+use ark_std::collections::{BTreeMap, BTreeSet};
+
 pub(crate) const TENSOR_EXPANSION_LOG: usize = 16;
 pub(crate) const TENSOR_EXPANSION: usize = (1 << TENSOR_EXPANSION_LOG) - 1;
 
@@ -228,6 +231,75 @@ pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
 pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     assert_eq!(lhs.len(), rhs.len());
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).sum()
+}
+
+#[inline]
+pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
+    a.iter()
+        .zip(b)
+        .zip(c)
+        .map(|((row_a, row_b), row_c)| {
+            row_a
+                .iter()
+                .map(|(_, i)| *i)
+                .chain(row_b.iter().map(|(_, i)| *i))
+                .chain(row_c.iter().map(|(_, i)| *i))
+                .collect::<BTreeSet<_>>()
+                .into_iter()
+                .collect()
+        })
+        .collect()
+}
+
+#[inline]
+pub fn joint_matrices<F: Field>(
+    joint_matrix: &Vec<Vec<usize>>,
+    a: &Matrix<F>,
+    b: &Matrix<F>,
+    c: &Matrix<F>,
+) -> (Vec<F>, Vec<F>, Vec<F>, Vec<F>, Vec<F>) {
+    let mut row_vec = Vec::new();
+    let mut col_vec = Vec::new();
+    let mut val_a_vec = Vec::new();
+    let mut val_b_vec = Vec::new();
+    let mut val_c_vec = Vec::new();
+
+    let a = a
+        .iter()
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
+        .collect::<BTreeMap<(usize, usize), F>>();
+
+    let b = b
+        .iter()
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
+        .collect::<BTreeMap<(usize, usize), F>>();
+
+    let c = c
+        .iter()
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
+        .collect::<BTreeMap<(usize, usize), F>>();
+
+    for (r, row) in joint_matrix.into_iter().enumerate() {
+        for i in row {
+            let row_val = F::from(r as u64);
+            let col_val = F::from(*i as u64);
+
+            row_vec.push(row_val);
+            col_vec.push(col_val);
+            // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
+            val_a_vec.push(a.get(&(r, *i)).copied().unwrap_or(F::zero()));
+            val_b_vec.push(b.get(&(r, *i)).copied().unwrap_or(F::zero()));
+            val_c_vec.push(c.get(&(r, *i)).copied().unwrap_or(F::zero()));
+        }
+    }
+
+    (row_vec, col_vec, val_a_vec, val_b_vec, val_c_vec)
 }
 
 /// Return a matrix stream, row major.
