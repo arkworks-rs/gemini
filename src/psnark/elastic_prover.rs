@@ -134,9 +134,9 @@ impl<E: PairingEngine> Proof<E> {
         let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
         let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
 
-        let ra_star_val_a = HadamardStreamer::new(ra_star.clone(), val_a);
-        let rb_star_val_b = HadamardStreamer::new(rb_star.clone(), val_b);
-        let rc_star_val_c = HadamardStreamer::new(rc_star.clone(), val_c);
+        let ra_star_val_a = HadamardStreamer::new(&ra_star, &val_a);
+        let rb_star_val_b = HadamardStreamer::new(&rb_star, &val_b);
+        let rc_star_val_c = HadamardStreamer::new(&rc_star, &val_c);
 
         let ra_star_commitment = ck.commit(&ra_star);
         let rb_star_commitment = ck.commit(&rb_star);
@@ -191,6 +191,15 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
+
+        // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated, so that its lifetime
+        // will not conflict with the lifetime of the `provers`.
+        let ep_r = TensorStreamer::new(&sumcheck2.challenges, ra_star.len());
+
+        let lhs_ra_star = HadamardStreamer::new(&ra_star, &ep_r);
+        let lhs_rb_star = HadamardStreamer::new(&rb_star, &ep_r);
+        let lhs_rc_star = HadamardStreamer::new(&rc_star, &ep_r);
+
         let EntryProduct {
             msgs,
             chal: psi,
@@ -219,10 +228,6 @@ impl<E: PairingEngine> Proof<E> {
         let mu = transcript.get_challenge(b"mu");
         let ra_star_mu = ck.open(&ra_star, &mu);
 
-        let ep_r = TensorStreamer::new(&sumcheck2.challenges, ra_star.len());
-        let lhs_ra_star = HadamardStreamer::new(ra_star.clone(), ep_r.clone());
-        let lhs_rb_star = HadamardStreamer::new(rb_star.clone(), ep_r.clone());
-        let lhs_rc_star = HadamardStreamer::new(rc_star.clone(), ep_r);
 
         let r_val_chal_a = inner_product_uncheck(lhs_ra_star.iter(), val_a.iter());
         let r_val_chal_b = inner_product_uncheck(lhs_rb_star.iter(), val_b.iter());
@@ -252,7 +257,6 @@ impl<E: PairingEngine> Proof<E> {
             rc_star.clone(),
             mu,
         )));
-
         let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
 
         ////

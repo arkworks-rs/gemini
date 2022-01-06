@@ -1,8 +1,7 @@
 /// Time-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
-use ark_std::One;
 
-use crate::circuit::{Matrix, R1CS};
+use crate::circuit::R1CS;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, joint_matrices, powers, product_matrix_vector, sum_matrices, tensor,
@@ -41,7 +40,6 @@ impl<E: PairingEngine> Proof<E> {
 
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_proof = Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
-        let first_sumcheck_msgs = first_proof.prover_messages();
         end_timer!(first_sumcheck_time);
 
         let b_challenges = tensor(&first_proof.challenges);
