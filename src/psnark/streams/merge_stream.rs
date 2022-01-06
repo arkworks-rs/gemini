@@ -23,7 +23,7 @@ where
     S0: Iterable,
     S1: Iterable,
     S0::Item: Borrow<S0::Item>,
-    S1::Item: Borrow<S1::Item>,
+    S1::Item: Borrow<S0::Item>,
 {
     pub fn new(lhs: &'a S0, rhs: &'a S1) -> Self {
         Self { lhs, rhs }

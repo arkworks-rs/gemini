@@ -66,7 +66,7 @@ impl<E: PairingEngine> Proof<E> {
     #[allow(unused_assignments)]
     pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: R1csStream<SM, SZ, SW>,
-        ck: CommitterKeyStream<E, SG>,
+        ck: &CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where
         SM: Iterable + Copy,
@@ -74,9 +74,9 @@ impl<E: PairingEngine> Proof<E> {
         SW: Iterable + Copy,
         SG: Iterable,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
-        SZ::Item: Borrow<E::Fr> + Copy,
-        SW::Item: Borrow<E::Fr> + Copy,
-        SZ::Item: Borrow<E::Fr> + Copy,
+        SZ::Item: Borrow<E::Fr>,
+        SW::Item: Borrow<E::Fr>,
+        SZ::Item: Borrow<E::Fr>,
         SG::Item: Borrow<E::G1Affine>,
     {
         let psnark_time = start_timer!(|| module_path!());
@@ -121,14 +121,11 @@ impl<E: PairingEngine> Proof<E> {
         let col_ab = MergeStream::new(&col_a, &col_b);
         let col = MergeStream::new(&col_ab, &col_c);
 
-        let z_star = LookupStreamer {
-            items: r1cs.z,
-            indices: col,
-        };
+        let z_star = LookupStreamer::new(&r1cs.z, &col);
 
-        let ra_star = TensorIStreamer::new(&ra_short, row, 1 << len);
-        let rb_star = TensorIStreamer::new(&rb_short, row, 1 << len);
-        let rc_star = TensorIStreamer::new(&rc_short, row, 1 << len);
+        let ra_star = TensorIStreamer::new(&ra_short, &row, 1 << len);
+        let rb_star = TensorIStreamer::new(&rb_short, &row, 1 << len);
+        let rc_star = TensorIStreamer::new(&rc_short, &row, 1 << len);
 
         let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero);
         let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
@@ -206,7 +203,7 @@ impl<E: PairingEngine> Proof<E> {
             mut provers,
         } = EntryProduct::new_elastic_batch(
             &mut transcript,
-            &ck,
+            ck,
             (
                 &pl_set_r,
                 &pl_subset_r,
@@ -271,7 +268,7 @@ impl<E: PairingEngine> Proof<E> {
         let tc_chal = transcript.get_challenge::<E::Fr>(b"tc");
         let tc_challenges = powers(tc_chal, 2 * 3 + 4);
 
-        let body_polynomials_0 = lincomb!(
+        let body_polynomials_0 = &lincomb!(
             (
                 pl_set_acc_r,
                 pl_subset_acc_r,
@@ -285,7 +282,7 @@ impl<E: PairingEngine> Proof<E> {
             ),
             &tc_challenges
         );
-        let body_polynomials_1 = lincomb!(
+        let body_polynomials_1 = &lincomb!(
             (
                 pl_set_sh_r,
                 pl_subset_sh_r,
@@ -300,9 +297,9 @@ impl<E: PairingEngine> Proof<E> {
             ),
             &tc_challenges
         );
-        let body_polynomials_2 = z_star;
-        let body_polynomials_3 = lincomb!((rb_star, rc_star), &tc_challenges);
-        let body_polynomials_4 = rb_star.clone();
+        let body_polynomials_2 = &z_star;
+        let body_polynomials_3 = &lincomb!((rb_star, rc_star), &tc_challenges);
+        let body_polynomials_4 = &rb_star.clone();
 
         let psi_squares = powers2(psi, sumcheck3.challenges.len());
         let mu_squares = powers2(mu, sumcheck3.challenges.len());
@@ -322,15 +319,15 @@ impl<E: PairingEngine> Proof<E> {
         let tensorcheck_challenges_4 = strip_last(&tensorcheck_challenges_4);
 
         let tensorcheck_foldings_0 =
-            FoldedPolynomialTree::new(&body_polynomials_0, tensorcheck_challenges_0);
+            FoldedPolynomialTree::new(body_polynomials_0, tensorcheck_challenges_0);
         let tensorcheck_foldings_1 =
-            FoldedPolynomialTree::new(&body_polynomials_1, tensorcheck_challenges_1);
+            FoldedPolynomialTree::new(body_polynomials_1, tensorcheck_challenges_1);
         let tensorcheck_foldings_2 =
-            FoldedPolynomialTree::new(&body_polynomials_2, tensorcheck_challenges_2);
+            FoldedPolynomialTree::new(body_polynomials_2, tensorcheck_challenges_2);
         let tensorcheck_foldings_3 =
-            FoldedPolynomialTree::new(&body_polynomials_3, tensorcheck_challenges_3);
+            FoldedPolynomialTree::new(body_polynomials_3, tensorcheck_challenges_3);
         let tensorcheck_foldings_4 =
-            FoldedPolynomialTree::new(&body_polynomials_4, tensorcheck_challenges_4);
+            FoldedPolynomialTree::new(body_polynomials_4, tensorcheck_challenges_4);
 
         let mut folded_polynomials_commitments = Vec::new();
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_0));
