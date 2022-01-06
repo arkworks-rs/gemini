@@ -91,10 +91,10 @@ where
 
 #[test]
 fn test_index() {
-    let indices = vec![4, 4, 3, 2, 1, 0];
-    let items = vec![8, 7, 6, 5, 4, 3, 2, 1, 0];
+    let indices = &[4, 4, 3, 2, 1, 0];
+    let items = &[8, 7, 6, 5, 4, 3, 2, 1, 0];
 
-    let stream = LookupStreamer::new(items.as_slice(), indices.as_slice());
+    let stream = LookupStreamer::new(&items, &indices);
     let stream = stream.iter().cloned().collect::<Vec<_>>();
     assert_eq!(stream, indices);
 }

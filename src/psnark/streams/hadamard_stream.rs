@@ -72,14 +72,14 @@ fn test_hadamard_stream() {
     use ark_std::UniformRand;
 
     let rng = &mut test_rng();
-    let lhs = (0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
-    let rhs = (0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+    let lhs = &(0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+    let rhs = &(0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
     let hadamard_product = lhs
         .iter()
         .zip(rhs.iter())
         .map(|(&x, y)| x * y)
         .collect::<Vec<_>>();
-    let hadamard_stream = HadamardStreamer::<Fr, _, _>::new(lhs.as_slice(), rhs.as_slice());
+    let hadamard_stream = HadamardStreamer::<Fr, _, _>::new(&lhs, &rhs);
     let hadamard_stream_collected = hadamard_stream.iter().collect::<Vec<_>>();
     assert_eq!(hadamard_stream_collected, hadamard_product);
 }
