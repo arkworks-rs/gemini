@@ -18,7 +18,7 @@ use crate::misc::{evaluate_be, hadamard, powers, powers2, strip_last, MatrixElem
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
-    MergeStream, TensorIStreamer, TensorStreamer, ValStream,
+    MergeStream, TensorIStreamer, TensorStreamer,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -79,7 +79,7 @@ impl<E: PairingEngine> Proof<E> {
         SZ::Item: Borrow<E::Fr> + Copy,
         SG::Item: Borrow<E::G1Affine>,
     {
-        let _ahp_proof_time = start_timer!(|| "AP::Prove");
+        let psnark_time = start_timer!(|| module_path!());
         let mut transcript = Transcript::new(PROTOCOL_NAME);
         // send the vector w
         let witness_commitment_time = start_timer!(|| "Commitment to w");
@@ -448,6 +448,7 @@ impl<E: PairingEngine> Proof<E> {
             base_polynomials_evaluations,
         };
 
+        end_timer!(psnark_time);
         Proof {
             witness_commitment,
             zc_alpha,
