@@ -107,7 +107,8 @@ pub fn evaluate_sq_fp<F: Field>(
 }
 
 /// The struct for the tensor check proof.
-pub struct TensorCheckProof<E: PairingEngine> {
+#[derive(PartialEq, Eq)]
+pub struct TensorcheckProof<E: PairingEngine> {
     /// The commitments for all the folded polynomials in the tensor check.
     pub folded_polynomials_commitments: Vec<Commitment<E>>,
     /// The evaluations of all the folded polynomials in the tensor check.
@@ -176,7 +177,7 @@ where
     (partial_foldings, transcribed_foldings)
 }
 
-impl<E: PairingEngine> TensorCheckProof<E> {
+impl<E: PairingEngine> TensorcheckProof<E> {
     /// The function for construct tensor check proof in a time-efficient way.
     ///
     /// It takes as input the randomness generator `transcript`, the committer key `ck`,
@@ -191,7 +192,7 @@ impl<E: PairingEngine> TensorCheckProof<E> {
         ck: &CommitterKey<E>,
         base_polynomials: [&Vec<E::Fr>; N],
         body_polynomials: [(&[&Vec<E::Fr>], &[E::Fr]); M],
-    ) -> TensorCheckProof<E> {
+    ) -> TensorcheckProof<E> {
         let max_len = body_polynomials
             .iter()
             .map(|x| x.0.len())

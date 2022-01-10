@@ -54,7 +54,6 @@ impl<E: PairingEngine> Proof<E> {
 
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_proof = Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
-        let first_sumcheck_msgs = first_proof.prover_messages();
         end_timer!(first_sumcheck_time);
 
         let b_challenges = tensor(&first_proof.challenges);

@@ -9,12 +9,12 @@ use merlin::Transcript;
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
-use crate::misc::{evaluate_be, evaluate_le, expand_tensor, powers, strip_last, MatrixElement};
+use crate::misc::{evaluate_be, evaluate_le, hadamard, powers, powers2, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorCheckProof};
+use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME, SPACE_TIME_THRESHOLD};
 
@@ -24,7 +24,7 @@ pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
-) -> TensorCheckProof<E>
+) -> TensorcheckProof<E>
 where
     F: Field,
     E: PairingEngine<Fr = F>,
@@ -85,7 +85,7 @@ where
     // let time_proof = time_ck.batch_open_multi_points(tensorcheck_tfoldings, &eval_points, open_time_chals);
     let evaluation_proof = proof_w + proof;
     end_timer!(tensorcheck_open_time);
-    TensorCheckProof {
+    TensorcheckProof {
         folded_polynomials_commitments,
         folded_polynomials_evaluations,
         evaluation_proof,
@@ -99,7 +99,7 @@ pub fn tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
-) -> TensorCheckProof<E>
+) -> TensorcheckProof<E>
 where
     F: Field,
     E: PairingEngine<Fr = F>,
@@ -145,7 +145,7 @@ where
     let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points);
     let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, &open_chals[1..]);
     let evaluation_proof = proof_w + proof;
-    TensorCheckProof {
+    TensorcheckProof {
         folded_polynomials_commitments,
         folded_polynomials_evaluations,
         evaluation_proof,
@@ -206,32 +206,14 @@ impl<E: PairingEngine> Proof<E> {
         // after sumcheck, generate a new challenge
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         // run the second sumcheck
-        let mut a_tensors: Vec<E::Fr> = Vec::new();
-        let mut b_tensors = Vec::new();
-        let mut c_tensors = Vec::new();
-        let mut first_prover_randomness = first_proof.challenges.iter();
-        let r = first_prover_randomness.next().unwrap();
-        let mut acc = alpha;
+        let b_tensors = &first_proof.challenges;
+        let c_tensors = &powers2(alpha, b_tensors.len());
+        let a_tensors = &hadamard(&b_tensors, &c_tensors);
 
-        a_tensors.push(acc * r);
-        b_tensors.push(*r);
-        c_tensors.push(acc);
-
-        for r in first_prover_randomness {
-            acc = acc.square();
-
-            a_tensors.push(acc * r);
-            b_tensors.push(*r);
-            c_tensors.push(acc);
-        }
-
-        let a_tensors_expanded = expand_tensor(&a_tensors);
-        let b_tensors_expanded = expand_tensor(&b_tensors);
-        let c_tensors_expanded = expand_tensor(&c_tensors);
         let len = r1cs.z.len();
-        let a_alpha = MatrixTensor::new(r1cs.a_rowm, &a_tensors_expanded, len);
-        let b_alpha = MatrixTensor::new(r1cs.b_rowm, &b_tensors_expanded, len);
-        let c_alpha = MatrixTensor::new(r1cs.c_rowm, &c_tensors_expanded, len);
+        let a_alpha = MatrixTensor::new(r1cs.a_rowm, a_tensors, len);
+        let b_alpha = MatrixTensor::new(r1cs.b_rowm, b_tensors, len);
+        let c_alpha = MatrixTensor::new(r1cs.c_rowm, c_tensors, len);
         let sumcheck_batch_challenges = powers(eta, 3);
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 

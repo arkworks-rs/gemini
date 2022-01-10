@@ -91,9 +91,9 @@ pub(crate) fn powers<F: Field>(element: F, len: usize) -> Vec<F> {
 pub(crate) fn powers2<F: Field>(element: F, len: usize) -> Vec<F> {
     let mut powers = vec![F::one(); len];
     if len > 0 {
-        powers[1] = element;
+        powers[0] = element;
     }
-    for i in 2..len {
+    for i in 1..len {
         powers[i] = powers[i - 1].square();
     }
     powers
@@ -126,6 +126,7 @@ pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> V
     matrix.iter().map(|row| inner_prod_fn(row)).collect()
 }
 
+#[allow(unused)]
 pub fn product_vector_matrix<F: Field>(z: &[F], matrix: &[Vec<(F, usize)>]) -> Vec<F> {
     let mut res = vec![F::zero(); z.len()];
     for (row_index, row) in matrix.iter().enumerate() {
@@ -234,6 +235,7 @@ pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
 }
 
 #[inline]
+#[allow(unused)]
 pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
     a.iter()
         .zip(b)
@@ -252,6 +254,7 @@ pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Ve
 }
 
 #[inline]
+#[allow(unused)]
 pub fn joint_matrices<F: Field>(
     joint_matrix: &Vec<Vec<usize>>,
     a: &Matrix<F>,
@@ -367,6 +370,7 @@ pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<Matri
     a_row_flat
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 pub fn matrix_slice_naive<F: Field>(a: &[Vec<(F, usize)>], n: usize) -> Vec<MatrixElement<F>> {
     let mut aa = vec![vec![F::zero(); n]; n];

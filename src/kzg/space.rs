@@ -57,7 +57,7 @@ where
     }
 
     /// Evaluate a single polynomial at the point `alpha`, and provide an evaluation proof along with the evaluation.
-    pub fn open<SF>(&self, polynomial: SF, alpha: &E::Fr) -> (E::Fr, EvaluationProof<E>)
+    pub fn open<SF>(&self, polynomial: &SF, alpha: &E::Fr) -> (E::Fr, EvaluationProof<E>)
     where
         SF: Iterable,
         SF::Item: Borrow<E::Fr>,
@@ -321,7 +321,7 @@ fn test_open_multi_points() {
     let polynomial_stream = &polynomial[..];
     let beta = Fr::rand(rng);
     let (_, evaluation_proof_batch) = space_ck.open_multi_points(&polynomial_stream, &[beta]);
-    let (_, evaluation_proof_single) = space_ck.open(polynomial_stream, &beta);
+    let (_, evaluation_proof_single) = space_ck.open(&polynomial_stream, &beta);
     assert_eq!(evaluation_proof_batch, evaluation_proof_single);
 
     let (remainder, _evaluation_poof) =

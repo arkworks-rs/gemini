@@ -2,13 +2,13 @@ use crate::iterable::Iterable;
 use ark_std::borrow::Borrow;
 
 #[derive(Clone, Copy)]
-pub struct LookupStreamer<S, I>
+pub struct LookupStreamer<'a, S, I>
 where
     S: Iterable,
     I: Iterable,
 {
-    pub(crate) items: S,
-    pub(crate) indices: I,
+    pub(crate) items: &'a S,
+    pub(crate) indices: &'a I,
 }
 
 pub struct LookupIter<I, II>
@@ -23,19 +23,19 @@ where
     current_item: Option<I::Item>,
 }
 
-impl<S, I> LookupStreamer<S, I>
+impl<'a, S, I> LookupStreamer<'a, S, I>
 where
     S: Iterable,
     I: Iterable,
     S::Item: Copy,
     I::Item: Borrow<usize>,
 {
-    pub fn new(items: S, indices: I) -> Self {
-        Self { items, indices }
+    pub fn new(items: &'a S, indices: &'a I) -> Self {
+        Self {items, indices}
     }
 }
 
-impl<S, I> Iterable for LookupStreamer<S, I>
+impl<'a, S, I> Iterable for LookupStreamer<'a, S, I>
 where
     S: Iterable,
     I: Iterable,
@@ -91,10 +91,10 @@ where
 
 #[test]
 fn test_index() {
-    let indices = vec![4, 4, 3, 2, 1, 0];
-    let items = vec![8, 7, 6, 5, 4, 3, 2, 1, 0];
+    let indices = &[4, 4, 3, 2, 1, 0];
+    let items = &[8, 7, 6, 5, 4, 3, 2, 1, 0];
 
-    let stream = LookupStreamer::new(items.as_slice(), indices.as_slice());
+    let stream = LookupStreamer::new(&items, &indices);
     let stream = stream.iter().cloned().collect::<Vec<_>>();
     assert_eq!(stream, indices);
 }

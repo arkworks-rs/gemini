@@ -2,22 +2,24 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
-use crate::misc::{MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
+use crate::misc::{
+    expand_tensor, MatrixElement, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG,
+};
 
 /// Streaming struct for producing tensor product of the matrix polynomial.
-#[derive(Clone, Copy)]
-pub(crate) struct MatrixTensor<'a, F, SC>
+#[derive(Clone)]
+pub(crate) struct MatrixTensor<F, SC>
 where
     F: Field,
     SC: Iterable,
     SC::Item: Borrow<MatrixElement<F>>,
 {
     matrix: SC,
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
     len: usize,
 }
 
-impl<'a, F, SC> MatrixTensor<'a, F, SC>
+impl<F, SC> MatrixTensor<F, SC>
 where
     F: Field,
     SC: Iterable,
@@ -26,7 +28,8 @@ where
     /// Function for initializing the stream.
     /// The input contains the stream of R1CS matrix, a vector of field elements
     /// for producing tensor product, and the length of the result stream.
-    pub fn new(matrix: SC, tensor: &'a PartialTensor<F>, len: usize) -> Self {
+    pub fn new(matrix: SC, v: &[F], len: usize) -> Self {
+        let tensor = expand_tensor(v);
         MatrixTensor {
             matrix,
             tensor,
@@ -35,19 +38,19 @@ where
     }
 }
 
-impl<'a, F, SC> Iterable for MatrixTensor<'a, F, SC>
+impl<F, SC> Iterable for MatrixTensor<F, SC>
 where
     F: Field,
     SC: Iterable,
     SC::Item: Borrow<MatrixElement<F>>,
 {
     type Item = F;
-    type Iter = MatrixTensorIter<'a, F, SC::Iter>;
+    type Iter = MatrixTensorIter<F, SC::Iter>;
 
     fn iter(&self) -> Self::Iter {
         MatrixTensorIter {
             it: self.matrix.iter(),
-            tensor: self.tensor,
+            tensor: self.tensor.clone(),
         }
     }
 
@@ -56,17 +59,17 @@ where
     }
 }
 
-pub(crate) struct MatrixTensorIter<'a, F, I>
+pub(crate) struct MatrixTensorIter<F, I>
 where
     F: Field,
     I: Iterator,
     I::Item: Borrow<MatrixElement<F>>,
 {
     it: I,
-    tensor: &'a PartialTensor<F>,
+    tensor: PartialTensor<F>,
 }
 
-impl<'a, F, I> Iterator for MatrixTensorIter<'a, F, I>
+impl<F, I> Iterator for MatrixTensorIter<F, I>
 where
     F: Field,
     I: Iterator,
@@ -102,7 +105,6 @@ where
 #[test]
 fn test_matrix_tensor_stream() {
     use crate::iterable::dummy::DiagonalMatrixStreamer;
-    use crate::misc::expand_tensor;
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
@@ -112,10 +114,9 @@ fn test_matrix_tensor_stream() {
     let r = F::rand(rng);
     let n = 4;
     let one_tensor = [F::one(), F::one()];
-    let expanded_one_tensor = expand_tensor(&one_tensor);
 
     let matrix = DiagonalMatrixStreamer::new(r, n);
-    let matrix_tensor = MatrixTensor::new(matrix, &expanded_one_tensor, n);
+    let matrix_tensor = MatrixTensor::new(matrix, &one_tensor, n);
     let mut stream = matrix_tensor.iter();
     assert_eq!(stream.next(), Some(r));
     assert_eq!(stream.next(), Some(r));
@@ -124,8 +125,7 @@ fn test_matrix_tensor_stream() {
     assert!(stream.next().is_none());
 
     let random_tensor = [F::rand(rng), F::rand(rng)];
-    let expanded_random_tensor = expand_tensor(&random_tensor);
-    let matrix_tensor = MatrixTensor::new(matrix, &expanded_random_tensor, n);
+    let matrix_tensor = MatrixTensor::new(matrix, &random_tensor, n);
     let mut stream = matrix_tensor.iter();
     assert_eq!(stream.next(), Some(r * random_tensor[0] * random_tensor[1]));
     assert_eq!(stream.next(), Some(r * random_tensor[1]));
@@ -143,7 +143,6 @@ fn test_matrix_tensor_len() {
 
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
-    use crate::misc::expand_tensor;
     use crate::misc::{matrix_into_col_major_slice, matrix_into_row_major_slice};
 
     let rng = &mut test_rng();
@@ -152,21 +151,17 @@ fn test_matrix_tensor_len() {
     let one_tensor = [F::one(); 3];
 
     let matrix = DiagonalMatrixStreamer::new(r, n);
-    let expanded_one_tensor = expand_tensor(&one_tensor);
-    let matrix_tensor = MatrixTensor::new(matrix, &expanded_one_tensor, n);
-
+    let matrix_tensor = MatrixTensor::new(matrix, &one_tensor, n);
     assert_eq!(matrix_tensor.len(), matrix_tensor.iter().count());
 
     let log_n = 10;
     let n = 1 << log_n;
     let one_tensor = vec![F::one(); log_n];
-    let expanded_one_tensor = expand_tensor(&one_tensor);
     let circuit = random_circuit(rng, n, n);
     let r1cs = generate_relation(circuit);
     let matrix_rowm = matrix_into_row_major_slice(&r1cs.a, r1cs.z.len());
     let matrix_colm = matrix_into_col_major_slice(&r1cs.a);
-    let matrix_tensor =
-        MatrixTensor::new(matrix_rowm.as_slice(), &expanded_one_tensor, r1cs.z.len());
+    let matrix_tensor = MatrixTensor::new(matrix_rowm.as_slice(), &one_tensor, r1cs.z.len());
     let matrix_cols = matrix_rowm.iter().filter(|x| x.is_eol()).count();
     let matrix_rows = matrix_colm.iter().filter(|x| x.is_eol()).count();
     // make sure that rA has the same number of elements of z
@@ -180,7 +175,6 @@ fn test_matrix_tensor_len() {
 
 #[test]
 fn test_matrix_tensor() {
-    use crate::misc::expand_tensor;
     use ark_bls12_381::Fr;
     use ark_ff::{One, Zero};
     use ark_std::test_rng;
@@ -207,8 +201,7 @@ fn test_matrix_tensor() {
     ];
     let r = F::rand(rng);
     let tensor = vec![r, r * r];
-    let expanded_tensor = expand_tensor(&tensor);
-    let mt = MatrixTensor::new(matrix.as_slice(), &expanded_tensor, 4);
+    let mt = MatrixTensor::new(matrix.as_slice(), &tensor, 4);
     let mut product = mt.iter();
     let expected = r * r * r + r * r + r + one;
     assert_eq!(product.next(), Some(expected));
@@ -220,8 +213,7 @@ fn test_matrix_tensor() {
     let challenges = [F::rand(rng), F::rand(rng), F::rand(rng), F::rand(rng)];
     let identity = DiagonalMatrixStreamer::new(F::one(), 1 << 4);
 
-    let expanded_challenges = expand_tensor(&challenges);
-    let mt = MatrixTensor::new(identity, &expanded_challenges, 1 << 4);
+    let mt = MatrixTensor::new(identity, &challenges, 1 << 4);
     let mut got = mt.iter().collect::<Vec<_>>();
     got.reverse();
     let expected = crate::misc::tensor(&challenges);

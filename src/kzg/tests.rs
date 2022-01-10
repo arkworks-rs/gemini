@@ -51,7 +51,7 @@ fn test_open_consistency() {
 
     // compute the time commitment
     let (time_evaluation, time_open) = time_ck.open(&polynomials, &alpha);
-    let (space_evaluation, space_open) = space_ck.open(polynomial_stream, &alpha);
+    let (space_evaluation, space_open) = space_ck.open(&polynomial_stream, &alpha);
     // compute the space commitment
     assert_eq!(time_evaluation, space_evaluation);
     assert_eq!(time_open, space_open);

@@ -49,7 +49,11 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
             acc_v_commitments,
             claimed_sumchecks,
         };
-        EntryProduct { provers, msgs }
+        EntryProduct {
+            provers,
+            chal,
+            msgs,
+        }
     }
 }
 
@@ -113,7 +117,7 @@ macro_rules! impl_elastic_batch {
                 claimed_sumchecks
 
             };
-            EntryProduct { msgs, provers }
+            EntryProduct { msgs, chal, provers }
         }
     };
 }

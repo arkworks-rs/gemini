@@ -2,12 +2,14 @@
 extern crate criterion;
 extern crate merlin;
 
+use criterion::{BenchmarkId, Criterion};
+
 use ark_bls12_381::Fr;
 use ark_ff::One;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
-use criterion::{BenchmarkId, Criterion};
-use gemini::sumcheck::proof::Sumcheck;
+
+use ark_gemini::sumcheck::proof::Sumcheck;
 
 fn bench_sumcheck(c: &mut Criterion) {
     let mut group = c.benchmark_group("sumcheck");

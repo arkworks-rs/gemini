@@ -84,14 +84,14 @@ where
 use ark_std::borrow::Borrow;
 
 #[derive(Clone)]
-pub struct TensorIStreamer<F, S>
+pub struct TensorIStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
     tensor: PartialTensor<F>,
-    index: S,
+    index: &'a S,
     len: usize,
 }
 
@@ -104,19 +104,19 @@ where
     index: I,
     tensor: PartialTensor<F>,
 }
-impl<'a, F, S> TensorIStreamer<F, S>
+impl<'a, F, S> TensorIStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
-    pub fn new(v: &[F], index: S, len: usize) -> Self {
+    pub fn new(v: &[F], index: &'a S, len: usize) -> Self {
         let tensor = expand_tensor(v);
         Self { tensor, index, len }
     }
 }
 
-impl<'a, F, S> Iterable for TensorIStreamer<F, S>
+impl<'a, F, S> Iterable for TensorIStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,

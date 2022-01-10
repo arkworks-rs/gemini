@@ -51,15 +51,7 @@ fn test_snark_consistency() {
     let ck_stream = CommitterKeyStream::from(&ck);
     let space_proof = Proof::new_elastic(r1cs_stream, ck_stream);
 
-    assert_eq!(
-        time_proof.witness_commitment,
-        space_proof.witness_commitment
-    );
-
-    assert_eq!(
-        time_proof.first_sumcheck_msgs,
-        space_proof.first_sumcheck_msgs
-    );
+    assert_eq!(time_proof, space_proof);
 }
 
 #[test]

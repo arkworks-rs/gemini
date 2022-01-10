@@ -36,7 +36,7 @@ pub struct R1csStream<SM, SZ, SW> {
 /// Represents a matrix.
 pub type Matrix<F> = Vec<Vec<(F, usize)>>;
 
-pub struct R1CS<F: Field> {
+pub struct R1cs<F: Field> {
     pub a: Matrix<F>,
     pub b: Matrix<F>,
     pub c: Matrix<F>,
@@ -143,7 +143,7 @@ impl<F: Field> ConstraintSynthesizer<F> for OutlineTestCircuit {
     }
 }
 
-pub fn generate_relation<F: PrimeField, C: ConstraintSynthesizer<F>>(circuit: C) -> R1CS<F> {
+pub fn generate_relation<F: PrimeField, C: ConstraintSynthesizer<F>>(circuit: C) -> R1cs<F> {
     let pcs = ConstraintSystem::new_ref();
     pcs.set_optimization_goal(OptimizationGoal::Weight);
     // pcs.set_optimization_goal(OptimizationGoal::Constraints);
@@ -158,7 +158,7 @@ pub fn generate_relation<F: PrimeField, C: ConstraintSynthesizer<F>>(circuit: C)
     let statement = pcs.instance_assignment.as_slice();
     let witness = pcs.witness_assignment.as_slice();
     let matrices = pcs.to_matrices().expect("should not be `None`");
-    R1CS {
+    R1cs {
         a: matrices.a,
         b: matrices.b,
         c: matrices.c,
@@ -203,7 +203,7 @@ pub fn random_circuit<F: Field>(
     }
 }
 
-pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1CS<F> {
+pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1cs<F> {
     let e = F::rand(rng);
     let inv_e = e.inverse().expect("Buy a lottery ticket and retry");
     let z = vec![e; n];
@@ -211,7 +211,7 @@ pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1CS<F> {
     let x = vec![e];
 
     let diagonal_matrix = (0..n).map(|i| vec![(inv_e, i)]).collect::<Vec<_>>();
-    R1CS {
+    R1cs {
         a: diagonal_matrix.clone(),
         b: diagonal_matrix.clone(),
         c: diagonal_matrix.clone(),

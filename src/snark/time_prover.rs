@@ -3,20 +3,20 @@ use ark_ec::PairingEngine;
 use ark_ff::{Field, One, Zero};
 use log::debug;
 
-use crate::circuit::R1CS;
+use crate::circuit::R1cs;
 use crate::kzg::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
 use crate::sumcheck::proof::Sumcheck;
-use crate::tensorcheck::TensorCheckProof;
+use crate::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the R1CS instance `r1cs` and the committer key `ck` for the polynomial commitment scheme,
     /// produce a new SNARK proof using the time-efficient prover.
-    pub fn new_time(r1cs: &R1CS<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
+    pub fn new_time(r1cs: &R1cs<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
     where
         E: PairingEngine,
     {
@@ -91,7 +91,7 @@ impl<E: PairingEngine> Proof<E> {
             &second_proof.challenges[..],
         )];
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        let tensor_check_proof = TensorCheckProof::new_time(
+        let tensor_check_proof = TensorcheckProof::new_time(
             &mut transcript,
             ck,
             tc_base_polynomials,

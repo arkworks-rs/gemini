@@ -3,11 +3,11 @@ extern crate criterion;
 extern crate merlin;
 
 use ark_bls12_381::{Bls12_381, Fr};
+use ark_gemini::kzg::CommitterKey;
+use ark_gemini::kzg::CommitterKeyStream;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 use criterion::{BenchmarkId, Criterion};
-use gemini::kzg::CommitterKey;
-use gemini::kzg::CommitterKeyStream;
 
 fn bench_commit(c: &mut Criterion) {
     let mut group = c.benchmark_group("commit");
@@ -37,7 +37,7 @@ fn bench_commit(c: &mut Criterion) {
                     .cloned()
                     .collect::<Vec<_>>();
                 let polynomial_stream = be_polynomial.as_slice();
-                b.iter(|| ck_stream.commit(polynomial_stream));
+                b.iter(|| ck_stream.commit(&polynomial_stream));
             });
     }
 }

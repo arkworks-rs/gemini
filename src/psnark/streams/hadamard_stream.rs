@@ -5,9 +5,9 @@ use ark_std::marker::PhantomData;
 use crate::iterable::Iterable;
 
 #[derive(Clone, Copy)]
-pub struct HadamardStreamer<F, S0, S1>(S0, S1, PhantomData<F>);
+pub struct HadamardStreamer<'a, F, S0, S1>(&'a S0, &'a S1, PhantomData<F>);
 
-impl<F, S0, S1> HadamardStreamer<F, S0, S1>
+impl<'a, F, S0, S1> HadamardStreamer<'a, F, S0, S1>
 where
     S0: Iterable,
     F: Field,
@@ -15,7 +15,7 @@ where
     S0::Item: Borrow<F>,
     S1::Item: Borrow<F>,
 {
-    pub fn new(s0: S0, s1: S1) -> Self {
+    pub fn new(s0: &'a S0, s1: &'a S1) -> Self {
         Self(s0, s1, PhantomData)
     }
 }
@@ -43,7 +43,7 @@ where
     }
 }
 
-impl<S0, S1, F> Iterable for HadamardStreamer<F, S0, S1>
+impl<'a, S0, S1, F> Iterable for HadamardStreamer<'a, F, S0, S1>
 where
     S0: Iterable,
     S1: Iterable,
@@ -72,14 +72,14 @@ fn test_hadamard_stream() {
     use ark_std::UniformRand;
 
     let rng = &mut test_rng();
-    let lhs = (0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
-    let rhs = (0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+    let lhs = &(0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+    let rhs = &(0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
     let hadamard_product = lhs
         .iter()
         .zip(rhs.iter())
         .map(|(&x, y)| x * y)
         .collect::<Vec<_>>();
-    let hadamard_stream = HadamardStreamer::<Fr, _, _>::new(lhs.as_slice(), rhs.as_slice());
+    let hadamard_stream = HadamardStreamer::<Fr, _, _>::new(&lhs, &rhs);
     let hadamard_stream_collected = hadamard_stream.iter().collect::<Vec<_>>();
     assert_eq!(hadamard_stream_collected, hadamard_product);
 }
