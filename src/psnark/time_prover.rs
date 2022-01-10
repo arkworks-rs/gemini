@@ -1,11 +1,13 @@
 /// Time-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
+use ark_ff::Field;
 use ark_std::One;
 
-use crate::circuit::{Matrix, R1CS};
+use crate::circuit::R1CS;
 use crate::kzg::CommitterKey;
 use crate::misc::{
-    evaluate_le, hadamard, joint_matrices, powers, product_matrix_vector, sum_matrices, tensor,
+    evaluate_le, hadamard, joint_matrices, linear_combination, powers, product_matrix_vector,
+    sum_matrices, tensor,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::transcript::GeminiTranscript;
@@ -15,8 +17,19 @@ use crate::PROTOCOL_NAME;
 use super::Proof;
 
 #[inline]
-fn lookup<T: Copy>(v: &[T], index: &[usize]) -> Vec<T> {
+fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
     index.iter().map(|&i| v[i]).collect()
+}
+
+#[inline]
+fn plookup<F: Field>(
+    subset: &Vec<F>,
+    set: &Vec<F>,
+    index: &Vec<usize>,
+    gamma: F,
+    chi: F,
+) -> (Vec<Vec<F>>, F, F, Vec<F>, Vec<Vec<F>>) {
+    todo!()
 }
 
 impl<E: PairingEngine> Proof<E> {
@@ -49,14 +62,66 @@ impl<E: PairingEngine> Proof<E> {
         let a_challenges = hadamard(&b_challenges, &c_challenges);
 
         let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c);
-        let (row, col, val_a, val_b, val_c) =
+        let (row, col, row_index, col_index, val_a, val_b, val_c) =
             joint_matrices(&joint_matrix, &r1cs.a, &r1cs.b, &r1cs.c);
 
-        // let z_a_star = lookup(&r1cs.z, &col_a);
-        // let r_a_star = lookup(&r_a, &row_a);
-        // let rz_a_star = hadamard(&z_a_star, &r_a_star);
-        // let _second_sumcheck1 =
-        //     Sumcheck::new_time(&mut transcript, &val_a, &rz_a_star, &E::Fr::one());
+        let r_a_star = lookup(&a_challenges, &row_index);
+        let r_b_star = lookup(&b_challenges, &row_index);
+        let r_c_star = lookup(&c_challenges, &row_index);
+        let z_star = lookup(&r1cs.z, &col_index);
+
+        let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
+        let z_r_commitments = ck.batch_commit(vec![&r_a_star, &r_b_star, &r_c_star, &z_star]);
+        end_timer!(z_r_commitments_time);
+
+        z_r_commitments
+            .iter()
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
+
+        let eta = transcript.get_challenge::<E::Fr>(b"eta");
+        let eta2 = eta.square();
+
+        let r_star_val = linear_combination(
+            &[
+                hadamard(&r_a_star, &val_a),
+                hadamard(&r_b_star, &val_b),
+                hadamard(&r_c_star, &val_c),
+            ],
+            &[E::Fr::one(), eta, eta2],
+        )
+        .unwrap();
+
+        let second_sumcheck_time = start_timer!(|| "Second sumcheck");
+        let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
+        let second_sumcheck_msgs = second_proof.prover_messages();
+        end_timer!(second_sumcheck_time);
+
+        let gamma = transcript.get_challenge(b"gamma");
+        let chi = transcript.get_challenge(b"chi");
+
+        let (r_lookup_vec, r_subset_prod, r_set_prod, r_sorted, r_partial_prods) =
+            plookup(&r_a_star, &a_challenges, &row_index, gamma, chi);
+        let (z_lookup_vec, z_subset_prod, z_set_prod, z_sorted, z_partial_prods) =
+            plookup(&z_star, &r1cs.z, &col_index, gamma, chi);
+
+        vec![r_subset_prod, r_set_prod, z_subset_prod, z_set_prod]
+            .iter()
+            .for_each(|c| transcript.append_scalar(b"entryprod", c));
+
+        let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
+        let sorted_commitments = ck.batch_commit(vec![&r_sorted, &z_sorted]);
+        end_timer!(sorted_commitments_time);
+
+        let partial_prod_commitments_time = start_timer!(|| "Commitments to partial prods");
+        let r_partial_prod_commitments = ck.batch_commit(&r_partial_prods);
+        let z_partial_prod_commitments = ck.batch_commit(&z_partial_prods);
+        end_timer!(partial_prod_commitments_time);
+
+        sorted_commitments
+            .iter()
+            .chain(r_partial_prod_commitments.iter())
+            .chain(z_partial_prod_commitments.iter())
+            .for_each(|c| transcript.append_commitment(b"commitment", c));
 
         todo!()
     }

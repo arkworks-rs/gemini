@@ -257,9 +257,19 @@ pub fn joint_matrices<F: Field>(
     a: &Matrix<F>,
     b: &Matrix<F>,
     c: &Matrix<F>,
-) -> (Vec<F>, Vec<F>, Vec<F>, Vec<F>, Vec<F>) {
+) -> (
+    Vec<F>,
+    Vec<F>,
+    Vec<usize>,
+    Vec<usize>,
+    Vec<F>,
+    Vec<F>,
+    Vec<F>,
+) {
     let mut row_vec = Vec::new();
     let mut col_vec = Vec::new();
+    let mut row_index_vec = Vec::new();
+    let mut col_index_vec = Vec::new();
     let mut val_a_vec = Vec::new();
     let mut val_b_vec = Vec::new();
     let mut val_c_vec = Vec::new();
@@ -290,6 +300,8 @@ pub fn joint_matrices<F: Field>(
             let row_val = F::from(r as u64);
             let col_val = F::from(*i as u64);
 
+            row_index_vec.push(r);
+            col_index_vec.push(*i);
             row_vec.push(row_val);
             col_vec.push(col_val);
             // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
@@ -299,7 +311,15 @@ pub fn joint_matrices<F: Field>(
         }
     }
 
-    (row_vec, col_vec, val_a_vec, val_b_vec, val_c_vec)
+    (
+        row_vec,
+        col_vec,
+        row_index_vec,
+        col_index_vec,
+        val_a_vec,
+        val_b_vec,
+        val_c_vec,
+    )
 }
 
 /// Return a matrix stream, row major.
