@@ -325,70 +325,24 @@ pub fn joint_matrices<F: Field>(
     )
 }
 
-/// Return a matrix stream, row major.
-/// XXX. can this be done without the hint for the number of columns?
-#[cfg(test)]
-pub(crate) fn matrix_into_row_major_slice<F: Field>(
-    a: &[Vec<(F, usize)>],
-    col_number: usize,
-) -> Vec<MatrixElement<F>> {
-    use ark_std::cmp::Ordering;
-    let mut a_row_flat = Vec::new();
+// #[cfg(test)]
+// pub fn matrix_slice_naive<F: Field>(a: &[Vec<(F, usize)>], n: usize) -> Vec<MatrixElement<F>> {
+//     let mut aa = vec![vec![F::zero(); n]; n];
+//     for (row, elements) in a.iter().enumerate() {
+//         for &(val, col) in elements {
+//             aa[row][col] = val;
+//         }
+//     }
 
-    for column in (0..col_number).rev() {
-        for (row, elements) in a.iter().enumerate().rev() {
-            for &(val, col) in elements.iter().rev() {
-                match col.cmp(&column) {
-                    Ordering::Equal => {
-                        a_row_flat.push(MatrixElement::Element((val, row)));
-                    }
-                    Ordering::Less => {
-                        break;
-                    }
-                    Ordering::Greater => {
-                        continue;
-                    }
-                }
-            }
-        }
-        a_row_flat.push(MatrixElement::EOL);
-    }
-    a_row_flat
-}
+//     let mut a_row_flat = Vec::new();
+//     for j in (0..n).rev() {
+//         for i in (0..n).rev() {
+//             if aa[i][j] != F::zero() {
+//                 a_row_flat.push(MatrixElement::Element((aa[i][j], i)))
+//             }
+//         }
+//         a_row_flat.push(MatrixElement::EOL);
+//     }
 
-// Return a matrix stream, column major.
-#[cfg(test)]
-pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
-    let mut a_row_flat = Vec::new();
-
-    for (_row, elements) in a.iter().enumerate().rev() {
-        for &(val, col) in elements.iter().rev() {
-            a_row_flat.push(MatrixElement::Element((val, col)));
-        }
-        a_row_flat.push(MatrixElement::EOL);
-    }
-    a_row_flat
-}
-
-#[allow(dead_code)]
-#[cfg(test)]
-pub fn matrix_slice_naive<F: Field>(a: &[Vec<(F, usize)>], n: usize) -> Vec<MatrixElement<F>> {
-    let mut aa = vec![vec![F::zero(); n]; n];
-    for (row, elements) in a.iter().enumerate() {
-        for &(val, col) in elements {
-            aa[row][col] = val;
-        }
-    }
-
-    let mut a_row_flat = Vec::new();
-    for j in (0..n).rev() {
-        for i in (0..n).rev() {
-            if aa[i][j] != F::zero() {
-                a_row_flat.push(MatrixElement::Element((aa[i][j], i)))
-            }
-        }
-        a_row_flat.push(MatrixElement::EOL);
-    }
-
-    a_row_flat
-}
+//     a_row_flat
+// }

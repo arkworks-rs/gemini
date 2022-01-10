@@ -26,6 +26,95 @@ pub struct DiagonalMatrixStreamer<T> {
     len: usize,
 }
 
+pub struct RepeatStreamer<'a, T> {
+    m: &'a [T],
+    repeat: usize,
+}
+
+impl<'a, T> Iterable for RepeatStreamer<'a, T> {
+    type Item = &'a T;
+
+    type Iter = iter::Take<iter::Cycle<std::slice::Iter<'a, T>>>;
+
+    fn iter(&self) -> Self::Iter {
+        self.m.iter().cycle().take(self.len())
+    }
+
+    fn len(&self) -> usize {
+        self.m.len() * self.repeat
+    }
+}
+
+impl<'a, T> RepeatStreamer<'a, T> {
+    pub fn new(m: &'a [T], repeat: usize) -> Self {
+        Self { m, repeat }
+    }
+}
+
+pub struct RepeatMatrixStreamer<T> {
+    m: Vec<T>,
+    repeat: usize,
+    block_size: usize,
+}
+
+impl<T: Copy> Iterable for RepeatMatrixStreamer<MatrixElement<T>> {
+    type Item = MatrixElement<T>;
+
+    type Iter = RepeatMatrixIterator<T>;
+
+    fn iter(&self) -> Self::Iter {
+        Self::Iter {
+            m: self.m.clone(),
+            repeat: self.repeat,
+            block_size: self.block_size,
+            count: 0,
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.m.len() * self.repeat
+    }
+}
+
+impl<T: Clone> RepeatMatrixStreamer<MatrixElement<T>> {
+    pub fn new(m: Vec<MatrixElement<T>>, repeat: usize, block_size: usize) -> Self {
+        Self {
+            m,
+            repeat,
+            block_size,
+        }
+    }
+}
+pub struct RepeatMatrixIterator<T> {
+    m: Vec<MatrixElement<T>>,
+    repeat: usize,
+    count: usize,
+    block_size: usize,
+}
+
+impl<T: Copy> Iterator for RepeatMatrixIterator<T> {
+    type Item = MatrixElement<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.count == 0 && self.repeat == 0 {
+            None
+        } else {
+            if self.repeat != 0 && self.count == 0 {
+                self.count = self.m.len();
+                self.repeat -= 1;
+            }
+            self.count -= 1;
+            match self.m[self.count] {
+                MatrixElement::Element((e, i)) => Some(MatrixElement::Element((
+                    e,
+                    i + self.repeat * self.block_size,
+                ))),
+                t => Some(t),
+            }
+        }
+    }
+}
+
 /// Iterator for the diagonal matrix.
 pub struct DiagonalMatrixIter<T> {
     e: T,

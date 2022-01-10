@@ -143,7 +143,7 @@ fn test_matrix_tensor_len() {
 
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
-    use crate::misc::{matrix_into_col_major_slice, matrix_into_row_major_slice};
+    use crate::circuit::{matrix_into_col_major_slice, matrix_into_row_major_slice};
 
     let rng = &mut test_rng();
     let r = F::rand(rng);

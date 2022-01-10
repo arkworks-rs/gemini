@@ -31,7 +31,7 @@ where
     I::Item: Borrow<usize>,
 {
     pub fn new(items: &'a S, indices: &'a I) -> Self {
-        Self {items, indices}
+        Self { items, indices }
     }
 }
 

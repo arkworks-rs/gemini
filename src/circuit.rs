@@ -10,6 +10,14 @@ use ark_relations::{
 };
 use ark_std::rand::RngCore;
 
+use crate::{
+    iterable::{
+        dummy::{RepeatMatrixStreamer, RepeatStreamer},
+        Iterable,
+    },
+    misc::MatrixElement,
+};
+
 #[derive(Copy, Clone)]
 pub struct Circuit<F: Field> {
     a: Option<F>,
@@ -165,6 +173,104 @@ pub fn generate_relation<F: PrimeField, C: ConstraintSynthesizer<F>>(circuit: C)
         z: statement.iter().chain(witness).cloned().collect(),
         w: witness.to_vec(),
         x: statement.to_vec(),
+    }
+}
+
+/// Return a matrix stream, row major.
+/// XXX. can this be done without the hint for the number of columns?
+pub(crate) fn matrix_into_row_major_slice<F: Field>(
+    a: &[Vec<(F, usize)>],
+    col_number: usize,
+) -> Vec<MatrixElement<F>> {
+    use ark_std::cmp::Ordering;
+    let mut a_row_flat = Vec::new();
+
+    for column in (0..col_number).rev() {
+        for (row, elements) in a.iter().enumerate().rev() {
+            for &(val, col) in elements.iter().rev() {
+                match col.cmp(&column) {
+                    Ordering::Equal => {
+                        a_row_flat.push(MatrixElement::Element((val, row)));
+                    }
+                    Ordering::Less => {
+                        break;
+                    }
+                    Ordering::Greater => {
+                        continue;
+                    }
+                }
+            }
+        }
+        a_row_flat.push(MatrixElement::EOL);
+    }
+    a_row_flat
+}
+
+// Return a matrix stream, column major.
+pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
+    let mut a_row_flat = Vec::new();
+
+    for (_row, elements) in a.iter().enumerate().rev() {
+        for &(val, col) in elements.iter().rev() {
+            a_row_flat.push(MatrixElement::Element((val, col)));
+        }
+        a_row_flat.push(MatrixElement::EOL);
+    }
+    a_row_flat
+}
+
+pub fn repeat_r1cs<'a, F: PrimeField>(
+    r1cs: &'a R1cs<F>,
+    repeat: usize,
+    [z_a, z_b, z_c]: &'a [&[F]; 3],
+) -> R1csStream<impl Iterable, impl Iterable + 'a, impl Iterable + 'a> {
+    // XXX. change this
+    let nonzero = 0;
+    let block_size = 0;
+
+    let a_colm =
+        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.a), repeat, block_size);
+    let b_colm =
+        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.b), repeat, block_size);
+    let c_colm =
+        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.c), repeat, block_size);
+
+    let col_number = a_colm.len();
+    let a_rowm = RepeatMatrixStreamer::new(
+        matrix_into_row_major_slice(&r1cs.a, col_number),
+        repeat,
+        block_size,
+    );
+    let b_rowm = RepeatMatrixStreamer::new(
+        matrix_into_row_major_slice(&r1cs.b, col_number),
+        repeat,
+        block_size,
+    );
+    let c_rowm = RepeatMatrixStreamer::new(
+        matrix_into_row_major_slice(&r1cs.c, col_number),
+        repeat,
+        block_size,
+    );
+
+    let z = RepeatStreamer::new(&r1cs.z, repeat);
+    let witness = RepeatStreamer::new(&r1cs.w, repeat);
+    let z_a = RepeatStreamer::new(&z_a, repeat);
+    let z_b = RepeatStreamer::new(&z_b, repeat);
+    let z_c = RepeatStreamer::new(&z_c, repeat);
+
+    R1csStream {
+        a_colm,
+        b_colm,
+        a_rowm,
+        b_rowm,
+        c_rowm,
+        c_colm,
+        z,
+        witness,
+        z_a,
+        z_b,
+        z_c,
+        nonzero,
     }
 }
 
