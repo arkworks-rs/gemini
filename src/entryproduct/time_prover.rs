@@ -5,6 +5,7 @@ use merlin::Transcript;
 use super::{EntryProduct, ProverMsgs};
 use crate::misc::evaluate_le;
 use crate::sumcheck::time_prover::Witness;
+use crate::sumcheck::Prover;
 use crate::transcript::GeminiTranscript;
 use crate::{kzg::CommitterKey, sumcheck::TimeProver};
 
@@ -50,7 +51,66 @@ fn monic<F: Field>(v: &[F]) -> Vec<F> {
     monic_v
 }
 
-impl<E: PairingEngine> EntryProduct<E, TimeProver<E::Fr>> {
+impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
+    /// Creates a new grand product argument using the time prover.
+    ///
+    /// # Panics
+    /// If the length of the claimed products differs from the length of `vs`.
+    pub fn new_time_batch(
+        transcript: &mut Transcript,
+        ck: &CommitterKey<E>,
+        vs: &[&[E::Fr]],
+        claimed_products: &[E::Fr],
+    ) -> Self {
+        assert_eq!(vs.len(), claimed_products.len());
+
+        // XXX. we do not really need to store monic_vs, we can just extend every element of vs with 1.
+        let monic_vs = vs.iter().map(|v| monic(v)).collect::<Vec<_>>();
+        let rrot_vs = monic_vs
+            .iter()
+            .map(|v| right_rotation(v))
+            .collect::<Vec<_>>();
+        let acc_vs = monic_vs
+            .iter()
+            .map(|v| accumulated_product(v))
+            .collect::<Vec<_>>();
+        let acc_v_commitments = ck.batch_commit(&acc_vs);
+        acc_v_commitments
+            .iter()
+            .for_each(|acc_v_commitment| transcript.append_commitment(b"acc_v", acc_v_commitment));
+
+        let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+
+        let provers = rrot_vs
+            .iter()
+            .zip(acc_vs.iter())
+            .map(|(rrot_v, acc_v)| {
+                let witness = Witness::new(rrot_v, acc_v, &chal);
+                Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>
+            })
+            .collect::<Vec<_>>();
+        let claimed_sumchecks = claimed_products
+            .iter()
+            .zip(acc_vs.iter())
+            .map(|(cp, acc_v)| {
+                let acc_v_chal = evaluate_le(acc_v, &chal);
+                let chal_n = chal.pow(&[acc_v.len() as u64]);
+                acc_v_chal * chal + cp - chal_n
+            })
+            .collect::<Vec<_>>();
+
+        let msgs = ProverMsgs {
+            acc_v_commitments,
+            claimed_sumchecks,
+        };
+
+        EntryProduct {
+            msgs,
+            chal,
+            provers,
+        }
+    }
+
     /// Creates a new grand product argument using the time prover.
     pub fn new_time(
         transcript: &mut Transcript,
@@ -72,7 +132,7 @@ impl<E: PairingEngine> EntryProduct<E, TimeProver<E::Fr>> {
         ];
 
         let witness = Witness::new(&rrot_v, &acc_v, &chal);
-        let provers = vec![TimeProver::new(witness)];
+        let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>];
         let msgs = ProverMsgs {
             acc_v_commitments,
             claimed_sumchecks,

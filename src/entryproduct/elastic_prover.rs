@@ -108,14 +108,14 @@ macro_rules! impl_elastic_batch {
                 let claimed_sumcheck = sumcheck_subclaim(claimed_product, &acc_v, &chal);
 
                 claimed_sumchecks.push(claimed_sumcheck);
+                // XXXX. should we send also the claimed sumchecks?
                 let sumcheck_prover = ElasticProver::new(rrot_v, acc_v, chal);
                 provers.push(Box::new(sumcheck_prover));
             )*
 
             let msgs = ProverMsgs {
                 acc_v_commitments,
-                claimed_sumchecks
-
+                claimed_sumchecks,
             };
             EntryProduct { msgs, chal, provers }
         }
