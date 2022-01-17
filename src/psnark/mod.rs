@@ -23,7 +23,6 @@ pub struct Proof<E: PairingEngine> {
     first_sumcheck_msgs: ProverMsgs<E::Fr>,
     r_star_commitments: [Commitment<E>; 3],
     z_star_commitment: Commitment<E>,
-    z_star_rs: [E::Fr; 3],
     second_sumcheck_msgs: ProverMsgs<E::Fr>,
     set_r_ep: E::Fr,
     subset_r_ep: E::Fr,

@@ -136,31 +136,21 @@ impl<E: PairingEngine> Proof<E> {
         let alpha_star_commitment = ck.commit(&alpha_star);
         let r_star_commitments = [ralpha_star_commitment, r_star_commitment, alpha_star_commitment];
         let z_star_commitment = ck.commit(&z_star);
-        // compute the inner products for the sub-claims:
-        // <z*, r_a* \odot val_a>
-        // <z*, r_b* \odot val_b>
-        // <z*, r_c* \odot val_c>
-        let ralpha_star_val_a = HadamardStreamer::new(&ralpha_star, &val_a);
-        let r_star_val_b = HadamardStreamer::new(&r_star, &val_b);
-        let alpha_star_val_c = HadamardStreamer::new(&alpha_star, &val_c);
-        let s0 = inner_product_uncheck(z_star.iter(), ralpha_star_val_a.iter());
-        let s1 = inner_product_uncheck(z_star.iter(), r_star_val_b.iter());
-        let s2 = inner_product_uncheck(z_star.iter(), alpha_star_val_c.iter());
-        let z_star_rs = [s0, s1, s2];
 
         transcript.append_commitment(b"ra*", &ralpha_star_commitment);
         transcript.append_commitment(b"rb*", &r_star_commitment);
         transcript.append_commitment(b"rc*", &alpha_star_commitment);
         transcript.append_commitment(b"rb*", &z_star_commitment);
-        transcript.append_scalar(b"s0", &s0);
-        transcript.append_scalar(b"s1", &s1);
-        transcript.append_scalar(b"s2", &s2);
 
         // second sumcheck
         // batch the randomness for the three matrices and invoke the sumcheck protocol.
         let challenge = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(challenge, 3);
+        let ralpha_star_val_a = HadamardStreamer::new(&ralpha_star, &val_a);
+        let r_star_val_b = HadamardStreamer::new(&r_star, &val_b);
+        let alpha_star_val_c = HadamardStreamer::new(&alpha_star, &val_c);
         let rhs = lincomb!((ralpha_star_val_a, r_star_val_b, alpha_star_val_c), &challenges);
+
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let y = transcript.get_challenge(b"y");
@@ -482,7 +472,6 @@ impl<E: PairingEngine> Proof<E> {
             first_sumcheck_msgs: sumcheck1.prover_messages(),
             r_star_commitments,
             z_star_commitment,
-            z_star_rs,
             second_sumcheck_msgs: sumcheck2.prover_messages(),
             set_r_ep,
             subset_r_ep,
