@@ -59,7 +59,7 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
     pub fn new_time_batch(
         transcript: &mut Transcript,
         ck: &CommitterKey<E>,
-        vs: &[&[E::Fr]],
+        vs: &[Vec<E::Fr>],
         claimed_products: &[E::Fr],
     ) -> Self {
         assert_eq!(vs.len(), claimed_products.len());

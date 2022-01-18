@@ -145,18 +145,11 @@ impl<E: PairingEngine> Proof<E> {
         let ra_star_val_a = HadamardStreamer::new(&ra_star, &val_a);
         let rb_star_val_b = HadamardStreamer::new(&rb_star, &val_b);
         let rc_star_val_c = HadamardStreamer::new(&rc_star, &val_c);
-        let s0 = inner_product_uncheck(z_star.iter(), ra_star_val_a.iter());
-        let s1 = inner_product_uncheck(z_star.iter(), rb_star_val_b.iter());
-        let s2 = inner_product_uncheck(z_star.iter(), rc_star_val_c.iter());
-        let z_star_rs = [s0, s1, s2];
 
         transcript.append_commitment(b"ra*", &ra_star_commitment);
         transcript.append_commitment(b"rb*", &rb_star_commitment);
         transcript.append_commitment(b"rc*", &rc_star_commitment);
         transcript.append_commitment(b"rb*", &z_star_commitment);
-        transcript.append_scalar(b"s0", &s0);
-        transcript.append_scalar(b"s1", &s1);
-        transcript.append_scalar(b"s2", &s2);
 
         // second sumcheck
         // batch the randomness for the three matrices and invoke the sumcheck protocol.
@@ -460,12 +453,18 @@ impl<E: PairingEngine> Proof<E> {
             first_sumcheck_msgs: sumcheck1.prover_messages(),
             r_star_commitments,
             z_star_commitment,
-            z_star_rs,
             second_sumcheck_msgs: sumcheck2.prover_messages(),
-            set_r_ep,
-            subset_r_ep,
-            sorted_r_ep,
-            sorted_r_commitment,
+            set_r_b_ep: set_r_ep,
+            subset_r_b_ep: subset_r_ep,
+            sorted_r_b_ep: sorted_r_ep,
+            sorted_r_b_commitment: sorted_r_commitment,
+            /*
+            TODO: the following things need to be changed
+            */
+            set_r_c_ep: set_r_ep,
+            subset_r_c_ep: subset_r_ep,
+            sorted_r_c_ep: sorted_r_ep,
+            sorted_r_c_commitment: sorted_r_commitment,
             set_z_ep,
             subset_z_ep,
             sorted_z_ep,
