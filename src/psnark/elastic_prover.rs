@@ -14,7 +14,9 @@ use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
-use crate::misc::{evaluate_be, hadamard, powers, powers2, strip_last, MatrixElement};
+use crate::misc::{
+    evaluate_be, hadamard, powers, powers2, scalar_prod_unsafe, strip_last, MatrixElement,
+};
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
@@ -27,16 +29,6 @@ use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
-
-fn inner_product_uncheck<F: Field, I, J>(lhs: I, rhs: J) -> F
-where
-    I: Iterator,
-    J: Iterator,
-    I::Item: Borrow<F>,
-    J::Item: Borrow<F>,
-{
-    lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
-}
 
 fn evaluate_base_polynomial<I, F>(
     transcript: &mut Transcript,
@@ -134,7 +126,11 @@ impl<E: PairingEngine> Proof<E> {
         let ralpha_star_commitment = ck.commit(&ralpha_star);
         let r_star_commitment = ck.commit(&r_star);
         let alpha_star_commitment = ck.commit(&alpha_star);
-        let r_star_commitments = [ralpha_star_commitment, r_star_commitment, alpha_star_commitment];
+        let r_star_commitments = [
+            ralpha_star_commitment,
+            r_star_commitment,
+            alpha_star_commitment,
+        ];
         let z_star_commitment = ck.commit(&z_star);
 
         transcript.append_commitment(b"ra*", &ralpha_star_commitment);
@@ -149,13 +145,17 @@ impl<E: PairingEngine> Proof<E> {
         let ralpha_star_val_a = HadamardStreamer::new(&ralpha_star, &val_a);
         let r_star_val_b = HadamardStreamer::new(&r_star, &val_b);
         let alpha_star_val_c = HadamardStreamer::new(&alpha_star, &val_c);
-        let rhs = lincomb!((ralpha_star_val_a, r_star_val_b, alpha_star_val_c), &challenges);
+        let rhs = lincomb!(
+            (ralpha_star_val_a, r_star_val_b, alpha_star_val_c),
+            &challenges
+        );
 
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let y = transcript.get_challenge(b"y");
         let z = transcript.get_challenge(b"zeta");
-        let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) = plookup_streams(&alphas, &alpha_star, &row, y, z);
+        let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
+            plookup_streams(&alphas, &alpha_star, &row, y, z);
         let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&rs, &r_star, &row, y, z);
         let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &col, y, z);
         // compute the products to send to the verifier.
@@ -232,8 +232,8 @@ impl<E: PairingEngine> Proof<E> {
         // <r_a* \otimes (sumcheck chals), val_a>
         // <r_b* \otimes (sumcheck chals), val_b>
         // <r_c* \otimes (sumcheck chals), val_c> (not needed as it can be derived)
-        let r_val_chal_a = inner_product_uncheck(lhs_ralpha_star.iter(), val_a.iter());
-        let r_val_chal_b = inner_product_uncheck(lhs_r_star.iter(), val_b.iter());
+        let r_val_chal_a = scalar_prod_unsafe(lhs_ralpha_star.iter(), val_a.iter());
+        let r_val_chal_b = scalar_prod_unsafe(lhs_r_star.iter(), val_b.iter());
 
         transcript.append_scalar(b"r_val_chal_a", &r_val_chal_a);
         transcript.append_scalar(b"r_val_chal_b", &r_val_chal_b);
@@ -432,7 +432,7 @@ impl<E: PairingEngine> Proof<E> {
             + 3 * base_polynomials_evaluations.len(); // adjuct with the numebr of base polynomials
         let open_chals = powers(open_chal, open_chal_len);
 
-        // do this foe each element.
+        // do this for each element.
         let evaluation_proof: crate::kzg::EvaluationProof<E> = [
             ck.open_multi_points(&r1cs.witness, &eval_points).1,
             ck.open_multi_points(&ralpha_star, &eval_points).1,

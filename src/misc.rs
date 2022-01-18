@@ -10,7 +10,7 @@ pub(crate) const TENSOR_EXPANSION_LOG: usize = 16;
 pub(crate) const TENSOR_EXPANSION: usize = (1 << TENSOR_EXPANSION_LOG) - 1;
 
 /// Return a string will all the feature tags enabled so far.
-pub fn _features_enabled() -> String {
+pub(crate) fn _features_enabled() -> String {
     let parallel_enabled = if cfg!(feature = "parallel") {
         "parallel"
     } else {
@@ -231,7 +231,17 @@ pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
 #[inline]
 pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     assert_eq!(lhs.len(), rhs.len());
-    lhs.iter().zip(rhs).map(|(&x, y)| x * y).sum()
+    scalar_prod_unsafe(lhs.iter(), rhs.iter())
+}
+
+pub fn scalar_prod_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
+where
+    I: Iterator,
+    J: Iterator,
+    I::Item: Borrow<F>,
+    J::Item: Borrow<F>,
+{
+    lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
 }
 
 #[inline]
@@ -343,6 +353,5 @@ pub fn joint_matrices<F: Field>(
 //         }
 //         a_row_flat.push(MatrixElement::EOL);
 //     }
-
 //     a_row_flat
 // }

@@ -10,13 +10,9 @@ use ark_relations::{
 };
 use ark_std::rand::RngCore;
 
-use crate::{
-    iterable::{
-        dummy::{RepeatMatrixStreamer, RepeatStreamer},
-        Iterable,
-    },
-    misc::MatrixElement,
-};
+use crate::iterable::dummy::{RepeatMatrixStreamer, RepeatStreamer};
+use crate::iterable::Iterable;
+use crate::misc::MatrixElement;
 
 #[derive(Copy, Clone)]
 pub struct Circuit<F: Field> {
@@ -222,8 +218,12 @@ pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<Matri
 pub fn repeat_r1cs<'a, F: PrimeField>(
     r1cs: &'a R1cs<F>,
     repeat: usize,
-    [z_a, z_b, z_c]: &'a [&[F]; 3],
-) -> R1csStream<impl Iterable, impl Iterable + 'a, impl Iterable + 'a> {
+    [z_a, z_b, z_c]: [&'a [F]; 3],
+) -> R1csStream<
+    impl Iterable<Item = MatrixElement<F>>,
+    impl Iterable<Item = &'a F> + 'a,
+    impl Iterable<Item = &'a F> + 'a,
+> {
     // XXX. change this
     let nonzero = 0;
     let block_size = 0;
@@ -307,6 +307,51 @@ pub fn random_circuit<F: Field>(
         num_constraints,
         num_variables,
     }
+}
+
+#[test]
+fn test_repeated_r1cs() {
+    use ark_bls12_381::Fr;
+
+    use crate::misc::evaluate_be;
+    use crate::misc::product_matrix_vector;
+    use crate::misc::scalar_prod;
+    use ark_std::{One, Zero};
+
+    let rng = &mut ark_std::test_rng();
+    let num_constraints = 1 << 4;
+    let num_variables = 1 << 4;
+    let repeat = 10;
+    let circuit = random_circuit(rng, num_constraints, num_variables);
+    let r1cs = generate_relation(circuit);
+    let za = product_matrix_vector(&r1cs.a, &r1cs.z);
+    let zb = product_matrix_vector(&r1cs.b, &r1cs.z);
+    let zc = product_matrix_vector(&r1cs.c, &r1cs.z);
+    let repeated_r1cs = repeat_r1cs(&r1cs, repeat, [&za, &zb, &zc]);
+
+    // test that <z_a, z_b> = z_c(1)
+    assert_eq!(scalar_prod(&za, &zb), evaluate_be(zc.iter(), &Fr::one()));
+    assert_eq!(
+        repeated_r1cs
+            .z_a
+            .iter()
+            .zip(repeated_r1cs.z_b.iter())
+            .map(|(x, y)| *x * y)
+            .sum::<Fr>(),
+        evaluate_be(repeated_r1cs.z_c.iter(), &Fr::one())
+    );
+
+    // test that [Az](1) = z_a(1)
+    let expected = za.iter().sum::<Fr>() * Fr::from(repeat as u64);
+    let mut got = Fr::zero();
+    for matrix_element in repeated_r1cs.a_colm.iter() {
+        match matrix_element {
+            MatrixElement::EOL => { /* do nothing here, all is being added up */ }
+            MatrixElement::Element((e, i)) => got += r1cs.z[i] * e,
+        }
+    }
+
+    assert_eq!(got, expected)
 }
 
 pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1cs<F> {
