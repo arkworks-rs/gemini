@@ -253,6 +253,15 @@ pub fn entry_prod<F: Field>(v: &[F]) -> F {
     res
 }
 
+/// Return the entry product of v.
+#[inline]
+#[allow(unused)]
+pub fn entry_prod<F: Field>(v: &[F]) -> F {
+    let mut res = F::one();
+    v.iter().for_each(|e| res *= e);
+    res
+}
+
 #[inline]
 #[allow(unused)]
 pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
