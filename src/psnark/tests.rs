@@ -1,8 +1,11 @@
 use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
-use crate::{circuit::{random_circuit, generate_relation}, kzg::CommitterKey};
+use crate::circuit::{random_circuit, generate_relation};
+use crate::kzg::CommitterKey;
 use super::Proof;
 
+
+#[test]
 fn test_consistency() {
     let rng = &mut test_rng();
     let num_constraints  = 128;

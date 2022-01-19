@@ -230,7 +230,7 @@ pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).collect()
 }
 
-/// Return the scalar product of `lhs` with `rhs`.
+/// Return the inner product of `lhs` with `rhs`.
 ///
 /// # Panics
 /// If the length of `lhs` and `rhs` are different.
