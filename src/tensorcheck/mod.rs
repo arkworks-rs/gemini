@@ -53,7 +53,7 @@ use crate::kzg::VerificationError;
 use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
-use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, scalar_prod};
+use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, ip};
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;
@@ -350,7 +350,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             );
 
             let batch_challenges = powers(batch_challenge, asserted_res.len());
-            let lc_asserted_res = scalar_prod(asserted_res, &batch_challenges);
+            let lc_asserted_res = ip(asserted_res, &batch_challenges);
 
             if subclaim != lc_asserted_res {
                 return Err(VerificationError);

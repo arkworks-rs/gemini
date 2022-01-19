@@ -8,7 +8,7 @@ use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, joint_matrices, linear_combination, powers, powers2,
-    product_matrix_vector, scalar_prod, sum_matrices, tensor,
+    product_matrix_vector, ip, sum_matrices, tensor, scalar_prod,
 };
 use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
 use crate::tensorcheck::TensorcheckProof;
@@ -23,14 +23,21 @@ fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
     index.iter().map(|&i| v[i]).collect()
 }
 
+
 #[inline]
-fn compute_lookup_vector_with_shift<F: Field>(v: &Vec<F>, gamma: F, chi: F, zeta: F) -> Vec<F> {
+fn alg_hash<F: Field>(v: &[F], w: &[F], chal: &F) -> Vec<F> {
+    assert_eq!(v.len(), w.len());
+    v.iter().zip(w).map(|(&v_i, &w_i) | v_i + w_i * chal).collect()
+}
+
+#[inline]
+fn compute_lookup_vector_with_shift<F: Field>(v: &[F], gamma: &F, chi: &F, zeta: &F) -> Vec<F> {
     let mut res = Vec::new();
     let tmp = (F::one() + chi) * gamma;
-    let mut prev = *v.last().unwrap() + zeta * F::from(v.len() as u64);
-    v.iter().enumerate().for_each(|(i, e)| {
-        let curr = *e + zeta * F::from(i as u64);
-        res.push(tmp + curr + chi * prev);
+    let mut prev = *v.last().unwrap() + F::from(v.len() as u64) * zeta;
+    v.iter().enumerate().for_each(|(i, &e)| {
+        let curr = e +  F::from(i as u64) * zeta;
+        res.push(tmp + curr + prev * chi);
         prev = curr
     });
     res
@@ -38,13 +45,13 @@ fn compute_lookup_vector_with_shift<F: Field>(v: &Vec<F>, gamma: F, chi: F, zeta
 
 #[inline]
 fn plookup<F: Field>(
-    subset: &Vec<F>,
-    set: &Vec<F>,
-    index_f: &Vec<F>,
-    index: &Vec<usize>,
-    gamma: F,
-    chi: F,
-    zeta: F,
+    subset: &[F],
+    set: &[F],
+    index_f: &[F],
+    index: &[usize],
+    gamma: &F,
+    chi: &F,
+    zeta: &F,
 ) -> (Vec<Vec<F>>, Vec<Vec<F>>, F, F, F, Vec<F>) {
     let mut lookup_vec = Vec::new();
     let mut accumulated_vec = Vec::new();
@@ -54,7 +61,7 @@ fn plookup<F: Field>(
     let mut accumulated_subset = Vec::new();
     let mut tmp = F::one();
     subset.iter().zip(index_f.iter()).for_each(|(e, f)| {
-        let x = *e + zeta * f + gamma;
+        let x = *e + *zeta * f + gamma;
         lookup_subset.push(x);
         tmp *= x;
         accumulated_subset.push(tmp)
@@ -152,7 +159,7 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|c| transcript.append_commitment(b"commitment", c));
 
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
-        let eta2 = eta.square();
+        let challenges = powers(eta, 3);
 
         let r_star_val = linear_combination(
             &[
@@ -160,7 +167,7 @@ impl<E: PairingEngine> Proof<E> {
                 hadamard(&r_b_star, &val_b),
                 hadamard(&r_c_star, &val_c),
             ],
-            &[E::Fr::one(), eta, eta2],
+            &challenges,
         )
         .unwrap();
 
@@ -188,9 +195,9 @@ impl<E: PairingEngine> Proof<E> {
             &b_challenges,
             &row,
             &row_index,
-            gamma,
-            chi,
-            E::Fr::zero(),
+            &gamma,
+            &chi,
+            &E::Fr::zero(),
         );
         lookup_vec.append(&mut r_b_lookup_vec);
         accumulated_vec.append(&mut r_b_accumulated_vec);
@@ -207,9 +214,9 @@ impl<E: PairingEngine> Proof<E> {
             &c_challenges,
             &row,
             &row_index,
-            gamma,
-            chi,
-            E::Fr::zero(),
+            &gamma,
+            &chi,
+            &E::Fr::zero(),
         );
         lookup_vec.append(&mut r_c_lookup_vec);
         accumulated_vec.append(&mut r_c_accumulated_vec);
@@ -221,7 +228,7 @@ impl<E: PairingEngine> Proof<E> {
             z_set_prod,
             z_sorted_prod,
             z_sorted,
-        ) = plookup(&z_star, &r1cs.z, &col, &col_index, gamma, chi, zeta);
+        ) = plookup(&z_star, &r1cs.z, &col, &col_index, &gamma, &chi, &zeta);
         lookup_vec.append(&mut z_lookup_vec);
         accumulated_vec.append(&mut z_accumulated_vec);
 
@@ -264,8 +271,8 @@ impl<E: PairingEngine> Proof<E> {
         let mu = transcript.get_challenge(b"mu");
 
         let r_a_star_mu_proof = ck.open(&r_a_star, &mu);
-        let s_0_prime = scalar_prod(&hadamard(&r_a_star, &val_a), &second_challenges);
-        let s_1_prime = scalar_prod(&hadamard(&r_b_star, &val_b), &second_challenges);
+        let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges);
+        let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges);
         // let s_2_prime = scalar_prod(&hadamard(&r_c_star, &val_c), &second_challenges);
         transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         transcript.append_scalar(b"r_val_chal_b", &s_1_prime);

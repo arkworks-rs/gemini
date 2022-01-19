@@ -17,7 +17,7 @@ pub(crate) fn _features_enabled() -> String {
         ""
     };
     let asm_enabled = if cfg!(feature = "asm") { "asm" } else { "" };
-    [parallel_enabled, asm_enabled].join(", ")
+    return [parallel_enabled, asm_enabled].join(", ");
 }
 
 /// Given the slice `v` as input,
@@ -26,15 +26,21 @@ pub fn strip_last<T>(v: &[T]) -> &[T] {
     v.split_last().map(|(_, x)| x).unwrap_or(&[])
 }
 
-/// Return ceil(x / y)
+/// Return ceil(x / y).
 #[inline]
 pub fn ceil_div(x: usize, y: usize) -> usize {
     // XXX. warning: this expression can overflow.
     (x + y - 1) / y
 }
 
+
+/// Return the scalar product of `scalar * v`.
+pub fn scalar_prod<F: Field>(scalar: &F, v: &[F]) -> Vec<F> {
+    v.iter().map(|&x| x * scalar).collect()
+}
+
 /// Compute a linear combination of the polynomials `polynomials` with the given challenges.
-pub(crate) fn linear_combination<F: Field, PP>(
+pub fn linear_combination<F: Field, PP>(
     polynomials: &[PP],
     challenges: &[F],
 ) -> Option<Vec<F>>
@@ -229,12 +235,12 @@ pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
 /// # Panics
 /// If the length of `lhs` and `rhs` are different.
 #[inline]
-pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
+pub fn ip<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     assert_eq!(lhs.len(), rhs.len());
-    scalar_prod_unsafe(lhs.iter(), rhs.iter())
+    ip_unsafe(lhs.iter(), rhs.iter())
 }
 
-pub fn scalar_prod_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
+pub fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
 where
     I: Iterator,
     J: Iterator,
@@ -289,20 +295,26 @@ pub fn joint_matrices<F: Field>(
 
     let a = a
         .iter()
-        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let b = b
         .iter()
-        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let c = c
         .iter()
-        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .enumerate()
+        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
+        .flatten()
         .collect::<BTreeMap<(usize, usize), F>>();
 
-    for (r, row) in joint_matrix.iter().enumerate() {
+    for (r, row) in joint_matrix.into_iter().enumerate() {
         for i in row {
             let row_val = F::from(r as u64);
             let col_val = F::from(*i as u64);

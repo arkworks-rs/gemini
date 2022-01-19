@@ -15,7 +15,7 @@ use crate::psnark::Proof;
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
 use crate::misc::{
-    evaluate_be, hadamard, powers, powers2, scalar_prod_unsafe, strip_last, MatrixElement,
+    evaluate_be, hadamard, powers, powers2, ip_unsafe, strip_last, MatrixElement,
 };
 use crate::psnark::streams::plookup::plookup_streams;
 use crate::psnark::streams::{
@@ -230,8 +230,8 @@ impl<E: PairingEngine> Proof<E> {
         // <r_a* \otimes (sumcheck chals), val_a>
         // <r_b* \otimes (sumcheck chals), val_b>
         // <r_c* \otimes (sumcheck chals), val_c> (not needed as it can be derived)
-        let r_val_chal_a = scalar_prod_unsafe(lhs_ralpha_star.iter(), val_a.iter());
-        let r_val_chal_b = scalar_prod_unsafe(lhs_r_star.iter(), val_b.iter());
+        let r_val_chal_a = ip_unsafe(lhs_ralpha_star.iter(), val_a.iter());
+        let r_val_chal_b = ip_unsafe(lhs_r_star.iter(), val_b.iter());
 
         transcript.append_scalar(b"r_val_chal_a", &r_val_chal_a);
         transcript.append_scalar(b"r_val_chal_b", &r_val_chal_b);

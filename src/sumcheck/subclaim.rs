@@ -1,7 +1,7 @@
 use ark_ff::Field;
 use merlin::Transcript;
 
-use crate::misc::scalar_prod;
+use crate::misc::ip;
 use crate::transcript::GeminiTranscript;
 use crate::{sumcheck::prover::ProverMsgs, VerificationError};
 
@@ -49,7 +49,7 @@ impl<F: Field> Subclaim<F> {
         let coefficients = (0..asserted_sums.len())
             .map(|_| transcript.get_challenge::<F>(b"batch-sumcheck"))
             .collect::<Vec<_>>();
-        let asserted_sum = scalar_prod(&coefficients, asserted_sums);
+        let asserted_sum = ip(&coefficients, asserted_sums);
         let (challenges, reduced_claim) = Self::reduce(transcript, messages, asserted_sum);
 
         let expected_reduced_claim: F = final_foldings

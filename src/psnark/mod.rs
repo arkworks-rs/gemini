@@ -7,6 +7,7 @@
 mod elastic_prover;
 mod time_prover;
 
+mod tests;
 mod streams;
 
 use ark_ec::PairingEngine;

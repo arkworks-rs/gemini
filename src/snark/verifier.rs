@@ -4,7 +4,7 @@ use ark_ff::Field;
 
 use crate::circuit::R1cs;
 use crate::kzg::VerifierKey;
-use crate::misc::{evaluate_le, scalar_prod};
+use crate::misc::{evaluate_le, ip};
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
 use crate::sumcheck::Subclaim;
@@ -55,25 +55,25 @@ impl<E: PairingEngine> Proof<E> {
         let beta_powers = powers(beta, num_constraints);
         let minus_beta_powers = powers(-beta, num_constraints);
 
-        let m_pos = scalar_prod(
+        let m_pos = ip(
             &product_matrix_vector(&r1cs.a, &beta_powers),
             &hadamard_randomness,
         ) + eta
-            * scalar_prod(
+            * ip(
                 &product_matrix_vector(&r1cs.b, &beta_powers),
                 tensor_challenges_head,
             )
-            + eta2 * scalar_prod(&product_matrix_vector(&r1cs.c, &beta_powers), &alpha_powers);
-        let m_neg = scalar_prod(
+            + eta2 * ip(&product_matrix_vector(&r1cs.c, &beta_powers), &alpha_powers);
+        let m_neg = ip(
             &product_matrix_vector(&r1cs.a, &minus_beta_powers),
             &hadamard_randomness,
         ) + eta
-            * scalar_prod(
+            * ip(
                 &product_matrix_vector(&r1cs.b, &minus_beta_powers),
                 tensor_challenges_head,
             )
             + eta2
-                * scalar_prod(
+                * ip(
                     &product_matrix_vector(&r1cs.c, &minus_beta_powers),
                     &alpha_powers,
                 );

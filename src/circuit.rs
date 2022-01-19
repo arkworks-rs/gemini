@@ -315,7 +315,7 @@ fn test_repeated_r1cs() {
 
     use crate::misc::evaluate_be;
     use crate::misc::product_matrix_vector;
-    use crate::misc::scalar_prod;
+    use crate::misc::ip;
     use ark_std::{One, Zero};
 
     let rng = &mut ark_std::test_rng();
@@ -330,7 +330,7 @@ fn test_repeated_r1cs() {
     let repeated_r1cs = repeat_r1cs(&r1cs, repeat, [&za, &zb, &zc]);
 
     // test that <z_a, z_b> = z_c(1)
-    assert_eq!(scalar_prod(&za, &zb), evaluate_be(zc.iter(), &Fr::one()));
+    assert_eq!(ip(&za, &zb), evaluate_be(zc.iter(), &Fr::one()));
     assert_eq!(
         repeated_r1cs
             .z_a
