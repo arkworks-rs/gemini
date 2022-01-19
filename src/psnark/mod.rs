@@ -7,8 +7,11 @@
 mod elastic_prover;
 mod time_prover;
 
-mod tests;
 mod streams;
+
+#[cfg(test)]
+mod tests;
+
 
 use ark_ec::PairingEngine;
 

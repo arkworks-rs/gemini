@@ -8,7 +8,7 @@ use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, joint_matrices, linear_combination, powers, powers2,
-    product_matrix_vector, ip, sum_matrices, tensor, scalar_prod,
+    product_matrix_vector, ip, sum_matrices, tensor,
 };
 use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
 use crate::tensorcheck::TensorcheckProof;
