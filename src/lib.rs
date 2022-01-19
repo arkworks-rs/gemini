@@ -44,7 +44,6 @@ mod misc;
 
 pub mod iterable;
 pub mod kzg;
-/// Preprocessing SNARK for R1CS.
 pub mod psnark;
 pub mod snark;
 pub mod sumcheck;
@@ -52,6 +51,8 @@ pub mod sumcheck;
 pub mod entryproduct;
 
 pub mod plookup;
+
+// pub mod memcheck;
 
 pub mod tensorcheck;
 mod transcript;
