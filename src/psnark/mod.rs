@@ -21,6 +21,7 @@ use crate::sumcheck::prover::ProverMsgs;
 use crate::tensorcheck::TensorcheckProof;
 
 /// The preprocessing SNARK proof, containing all prover's messages.
+#[allow(unused)]
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,
