@@ -24,7 +24,7 @@ impl<F: Field> Subclaim<F> {
         asserted_sum: F,
     ) -> Result<Self, VerificationError> {
         let ProverMsgs(messages, final_foldings) = prover_messages;
-        let (challenges, reduced_claim) = Self::reduce(transcript, &messages, asserted_sum);
+        let (challenges, reduced_claim) = Self::reduce(transcript, messages, asserted_sum);
 
         // Add the final foldings to the transcript
         transcript.append_scalar(b"final-folding", &final_foldings[0][0]);
@@ -50,7 +50,7 @@ impl<F: Field> Subclaim<F> {
             .map(|_| transcript.get_challenge::<F>(b"batch-sumcheck"))
             .collect::<Vec<_>>();
         let asserted_sum = scalar_prod(&coefficients, asserted_sums);
-        let (challenges, reduced_claim) = Self::reduce(transcript, &messages, asserted_sum);
+        let (challenges, reduced_claim) = Self::reduce(transcript, messages, asserted_sum);
 
         let expected_reduced_claim: F = final_foldings
             .iter()

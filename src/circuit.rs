@@ -254,9 +254,9 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
 
     let z = RepeatStreamer::new(&r1cs.z, repeat);
     let witness = RepeatStreamer::new(&r1cs.w, repeat);
-    let z_a = RepeatStreamer::new(&z_a, repeat);
-    let z_b = RepeatStreamer::new(&z_b, repeat);
-    let z_c = RepeatStreamer::new(&z_c, repeat);
+    let z_a = RepeatStreamer::new(z_a, repeat);
+    let z_b = RepeatStreamer::new(z_b, repeat);
+    let z_c = RepeatStreamer::new(z_c, repeat);
 
     R1csStream {
         a_colm,
@@ -365,7 +365,7 @@ pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1cs<F> {
     R1cs {
         a: diagonal_matrix.clone(),
         b: diagonal_matrix.clone(),
-        c: diagonal_matrix.clone(),
+        c: diagonal_matrix,
         z,
         w,
         x,

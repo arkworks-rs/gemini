@@ -208,9 +208,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             )
         });
 
-        let foldings_body_polynomials = batched_body_polynomials
-            .map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
-            .flatten()
+        let foldings_body_polynomials = batched_body_polynomials.flat_map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
             .collect::<Vec<_>>();
         let folded_polynomials_commitments = ck.batch_commit(&foldings_body_polynomials);
 

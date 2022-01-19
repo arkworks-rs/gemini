@@ -207,11 +207,11 @@ fn test_sorted_stream() {
     let mut subset_indices = (0..subset_size)
         .map(|_| rng.gen_range(0..set_size))
         .collect::<Vec<_>>();
-    subset_indices.sort();
+    subset_indices.sort_unstable();
     // create the array for merged indices and the sorted vector `w `
     let mut merged_indices = subset_indices.clone();
     merged_indices.extend(0..set_size);
-    merged_indices.sort();
+    merged_indices.sort_unstable();
     merged_indices.reverse();
     let w = merged_indices
         .iter()

@@ -63,7 +63,7 @@ where
     F: Field,
     S: Iterable<Item = F>,
 {
-    let acc_v_chal = evaluate_be(acc_v.iter(), &chal);
+    let acc_v_chal = evaluate_be(acc_v.iter(), chal);
     let chal_n = chal.pow(&[acc_v.len() as u64]);
     acc_v_chal * chal + claimed_product - chal_n
 }

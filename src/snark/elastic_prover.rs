@@ -208,7 +208,7 @@ impl<E: PairingEngine> Proof<E> {
         // run the second sumcheck
         let b_tensors = &first_proof.challenges;
         let c_tensors = &powers2(alpha, b_tensors.len());
-        let a_tensors = &hadamard(&b_tensors, &c_tensors);
+        let a_tensors = &hadamard(b_tensors, c_tensors);
 
         let len = r1cs.z.len();
         let a_alpha = MatrixTensor::new(r1cs.a_rowm, a_tensors, len);

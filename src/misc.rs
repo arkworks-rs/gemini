@@ -17,7 +17,7 @@ pub(crate) fn _features_enabled() -> String {
         ""
     };
     let asm_enabled = if cfg!(feature = "asm") { "asm" } else { "" };
-    return [parallel_enabled, asm_enabled].join(", ");
+    [parallel_enabled, asm_enabled].join(", ")
 }
 
 /// Given the slice `v` as input,
@@ -289,26 +289,20 @@ pub fn joint_matrices<F: Field>(
 
     let a = a
         .iter()
-        .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let b = b
         .iter()
-        .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let c = c
         .iter()
-        .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .enumerate().flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
-    for (r, row) in joint_matrix.into_iter().enumerate() {
+    for (r, row) in joint_matrix.iter().enumerate() {
         for i in row {
             let row_val = F::from(r as u64);
             let col_val = F::from(*i as u64);

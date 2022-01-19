@@ -115,12 +115,12 @@ impl<E: PairingEngine> Proof<E> {
         let alpha_short = &powers2(alpha, len);
         let ralpha_short = &hadamard(r_short, alpha_short);
         // expand the randomness for each matrix
-        let rs = TensorStreamer::new(&r_short, 1 << len);
-        let alphas = TensorStreamer::new(&alpha_short, 1 << len);
+        let rs = TensorStreamer::new(r_short, 1 << len);
+        let alphas = TensorStreamer::new(alpha_short, 1 << len);
         // lookup in the randomness for the nonzero positions
-        let ralpha_star = TensorIStreamer::new(&ralpha_short, &row, 1 << len);
-        let r_star = TensorIStreamer::new(&r_short, &row, 1 << len);
-        let alpha_star = TensorIStreamer::new(&alpha_short, &row, 1 << len);
+        let ralpha_star = TensorIStreamer::new(ralpha_short, &row, 1 << len);
+        let r_star = TensorIStreamer::new(r_short, &row, 1 << len);
+        let alpha_star = TensorIStreamer::new(alpha_short, &row, 1 << len);
 
         // commit to the looked up vectors
         let ralpha_star_commitment = ck.commit(&ralpha_star);
@@ -210,8 +210,7 @@ impl<E: PairingEngine> Proof<E> {
                 &pl_subset_z,
                 &pl_sorted_z,
             ),
-            &vec![
-                set_r_ep,
+            &[set_r_ep,
                 subset_r_ep,
                 sorted_r_ep,
                 set_alpha_ep,
@@ -219,8 +218,7 @@ impl<E: PairingEngine> Proof<E> {
                 sorted_alpha_ep,
                 set_z_ep,
                 subset_z_ep,
-                sorted_z_ep,
-            ],
+                sorted_z_ep],
         );
 
         // At the end of the entry product protocol, we have some inneer-product claims.

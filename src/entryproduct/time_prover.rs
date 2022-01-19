@@ -34,7 +34,7 @@ fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
         .iter()
         .rev()
         .scan(F::one(), |state, elt| {
-            *state = *state * elt;
+            *state *= elt;
             Some(*state)
         })
         .collect::<Vec<_>>();

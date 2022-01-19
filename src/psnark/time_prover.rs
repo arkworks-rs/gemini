@@ -64,7 +64,7 @@ fn plookup<F: Field>(
     accumulated_vec.push(accumulated_subset);
 
     // Compute the lookup vector for the set
-    let lookup_set = compute_lookup_vector_with_shift(&set, gamma, chi, zeta);
+    let lookup_set = compute_lookup_vector_with_shift(set, gamma, chi, zeta);
     let mut accumulated_set = Vec::new();
     let mut tmp = F::one();
     lookup_set.iter().for_each(|x| {
@@ -246,7 +246,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let mut entry_products = EntryProduct::new_time_batch(
             &mut transcript,
-            &ck,
+            ck,
             &lookup_vec,
             &[
                 r_b_subset_prod,
@@ -351,7 +351,7 @@ impl<E: PairingEngine> Proof<E> {
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensor_check_proof = TensorcheckProof::new_time(
             &mut transcript,
-            &ck,
+            ck,
             tc_base_polynomials,
             tc_body_polynomials,
         );

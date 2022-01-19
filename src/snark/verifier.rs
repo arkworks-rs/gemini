@@ -26,7 +26,7 @@ impl<E: PairingEngine> Proof<E> {
         // Verify the first sumcheck
         transcript.append_scalar(b"zc(alpha)", &self.zc_alpha);
 
-        let subclaim_1 = Subclaim::new(&mut transcript, &first_sumcheck_msgs, self.zc_alpha)?;
+        let subclaim_1 = Subclaim::new(&mut transcript, first_sumcheck_msgs, self.zc_alpha)?;
 
         let eta = transcript.get_challenge::<E::Fr>(b"eta");
         let eta2 = eta.square();
@@ -61,7 +61,7 @@ impl<E: PairingEngine> Proof<E> {
         ) + eta
             * scalar_prod(
                 &product_matrix_vector(&r1cs.b, &beta_powers),
-                &tensor_challenges_head,
+                tensor_challenges_head,
             )
             + eta2 * scalar_prod(&product_matrix_vector(&r1cs.c, &beta_powers), &alpha_powers);
         let m_neg = scalar_prod(
@@ -70,7 +70,7 @@ impl<E: PairingEngine> Proof<E> {
         ) + eta
             * scalar_prod(
                 &product_matrix_vector(&r1cs.b, &minus_beta_powers),
-                &tensor_challenges_head,
+                tensor_challenges_head,
             )
             + eta2
                 * scalar_prod(

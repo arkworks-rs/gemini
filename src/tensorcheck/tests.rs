@@ -76,10 +76,10 @@ fn test_tensor_check() {
         .verify(
             &mut transcript,
             &vk,
-            &vec![asserted_res],
+            &[asserted_res],
             &base_polynomials_commitments,
             &direct_base_polynomials_evaluations,
-            &vec![randomnesses],
+            &[randomnesses],
             eval_chal,
             batch_challenge,
         )
