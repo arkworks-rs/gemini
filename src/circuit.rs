@@ -35,6 +35,7 @@ pub struct R1csStream<SM, SZ, SW> {
     pub z_b: SZ,
     pub z_c: SZ,
     pub nonzero: usize,
+    pub joint_len: usize,
 }
 
 /// Represents a matrix.
@@ -227,6 +228,7 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
     // XXX. change this
     let nonzero = 0;
     let block_size = 0;
+    let joint_len = 0;
 
     let a_colm =
         RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.a), repeat, block_size);
@@ -271,6 +273,7 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
         z_b,
         z_c,
         nonzero,
+        joint_len,
     }
 }
 

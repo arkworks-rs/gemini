@@ -47,6 +47,7 @@ fn test_snark_consistency() {
         z_b: Reversed::new(z_b.as_slice()),
         z_c: Reversed::new(z_c.as_slice()),
         nonzero: num_constraints,
+        joint_len: num_constraints,
     };
     let ck_stream = CommitterKeyStream::from(&ck);
     let space_proof = Proof::new_elastic(r1cs_stream, ck_stream);

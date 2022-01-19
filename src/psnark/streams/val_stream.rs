@@ -171,6 +171,7 @@ where
     matrix_a: SparseMatrixStream<'a, F, SA>,
     matrix_b: SparseMatrixStream<'a, F, SB>,
     matrix_c: SparseMatrixStream<'a, F, SC>,
+    joint_len: usize,
     _field: PhantomData<F>,
 }
 
@@ -202,11 +203,12 @@ where
     SB::Item: Borrow<MatrixElement<F>>,
     SC::Item: Borrow<MatrixElement<F>>,
 {
-    pub fn new(matrix_a: &'a SA, matrix_b: &'a SB, matrix_c: &'a SC, len: usize) -> Self {
+    pub fn new(matrix_a: &'a SA, matrix_b: &'a SB, matrix_c: &'a SC, len: usize, joint_len: usize) -> Self {
         Self {
             matrix_a: SparseMatrixStream::new(matrix_a, len),
             matrix_b: SparseMatrixStream::new(matrix_b, len),
             matrix_c: SparseMatrixStream::new(matrix_c, len),
+            joint_len,
 
             _field: PhantomData,
         }
@@ -350,6 +352,6 @@ where
     }
 
     fn len(&self) -> usize {
-        todo!()
+        self.joint_len
     }
 }

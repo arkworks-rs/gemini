@@ -215,6 +215,7 @@ pub fn dummy_r1cs_stream<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> Du
         z_b: DummyStreamer::new(F::one(), n),
         z_c: DummyStreamer::new(F::one(), n),
         nonzero: n,
+        joint_len: n,
     }
 }
 

@@ -57,7 +57,7 @@ impl<E: PairingEngine> Proof<E> {
     /// return a new _preprocessing_ SNARK using the elastic prover.
     #[allow(unused_assignments)]
     pub fn new_elastic<SM, SG, SZ, SW>(
-        r1cs: R1csStream<SM, SZ, SW>,
+        r1cs: &R1csStream<SM, SZ, SW>,
         ck: &CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where
@@ -104,9 +104,9 @@ impl<E: PairingEngine> Proof<E> {
         let col_ab = MergeStream::new(&col_a, &col_b);
         let col = MergeStream::new(&col_ab, &col_c);
         // define the joint val polynomials, one for each R1CS matrix
-        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero);
-        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
-        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero);
+        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero, r1cs.joint_len);
+        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero, r1cs.joint_len);
+        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero, r1cs.joint_len);
         // lookup in z for the nonzero positions
         let z_star = LookupStreamer::new(&r1cs.z, &col);
         // compose the randomness for the A-, B-, C-matrices
@@ -170,6 +170,7 @@ impl<E: PairingEngine> Proof<E> {
         let subset_z_ep = pl_subset_z.iter().product();
         let sorted_z_ep = pl_sorted_r.iter().product();
         // compute the commitments to the sorted polynomials
+        println!("{}", pl_sorted_alpha.len());
         let sorted_alpha_commitment = ck.commit(&pl_sorted_alpha);
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
         let sorted_z_commitment = ck.commit(&pl_sorted_z);
@@ -273,7 +274,7 @@ impl<E: PairingEngine> Proof<E> {
         let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
         let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
         let tc_chal = transcript.get_challenge::<E::Fr>(b"tc");
-        let tc_challenges = powers(tc_chal, 2 * 3 + 4);
+        let tc_challenges = powers(tc_chal, 13);
 
         let body_polynomials_0 = &lincomb!(
             (
@@ -325,7 +326,7 @@ impl<E: PairingEngine> Proof<E> {
         // 3rd challenges:
         let tensorcheck_challenges_2 = strip_last(&sumcheck2.challenges);
         // 4th challenges:
-        let tensorcheck_challenges_3 = hadamard(&sumcheck2.challenges, &sumcheck3.challenges);
+        let tensorcheck_challenges_3 = hadamard(&sumcheck2.challenges, &sumcheck3.challenges[.. sumcheck2.challenges.len()]);
         let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
         // 5th challenges:
         let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &mu_squares);
