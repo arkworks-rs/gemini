@@ -45,12 +45,13 @@ mod misc;
 pub mod iterable;
 pub mod kzg;
 /// Preprocessing SNARK for R1CS.
-#[allow(dead_code)]
 pub mod psnark;
 pub mod snark;
 pub mod sumcheck;
 
 pub mod entryproduct;
+
+pub mod plookup;
 
 pub mod tensorcheck;
 mod transcript;

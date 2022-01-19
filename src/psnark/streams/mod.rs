@@ -25,4 +25,3 @@ pub use intofield_stream::IntoField;
 pub use merge_stream::MergeStream;
 
 // pub mod memcheck;
-pub mod plookup;

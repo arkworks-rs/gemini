@@ -17,7 +17,7 @@ use crate::iterable::Iterable;
 use crate::misc::{
     evaluate_be, hadamard, powers, powers2, ip_unsafe, strip_last, MatrixElement,
 };
-use crate::psnark::streams::plookup::plookup_streams;
+use crate::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
     MergeStream, TensorIStreamer, TensorStreamer,
