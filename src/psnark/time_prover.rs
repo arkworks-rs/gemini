@@ -46,9 +46,18 @@ impl<E: PairingEngine> Proof<E> {
         let c_challenges = powers(alpha, b_challenges.len());
         let a_challenges = hadamard(&b_challenges, &c_challenges);
 
+        let num_constraints = r1cs.a.len();
+        let num_variables = r1cs.z.len();
+
         let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c);
-        let (row, col, row_index, col_index, val_a, val_b, val_c) =
-            joint_matrices(&joint_matrix, &r1cs.a, &r1cs.b, &r1cs.c);
+        let (row, col, row_index, col_index, val_a, val_b, val_c) = joint_matrices(
+            &joint_matrix,
+            num_constraints,
+            num_variables,
+            &r1cs.a,
+            &r1cs.b,
+            &r1cs.c,
+        );
 
         let r_a_star = lookup(&a_challenges, &row_index);
         let r_b_star = lookup(&b_challenges, &row_index);
@@ -91,7 +100,6 @@ impl<E: PairingEngine> Proof<E> {
         let (mut r_b_lookup_vec, r_b_sorted) = plookup(
             &r_b_star,
             &b_challenges,
-            &row,
             &row_index,
             &gamma,
             &chi,
@@ -104,7 +112,6 @@ impl<E: PairingEngine> Proof<E> {
         let (mut r_c_lookup_vec, r_c_sorted) = plookup(
             &r_c_star,
             &c_challenges,
-            &row,
             &row_index,
             &gamma,
             &chi,
@@ -115,7 +122,7 @@ impl<E: PairingEngine> Proof<E> {
         accumulated_vec.append(&mut r_c_accumulated_vec);
 
         let (mut z_lookup_vec, z_sorted) =
-            plookup(&z_star, &r1cs.z, &col, &col_index, &gamma, &chi, &zeta);
+            plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
         let (mut z_accumulated_vec, z_prod_vec) = compute_entry_prod(&z_lookup_vec);
         lookup_vec.append(&mut z_lookup_vec);
         accumulated_vec.append(&mut z_accumulated_vec);
@@ -258,16 +265,16 @@ impl<E: PairingEngine> Proof<E> {
             r_star_commitments: [z_r_commitments[0], z_r_commitments[1], z_r_commitments[2]],
             z_star_commitment: z_r_commitments[3],
             second_sumcheck_msgs: second_proof.prover_messages(),
-            set_r_ep: r_b_prod_vec[1],
-            subset_r_ep: r_b_prod_vec[0],
+            set_r_ep: r_b_prod_vec[0],
+            subset_r_ep: r_b_prod_vec[1],
             sorted_r_ep: r_b_prod_vec[2],
             sorted_r_commitment: sorted_commitments[0],
-            set_alpha_ep: r_c_prod_vec[1],
-            subset_alpha_ep: r_c_prod_vec[0],
+            set_alpha_ep: r_c_prod_vec[0],
+            subset_alpha_ep: r_c_prod_vec[1],
             sorted_alpha_ep: r_c_prod_vec[2],
             sorted_alpha_commitment: sorted_commitments[1],
-            set_z_ep: z_prod_vec[1],
-            subset_z_ep: z_prod_vec[0],
+            set_z_ep: z_prod_vec[0],
+            subset_z_ep: z_prod_vec[1],
             sorted_z_ep: z_prod_vec[2],
             sorted_z_commitment: sorted_commitments[2],
             ep_msgs: entry_products.msgs,

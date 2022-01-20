@@ -269,6 +269,8 @@ pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Ve
 #[allow(unused)]
 pub fn joint_matrices<F: Field>(
     joint_matrix: &Vec<Vec<usize>>,
+    num_constraints: usize,
+    num_variables: usize,
     a: &Matrix<F>,
     b: &Matrix<F>,
     c: &Matrix<F>,

@@ -77,6 +77,6 @@ fn test_plookup_relation() {
 
     assert_eq!(
         entry_product_pl_merged,
-        entry_product_pl_set * entry_product_pl_subset * (F::one() + z).pow(&[set.len() as u64])
+        entry_product_pl_set * entry_product_pl_subset * (F::one() + z).pow(&[subset.len() as u64])
     );
 }
