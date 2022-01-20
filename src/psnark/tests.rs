@@ -15,10 +15,10 @@ fn test_consistency() {
     let r1cs = generate_relation(circuit);
     let ck = CommitterKey::<Bls12_381>::new(num_variables*2+1, num_variables, rng);
 
-    let ck_stream = CommitterKeyStream::from(&ck);
-    let r1cs_stream = dummy_r1cs_stream(rng, num_constraints);
-    let _proof = Proof::new_elastic(&r1cs_stream, &ck_stream);
+    // let ck_stream = CommitterKeyStream::from(&ck);
+    // let r1cs_stream = dummy_r1cs_stream(rng, num_constraints);
+    // let _proof = Proof::new_elastic(&r1cs_stream, &ck_stream);
 
-    // let _proof = Proof::new_time(&r1cs, &ck);
+    let _proof = Proof::new_time(&r1cs, &ck);
 
 }
