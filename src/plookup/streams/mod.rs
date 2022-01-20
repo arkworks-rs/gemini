@@ -71,9 +71,9 @@ fn test_plookup_relation() {
     let pl_set = LookupSetStreamer::new(&set_stream, y, z);
     let pl_subset = LookupSubsetStreamer::new(&subset_stream, z);
     let pl_sorted = LookupSortedStreamer::new(&set_stream, &indices_stream, y, z);
-    let entry_product_pl_set = pl_set.iter().fold(F::one(), |x, y| x * y);
-    let entry_product_pl_subset = pl_subset.iter().fold(F::one(), |x, y| x * y);
-    let entry_product_pl_merged = pl_sorted.iter().fold(F::one(), |x, y| x * y);
+    let entry_product_pl_set = pl_set.iter().product::<F>();
+    let entry_product_pl_subset = pl_subset.iter().product::<F>();
+    let entry_product_pl_merged = pl_sorted.iter().product::<F>();
 
     assert_eq!(
         entry_product_pl_merged,
