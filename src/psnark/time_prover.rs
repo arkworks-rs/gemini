@@ -6,18 +6,17 @@ use crate::circuit::R1cs;
 use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
-    evaluate_le, hadamard, joint_matrices, linear_combination, powers, powers2,
-    product_matrix_vector, ip, sum_matrices, tensor,
+    compute_entry_prod, evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers,
+    powers2, product_matrix_vector, sum_matrices, tensor,
 };
+use crate::plookup::time_prover::{lookup, plookup};
 use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
 use crate::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
-use crate::plookup::time_prover::{plookup, lookup};
 
 use crate::PROTOCOL_NAME;
 
 use super::Proof;
-
 
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
@@ -89,14 +88,7 @@ impl<E: PairingEngine> Proof<E> {
         let mut lookup_vec = Vec::new();
         let mut accumulated_vec = Vec::new();
 
-        let (
-            mut r_b_lookup_vec,
-            mut r_b_accumulated_vec,
-            r_b_subset_prod,
-            r_b_set_prod,
-            r_b_sorted_prod,
-            r_b_sorted,
-        ) = plookup(
+        let (mut r_b_lookup_vec, r_b_sorted) = plookup(
             &r_b_star,
             &b_challenges,
             &row,
@@ -105,17 +97,11 @@ impl<E: PairingEngine> Proof<E> {
             &chi,
             &E::Fr::zero(),
         );
+        let (mut r_b_accumulated_vec, r_b_prod_vec) = compute_entry_prod(&r_b_lookup_vec);
         lookup_vec.append(&mut r_b_lookup_vec);
         accumulated_vec.append(&mut r_b_accumulated_vec);
 
-        let (
-            mut r_c_lookup_vec,
-            mut r_c_accumulated_vec,
-            r_c_subset_prod,
-            r_c_set_prod,
-            r_c_sorted_prod,
-            r_c_sorted,
-        ) = plookup(
+        let (mut r_c_lookup_vec, r_c_sorted) = plookup(
             &r_c_star,
             &c_challenges,
             &row,
@@ -124,27 +110,23 @@ impl<E: PairingEngine> Proof<E> {
             &chi,
             &E::Fr::zero(),
         );
+        let (mut r_c_accumulated_vec, r_c_prod_vec) = compute_entry_prod(&r_c_lookup_vec);
         lookup_vec.append(&mut r_c_lookup_vec);
         accumulated_vec.append(&mut r_c_accumulated_vec);
 
-        let (
-            mut z_lookup_vec,
-            mut z_accumulated_vec,
-            z_subset_prod,
-            z_set_prod,
-            z_sorted_prod,
-            z_sorted,
-        ) = plookup(&z_star, &r1cs.z, &col, &col_index, &gamma, &chi, &zeta);
+        let (mut z_lookup_vec, z_sorted) =
+            plookup(&z_star, &r1cs.z, &col, &col_index, &gamma, &chi, &zeta);
+        let (mut z_accumulated_vec, z_prod_vec) = compute_entry_prod(&z_lookup_vec);
         lookup_vec.append(&mut z_lookup_vec);
         accumulated_vec.append(&mut z_accumulated_vec);
 
         vec![
-            r_b_subset_prod,
-            r_b_set_prod,
-            r_c_subset_prod,
-            r_c_set_prod,
-            z_subset_prod,
-            z_set_prod,
+            r_b_prod_vec[0],
+            r_b_prod_vec[1],
+            r_c_prod_vec[0],
+            r_c_prod_vec[1],
+            z_prod_vec[0],
+            z_prod_vec[1],
         ]
         .iter()
         .for_each(|c| transcript.append_scalar(b"entryprod", c));
@@ -162,15 +144,15 @@ impl<E: PairingEngine> Proof<E> {
             ck,
             &lookup_vec,
             &[
-                r_b_subset_prod,
-                r_b_set_prod,
-                r_b_sorted_prod,
-                r_c_subset_prod,
-                r_c_set_prod,
-                r_c_sorted_prod,
-                z_subset_prod,
-                z_set_prod,
-                z_sorted_prod,
+                r_b_prod_vec[0],
+                r_b_prod_vec[1],
+                r_b_prod_vec[2],
+                r_c_prod_vec[0],
+                r_c_prod_vec[1],
+                r_c_prod_vec[2],
+                z_prod_vec[0],
+                z_prod_vec[1],
+                z_prod_vec[2],
             ],
         );
 
@@ -276,17 +258,17 @@ impl<E: PairingEngine> Proof<E> {
             r_star_commitments: [z_r_commitments[0], z_r_commitments[1], z_r_commitments[2]],
             z_star_commitment: z_r_commitments[3],
             second_sumcheck_msgs: second_proof.prover_messages(),
-            set_r_ep: r_b_set_prod,
-            subset_r_ep: r_b_subset_prod,
-            sorted_r_ep: r_b_sorted_prod,
+            set_r_ep: r_b_prod_vec[1],
+            subset_r_ep: r_b_prod_vec[0],
+            sorted_r_ep: r_b_prod_vec[2],
             sorted_r_commitment: sorted_commitments[0],
-            set_alpha_ep: r_c_set_prod,
-            subset_alpha_ep: r_c_subset_prod,
-            sorted_alpha_ep: r_c_sorted_prod,
+            set_alpha_ep: r_c_prod_vec[1],
+            subset_alpha_ep: r_c_prod_vec[0],
+            sorted_alpha_ep: r_c_prod_vec[2],
             sorted_alpha_commitment: sorted_commitments[1],
-            set_z_ep: z_set_prod,
-            subset_z_ep: z_subset_prod,
-            sorted_z_ep: z_sorted_prod,
+            set_z_ep: z_prod_vec[1],
+            subset_z_ep: z_prod_vec[0],
+            sorted_z_ep: z_prod_vec[2],
             sorted_z_commitment: sorted_commitments[2],
             ep_msgs: entry_products.msgs,
             ralpha_star_mu: r_a_star_mu_proof,

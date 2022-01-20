@@ -33,17 +33,13 @@ pub fn ceil_div(x: usize, y: usize) -> usize {
     (x + y - 1) / y
 }
 
-
 /// Return the scalar product of `scalar * v`.
 pub fn scalar_prod<F: Field>(scalar: &F, v: &[F]) -> Vec<F> {
     v.iter().map(|&x| x * scalar).collect()
 }
 
 /// Compute a linear combination of the polynomials `polynomials` with the given challenges.
-pub fn linear_combination<F: Field, PP>(
-    polynomials: &[PP],
-    challenges: &[F],
-) -> Option<Vec<F>>
+pub fn linear_combination<F: Field, PP>(polynomials: &[PP], challenges: &[F]) -> Option<Vec<F>>
 where
     PP: Borrow<Vec<F>>,
 {
@@ -339,6 +335,24 @@ pub fn joint_matrices<F: Field>(
         val_b_vec,
         val_c_vec,
     )
+}
+
+#[inline]
+pub fn compute_entry_prod<F: Field>(vec: &Vec<Vec<F>>) -> (Vec<Vec<F>>, Vec<F>) {
+    let mut acc = Vec::new();
+    let mut prod = Vec::new();
+    for v in vec.iter() {
+        let mut a = Vec::new();
+        let mut tmp = F::one();
+        v.iter().for_each(|x| {
+            tmp *= x;
+            a.push(tmp)
+        });
+        prod.push(tmp);
+        acc.push(a);
+    }
+
+    (acc, prod)
 }
 
 // #[cfg(test)]
