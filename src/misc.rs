@@ -314,11 +314,11 @@ pub fn joint_matrices<F: Field>(
 
     for (r, row) in joint_matrix.into_iter().enumerate() {
         for i in row {
-            let row_val = F::from(r as u64);
-            let col_val = F::from(*i as u64);
+            let row_val = F::from((num_constraints - r) as u64);
+            let col_val = F::from((num_variables - *i) as u64);
 
-            row_index_vec.push(r);
-            col_index_vec.push(*i);
+            row_index_vec.push(num_constraints - r);
+            col_index_vec.push(num_variables - *i);
             row_vec.push(row_val);
             col_vec.push(col_val);
             // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
