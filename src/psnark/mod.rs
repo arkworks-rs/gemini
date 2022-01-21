@@ -12,7 +12,6 @@ mod streams;
 #[cfg(test)]
 mod tests;
 
-
 use ark_ec::PairingEngine;
 
 use crate::entryproduct;

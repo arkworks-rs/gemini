@@ -36,7 +36,7 @@ where
     IND: Iterable<Item = usize>,
 {
     let pl_set = LookupSetStreamer::new(set, y, z);
-    let pl_subset = LookupSubsetStreamer::new(subset, z);
+    let pl_subset = LookupSubsetStreamer::new(subset, y);
     let pl_sorted = LookupSortedStreamer::new(set, index, y, z);
 
     (pl_set, pl_subset, pl_sorted)

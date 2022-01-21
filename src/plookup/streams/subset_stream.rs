@@ -5,19 +5,19 @@ use ark_std::borrow::Borrow;
 #[derive(Clone, Copy)]
 pub struct LookupSubsetStreamer<'a, F, S> {
     base_streamer: &'a S,
-    gamma: F,
+    y: F,
 }
 
 pub struct LookupSubsetIterator<F, I> {
     base_iterator: I,
-    gamma: F,
+    y: F,
 }
 
 impl<'a, F, S> LookupSubsetStreamer<'a, F, S> {
-    pub fn new(base_streamer: &'a S, gamma: F) -> Self {
+    pub fn new(base_streamer: &'a S, y: F) -> Self {
         Self {
             base_streamer,
-            gamma,
+            y,
         }
     }
 }
@@ -34,10 +34,10 @@ where
 
     fn iter(&self) -> Self::Iter {
         let base_iterator = self.base_streamer.iter();
-        let gamma = self.gamma;
+        let y = self.y;
         Self::Iter {
             base_iterator,
-            gamma,
+            y,
         }
     }
 
@@ -56,7 +56,7 @@ where
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        Some(self.gamma + self.base_iterator.next()?.borrow())
+        Some(self.y + self.base_iterator.next()?.borrow())
     }
 }
 

@@ -53,7 +53,7 @@ use crate::kzg::VerificationError;
 use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
-use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, ip};
+use crate::misc::{evaluate_le, fold_polynomial, ip, linear_combination, powers};
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;
@@ -208,7 +208,8 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             )
         });
 
-        let foldings_body_polynomials = batched_body_polynomials.flat_map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
+        let foldings_body_polynomials = batched_body_polynomials
+            .flat_map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
             .collect::<Vec<_>>();
         let folded_polynomials_commitments = ck.batch_commit(&foldings_body_polynomials);
 

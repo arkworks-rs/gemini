@@ -14,9 +14,7 @@ use crate::psnark::Proof;
 
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
-use crate::misc::{
-    evaluate_be, hadamard, powers, powers2, ip_unsafe, strip_last, MatrixElement,
-};
+use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
@@ -104,9 +102,27 @@ impl<E: PairingEngine> Proof<E> {
         let col_ab = MergeStream::new(&col_a, &col_b);
         let col = MergeStream::new(&col_ab, &col_c);
         // define the joint val polynomials, one for each R1CS matrix
-        let val_a = JointValStream::new(&r1cs.a_colm, &r1cs.b_colm, &r1cs.c_colm, r1cs.nonzero, r1cs.joint_len);
-        let val_b = JointValStream::new(&r1cs.b_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero, r1cs.joint_len);
-        let val_c = JointValStream::new(&r1cs.c_colm, &r1cs.b_colm, &r1cs.a_colm, r1cs.nonzero, r1cs.joint_len);
+        let val_a = JointValStream::new(
+            &r1cs.a_colm,
+            &r1cs.b_colm,
+            &r1cs.c_colm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
+        let val_b = JointValStream::new(
+            &r1cs.b_colm,
+            &r1cs.b_colm,
+            &r1cs.a_colm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
+        let val_c = JointValStream::new(
+            &r1cs.c_colm,
+            &r1cs.b_colm,
+            &r1cs.a_colm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
         // lookup in z for the nonzero positions
         let z_star = LookupStreamer::new(&r1cs.z, &col);
         // compose the randomness for the A-, B-, C-matrices
@@ -211,7 +227,8 @@ impl<E: PairingEngine> Proof<E> {
                 &pl_subset_z,
                 &pl_sorted_z,
             ),
-            &[set_r_ep,
+            &[
+                set_r_ep,
                 subset_r_ep,
                 sorted_r_ep,
                 set_alpha_ep,
@@ -219,7 +236,8 @@ impl<E: PairingEngine> Proof<E> {
                 sorted_alpha_ep,
                 set_z_ep,
                 subset_z_ep,
-                sorted_z_ep],
+                sorted_z_ep,
+            ],
         );
 
         // At the end of the entry product protocol, we have some inneer-product claims.
@@ -326,7 +344,10 @@ impl<E: PairingEngine> Proof<E> {
         // 3rd challenges:
         let tensorcheck_challenges_2 = strip_last(&sumcheck2.challenges);
         // 4th challenges:
-        let tensorcheck_challenges_3 = hadamard(&sumcheck2.challenges, &sumcheck3.challenges[.. sumcheck2.challenges.len()]);
+        let tensorcheck_challenges_3 = hadamard(
+            &sumcheck2.challenges,
+            &sumcheck3.challenges[..sumcheck2.challenges.len()],
+        );
         let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
         // 5th challenges:
         let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &mu_squares);

@@ -2,6 +2,8 @@ use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
+use super::set_stream::PlookupSetIterator;
+
 #[derive(Clone, Copy)]
 pub struct LookupSortedStreamer<'a, F, S, SA> {
     base_streamer: &'a S,
@@ -31,12 +33,12 @@ where
 {
     type Item = F;
 
-    type Iter = AlgHashIterator<F, SortedIterator<S::Item, S::Iter, SA::Iter>>;
+    type Iter = PlookupSetIterator<F, SortedIterator<S::Item, S::Iter, SA::Iter>>;
 
     fn iter(&self) -> Self::Iter {
         let base_iter = self.base_streamer.iter();
         let addr_iter = self.addr_streamer.iter();
-        AlgHashIterator::new(
+        PlookupSetIterator::new(
             SortedIterator::new(base_iter, addr_iter, self.base_streamer.len()),
             self.y,
             self.z,
@@ -112,61 +114,6 @@ where
     }
 }
 
-pub struct AlgHashIterator<F, I>
-where
-    I: Iterator,
-{
-    y1z: F,
-    z: F,
-    first: F,
-    previous: Option<F>,
-    it: I,
-}
-
-impl<F, I> AlgHashIterator<F, I>
-where
-    F: Field,
-    I: Iterator,
-    I::Item: Borrow<F> + Clone,
-{
-    fn new(mut it: I, y: F, z: F) -> Self {
-        let next = *it.next().unwrap().borrow();
-        Self {
-            z,
-            y1z: y * (F::one() + z),
-            it,
-            first: next,
-            previous: Some(next),
-        }
-    }
-}
-
-impl<F, I> Iterator for AlgHashIterator<F, I>
-where
-    F: Field,
-    I: Iterator,
-    I::Item: Borrow<F>,
-{
-    type Item = F;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match (self.it.next(), self.previous) {
-            (Some(current), Some(previous)) => {
-                let current = *current.borrow();
-                self.previous = Some(current);
-                Some(self.y1z + previous.borrow() + self.z * current)
-            }
-            (None, Some(previous)) => {
-                self.previous = None;
-                Some(self.y1z + previous.borrow() + self.z * self.first)
-            }
-            (None, None) => None,
-            (Some(_), None) => panic!(
-                "Something wrong with the iterator: previous position is None, current is Some(_)."
-            ),
-        }
-    }
-}
 
 #[test]
 fn test_sorted_iterator() {
@@ -222,7 +169,7 @@ fn test_sorted_stream() {
     let z = Fr::rand(rng);
     let len = set_size + subset_size;
     let ans = (0..len)
-        .map(|i| y * (Fr::one() + z) + w[i] + z * w[(i + 1) % len])
+        .map(|i| y * (Fr::one() + z) + z * w[i] + w[(i + 1) % len])
         .collect::<Vec<_>>();
 
     let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();

@@ -203,7 +203,13 @@ where
     SB::Item: Borrow<MatrixElement<F>>,
     SC::Item: Borrow<MatrixElement<F>>,
 {
-    pub fn new(matrix_a: &'a SA, matrix_b: &'a SB, matrix_c: &'a SC, len: usize, joint_len: usize) -> Self {
+    pub fn new(
+        matrix_a: &'a SA,
+        matrix_b: &'a SB,
+        matrix_c: &'a SC,
+        len: usize,
+        joint_len: usize,
+    ) -> Self {
         Self {
             matrix_a: SparseMatrixStream::new(matrix_a, len),
             matrix_b: SparseMatrixStream::new(matrix_b, len),

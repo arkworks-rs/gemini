@@ -16,7 +16,9 @@ use crate::kzg::Commitment;
 use crate::sumcheck::Prover;
 
 mod elastic_prover;
-mod time_prover;
+// XXX. this is temporarily available until accumulated_product is no more needed
+// in the preprocessing snark.
+pub(crate) mod time_prover;
 
 pub mod streams;
 

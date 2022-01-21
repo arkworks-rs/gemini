@@ -2,29 +2,20 @@ use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
+
 #[derive(Clone, Copy)]
 pub struct LookupSetStreamer<'a, F, S> {
     base_streamer: &'a S,
-    gamma: F,
-    beta: F,
-}
-
-pub struct LookupSetIterator<F, I> {
-    base_iterator: I,
-    zeta: F,
-    y1z: F,
-    previous: F,
-    first: F,
-    len: usize,
-    cnt: usize,
+    z: F,
+    y: F,
 }
 
 impl<'a, F, S> LookupSetStreamer<'a, F, S> {
-    pub fn new(base_streamer: &'a S, beta: F, gamma: F) -> Self {
+    pub fn new(base_streamer: &'a S, y: F, z: F) -> Self {
         Self {
             base_streamer,
-            beta,
-            gamma,
+            y,
+            z,
         }
     }
 }
@@ -37,21 +28,10 @@ where
 {
     type Item = F;
 
-    type Iter = LookupSetIterator<F, S::Iter>;
+    type Iter = PlookupSetIterator<F, S::Iter>;
 
     fn iter(&self) -> Self::Iter {
-        let gamma = self.gamma;
-        let y1z = self.beta * (F::one() + self.gamma);
-        let base_iterator = self.base_streamer.iter();
-        LookupSetIterator {
-            base_iterator,
-            zeta: gamma,
-            y1z,
-            previous: F::zero(),
-            first: F::zero(),
-            len: self.len(),
-            cnt: 0,
-        }
+        PlookupSetIterator::new(self.base_streamer.iter(), self.y, self.z)
     }
 
     fn len(&self) -> usize {
@@ -59,7 +39,38 @@ where
     }
 }
 
-impl<F, I> Iterator for LookupSetIterator<F, I>
+
+
+pub struct PlookupSetIterator<F, I>
+where
+    I: Iterator,
+{
+    y1z: F,
+    z: F,
+    first: F,
+    previous: Option<F>,
+    it: I,
+}
+
+impl<F, I> PlookupSetIterator<F, I>
+where
+    F: Field,
+    I: Iterator,
+    I::Item: Borrow<F>,
+{
+    pub fn new(mut it: I, y: F, z: F) -> Self {
+        let next = *it.next().unwrap().borrow();
+        Self {
+            z,
+            y1z: y * (F::one() + z),
+            it,
+            first: next,
+            previous: Some(next),
+        }
+    }
+}
+
+impl<F, I> Iterator for PlookupSetIterator<F, I>
 where
     F: Field,
     I: Iterator,
@@ -68,29 +79,20 @@ where
     type Item = F;
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.cnt == 0 {
-            let next_element = self.base_iterator.next()?;
-            self.first = *next_element.borrow();
-            let next_element = self.base_iterator.next()?;
-
-            self.cnt += 1;
-            self.previous = *next_element.borrow();
-
-            return Some(self.y1z + self.first + self.zeta * next_element.borrow());
-        } else if self.cnt == self.len - 1 {
-            self.cnt += 1;
-            return Some(self.y1z + self.previous + self.zeta * self.first);
-        }
-
-        if self.cnt < self.len {
-            self.cnt += 1;
-            let next_element = self.base_iterator.next()?;
-            let previous = self.previous;
-            self.previous = *next_element.borrow();
-
-            Some(self.y1z + previous + self.zeta * next_element.borrow())
-        } else {
-            None
+        match (self.it.next(), self.previous) {
+            (Some(current), Some(previous)) => {
+                let current = *current.borrow();
+                self.previous = Some(current);
+                Some(self.y1z + self.z * previous.borrow() + current)
+            }
+            (None, Some(previous)) => {
+                self.previous = None;
+                Some(self.y1z + self.z * previous.borrow() + self.first)
+            }
+            (None, None) => None,
+            (Some(_), None) => panic!(
+                "Something wrong with the iterator: previous position is None, current is Some(_)."
+            ),
         }
     }
 }
@@ -109,7 +111,7 @@ fn test_set_stream() {
     let z = Fr::rand(rng);
 
     let expected = (0..size)
-        .map(|i| y * (Fr::one() + z) + test_vector[i] + z * test_vector[(i + 1) % size])
+        .map(|i| y * (Fr::one() + z) + z * test_vector[i] + test_vector[(i + 1) % size])
         .collect::<Vec<_>>();
 
     let test_vector_stream = test_vector.as_slice();

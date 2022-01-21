@@ -29,7 +29,7 @@ fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
 /// \\[
 /// (f_0f_1\cdots f_{n-1} , f_1f_2\cdots f_{n-1}, \dots, \prod_{j \leq i }f_j, \dots, f_{n-2}f_{n-1}, f_{n-1})
 /// \\]
-fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
+pub fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
     let mut acc_v = v
         .iter()
         .rev()

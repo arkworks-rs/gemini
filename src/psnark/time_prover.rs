@@ -1,13 +1,15 @@
 /// Time-efficient preprocessing SNARK for R1CS.
 use ark_ec::PairingEngine;
+use ark_ff::Field;
 use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
 use crate::entryproduct::EntryProduct;
+use crate::entryproduct::time_prover::accumulated_product;
 use crate::kzg::CommitterKey;
 use crate::misc::{
-    compute_entry_prod, evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers,
-    powers2, product_matrix_vector, sum_matrices, tensor,
+    evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
+    product_matrix_vector, sum_matrices, tensor,
 };
 use crate::plookup::time_prover::{lookup, plookup};
 use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
@@ -90,9 +92,9 @@ impl<E: PairingEngine> Proof<E> {
         let second_challenges = tensor(&second_proof.challenges);
         end_timer!(second_sumcheck_time);
 
-        let gamma = transcript.get_challenge(b"gamma");
-        let chi = transcript.get_challenge(b"chi");
-        let zeta = transcript.get_challenge(b"zeta");
+        let gamma = transcript.get_challenge::<E::Fr>(b"gamma");
+        let chi = transcript.get_challenge::<E::Fr>(b"chi");
+        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
         let mut lookup_vec = Vec::new();
         let mut accumulated_vec = Vec::new();
@@ -105,11 +107,26 @@ impl<E: PairingEngine> Proof<E> {
             &chi,
             &E::Fr::zero(),
         );
-        let (mut r_b_accumulated_vec, r_b_prod_vec) = compute_entry_prod(&r_b_lookup_vec);
-        lookup_vec.append(&mut r_b_lookup_vec);
+
+        fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F>{
+            vec![
+                // can't use product() bc borrow confuses the multiplication.
+                v[0].iter().fold(F::one(), |x, y| x*y),
+                v[1].iter().fold(F::one(), |x, y| x*y),
+                v[2].iter().fold(F::one(), |x, y| x*y),
+            ]
+        }
+
+        fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
+            vec![accumulated_product(&v[0]), accumulated_product(&v[1]), accumulated_product(&v[2])]
+        }
+
+        let r_b_prod_vec = product3(&r_b_lookup_vec);
+        let mut r_b_accumulated_vec = accproduct3(&r_b_lookup_vec);
+        lookup_vec.append(&mut r_b_lookup_vec.to_vec());
         accumulated_vec.append(&mut r_b_accumulated_vec);
 
-        let (mut r_c_lookup_vec, r_c_sorted) = plookup(
+        let (r_c_lookup_vec, r_c_sorted) = plookup(
             &r_c_star,
             &c_challenges,
             &row_index,
@@ -117,14 +134,16 @@ impl<E: PairingEngine> Proof<E> {
             &chi,
             &E::Fr::zero(),
         );
-        let (mut r_c_accumulated_vec, r_c_prod_vec) = compute_entry_prod(&r_c_lookup_vec);
-        lookup_vec.append(&mut r_c_lookup_vec);
+        let r_c_prod_vec = product3(&r_c_lookup_vec);
+        let mut r_c_accumulated_vec = accproduct3(&r_c_lookup_vec);
+        lookup_vec.append(&mut r_c_lookup_vec.to_vec());
         accumulated_vec.append(&mut r_c_accumulated_vec);
 
-        let (mut z_lookup_vec, z_sorted) =
+        let (z_lookup_vec, z_sorted) =
             plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
-        let (mut z_accumulated_vec, z_prod_vec) = compute_entry_prod(&z_lookup_vec);
-        lookup_vec.append(&mut z_lookup_vec);
+        let z_prod_vec = product3(&z_lookup_vec);
+        let mut z_accumulated_vec = accproduct3(&z_lookup_vec);
+        lookup_vec.append(&mut z_lookup_vec.to_vec());
         accumulated_vec.append(&mut z_accumulated_vec);
 
         vec![

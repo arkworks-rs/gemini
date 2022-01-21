@@ -247,7 +247,6 @@ where
 }
 
 #[inline]
-#[allow(unused)]
 pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
     a.iter()
         .zip(b)
@@ -337,24 +336,6 @@ pub fn joint_matrices<F: Field>(
         val_b_vec,
         val_c_vec,
     )
-}
-
-#[inline]
-pub fn compute_entry_prod<F: Field>(vec: &Vec<Vec<F>>) -> (Vec<Vec<F>>, Vec<F>) {
-    let mut acc = Vec::new();
-    let mut prod = Vec::new();
-    for v in vec.iter() {
-        let mut a = Vec::new();
-        let mut tmp = F::one();
-        v.iter().for_each(|x| {
-            tmp *= x;
-            a.push(tmp)
-        });
-        prod.push(tmp);
-        acc.push(a);
-    }
-
-    (acc, prod)
 }
 
 // #[cfg(test)]
