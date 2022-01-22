@@ -57,6 +57,7 @@ pub fn plookup<F: Field>(
     z: &F,
     zeta: &F,
 ) -> ([Vec<F>; 3], Vec<F>) {
+    // if zeta != zero : alg_hash(set, chal); alg_hash
 
     let lookup_set = plookup_set(set, y, z, zeta);
     let lookup_subset = plookup_subset(subset, index, y, zeta);
