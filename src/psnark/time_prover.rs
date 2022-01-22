@@ -4,8 +4,8 @@ use ark_ff::Field;
 use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
-use crate::entryproduct::EntryProduct;
 use crate::entryproduct::time_prover::accumulated_product;
+use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
@@ -61,6 +61,8 @@ impl<E: PairingEngine> Proof<E> {
             &r1cs.c,
         );
 
+        let num_non_zero = row.len();
+
         let r_a_star = lookup(&a_challenges, &row_index);
         let r_b_star = lookup(&b_challenges, &row_index);
         let r_c_star = lookup(&c_challenges, &row_index);
@@ -90,6 +92,7 @@ impl<E: PairingEngine> Proof<E> {
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
         let second_challenges = tensor(&second_proof.challenges);
+        let second_challenges_head = &second_challenges[..num_non_zero];
         end_timer!(second_sumcheck_time);
 
         let gamma = transcript.get_challenge::<E::Fr>(b"gamma");
@@ -108,17 +111,21 @@ impl<E: PairingEngine> Proof<E> {
             &E::Fr::zero(),
         );
 
-        fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F>{
+        fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
             vec![
                 // can't use product() bc borrow confuses the multiplication.
-                v[0].iter().fold(F::one(), |x, y| x*y),
-                v[1].iter().fold(F::one(), |x, y| x*y),
-                v[2].iter().fold(F::one(), |x, y| x*y),
+                v[0].iter().fold(F::one(), |x, y| x * y),
+                v[1].iter().fold(F::one(), |x, y| x * y),
+                v[2].iter().fold(F::one(), |x, y| x * y),
             ]
         }
 
         fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
-            vec![accumulated_product(&v[0]), accumulated_product(&v[1]), accumulated_product(&v[2])]
+            vec![
+                accumulated_product(&v[0]),
+                accumulated_product(&v[1]),
+                accumulated_product(&v[2]),
+            ]
         }
 
         let r_b_prod_vec = product3(&r_b_lookup_vec);
@@ -139,8 +146,7 @@ impl<E: PairingEngine> Proof<E> {
         lookup_vec.append(&mut r_c_lookup_vec.to_vec());
         accumulated_vec.append(&mut r_c_accumulated_vec);
 
-        let (z_lookup_vec, z_sorted) =
-            plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
+        let (z_lookup_vec, z_sorted) = plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
         let z_prod_vec = product3(&z_lookup_vec);
         let mut z_accumulated_vec = accproduct3(&z_lookup_vec);
         lookup_vec.append(&mut z_lookup_vec.to_vec());
@@ -185,8 +191,8 @@ impl<E: PairingEngine> Proof<E> {
         let mu = transcript.get_challenge(b"mu");
 
         let r_a_star_mu_proof = ck.open(&r_a_star, &mu);
-        let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges);
-        let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges);
+        let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges_head);
+        let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges_head);
         // let s_2_prime = scalar_prod(&hadamard(&r_c_star, &val_c), &second_challenges);
         transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
@@ -197,19 +203,19 @@ impl<E: PairingEngine> Proof<E> {
         provers.append(&mut entry_products.provers);
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_a_star, &second_challenges),
+            &hadamard(&r_a_star, &second_challenges_head),
             &val_a,
             &E::Fr::one(),
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_b_star, &second_challenges),
+            &hadamard(&r_b_star, &second_challenges_head),
             &val_b,
             &E::Fr::one(),
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_c_star, &second_challenges),
+            &hadamard(&r_c_star, &second_challenges_head),
             &val_c,
             &E::Fr::one(),
         ))));
@@ -252,6 +258,9 @@ impl<E: PairingEngine> Proof<E> {
 
         let mu_powers2 = powers2(mu, third_proof.challenges.len());
 
+        // third_proof.challenges might be longer than second_proof.challenges because of
+        // the batched sumcheck involves entry products polynomials.
+        let third_proof_challlenges_head = &third_proof.challenges[..second_proof.challenges.len()];
         let tc_body_polynomials = [
             (
                 &accumulated_product_vec[..],
@@ -261,13 +270,14 @@ impl<E: PairingEngine> Proof<E> {
             (&[&z_star], &second_proof.challenges[..]),
             (
                 &[&r_a_star, &r_b_star, &r_c_star],
-                &hadamard(&second_proof.challenges, &third_proof.challenges)[..],
+                &hadamard(&second_proof.challenges, &third_proof_challlenges_head)[..],
             ),
             (
                 &[&r_b_star],
                 &hadamard(&mu_powers2, &third_proof.challenges)[..],
             ),
         ];
+        println!("?");
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensor_check_proof = TensorcheckProof::new_time(
