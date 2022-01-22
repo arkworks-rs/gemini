@@ -16,7 +16,7 @@
 //!
 //! Additionally, some sub-protocols are exported so that
 //! their space- and time- efficient impelementation might be used also elsewhere.
-//! - [`tensorcheck::TensorCheckProof`],
+//! - [`tensorcheck::TensorcheckProof`],
 //!     an argument for claims of the form \\(\langle f, \otimes_j (1, \rho_j) \rangle = t\\).
 //!     This can be used for proving batches of multivariate evaluations claims using
 //!     univariate polynomial commitments.
