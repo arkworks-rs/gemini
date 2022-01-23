@@ -102,7 +102,7 @@ impl<E: PairingEngine> Proof<E> {
         let mut lookup_vec = Vec::new();
         let mut accumulated_vec = Vec::new();
 
-        let (mut r_b_lookup_vec, r_b_sorted) = plookup(
+        let (r_b_lookup_vec, r_b_sorted) = plookup(
             &r_b_star,
             &b_challenges,
             &row_index,

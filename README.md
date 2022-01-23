@@ -10,10 +10,19 @@ Gemini is elastic proof system system, FFT-free, blazingly fast and space-consci
 
 Gemini's API can be accessed via:
 
-```
+```bash
 cargo rustdoc --open
 ```
 This include a detailed protocol description.
+
+## Feature
+
+Gemini can be compiled with the following feature flags:
+
+- `asm`, to turn on the assembly backend within [`ark-ff`](https://docs.rs/ark-ff/);
+- `parallel`, to turn on multi-threading. This requires the additional dependency [`rayon`](https://docs.rs/rayon/latest/rayon/)
+- `std`, to rely on the Rust Standard library;
+- `print-trace`, to print additional information concerning the execution time of the sub-protocols. This feature must be enabled in order to monitor the execution time of the examples.
 
 
 ## Performance
