@@ -188,16 +188,28 @@ impl<E: PairingEngine> Proof<E> {
             ],
         );
 
-        let mu = transcript.get_challenge(b"mu");
+        let mu = entry_products.chal;
+        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
-        let r_a_star_mu_proof = ck.open(&r_a_star, &mu);
+        let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(
+            &[&r_a_star, &accumulated_vec.into_iter().flatten().collect()],
+            &[mu],
+            &open_chal,
+        );
+        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&r_a_star, &mu)];
+        accumulated_vec
+            .iter()
+            .for_each(|v| ralpha_star_acc_mu_evals.push(evaluate_le(&v, &mu)));
+
         let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges_head);
         // let s_2_prime = scalar_prod(&hadamard(&r_c_star, &val_c), &second_challenges);
         transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
-        transcript.append_scalar(b"r_a_star_mu", &r_a_star_mu_proof.0);
-        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &r_a_star_mu_proof.1);
+        ralpha_star_acc_mu_evals
+            .iter()
+            .for_each(|e| transcript.append_scalar(b"r_a_star_acc_mu", e));
+        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ralpha_star_acc_mu_proof);
 
         let mut provers = Vec::new();
         provers.append(&mut entry_products.provers);
@@ -307,7 +319,8 @@ impl<E: PairingEngine> Proof<E> {
             sorted_z_ep: z_prod_vec[2],
             sorted_z_commitment: sorted_commitments[2],
             ep_msgs: entry_products.msgs,
-            ralpha_star_mu: r_a_star_mu_proof,
+            ralpha_star_acc_mu_proof,
+            ralpha_star_acc_mu_evals,
             rstars_vals: [s_0_prime, s_1_prime],
             third_sumcheck_msgs: third_proof.prover_messages(),
             tensor_check_proof,
