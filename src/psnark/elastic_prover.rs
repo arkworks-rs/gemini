@@ -245,7 +245,8 @@ impl<E: PairingEngine> Proof<E> {
         // We don't use them yet. Instead:
         // ask an evaluation of r_a* at a random point
         let mu = transcript.get_challenge(b"mu");
-        let ralpha_star_mu = ck.open(&ralpha_star, &mu);
+        let ralpha_star_acc_mu_proof = ck.open(&ralpha_star, &mu).1;
+        let ralpha_star_acc_mu_evals = vec![evaluate_be(r_star.iter(), &mu)];
         // compute the claimed entry products for
         // <r_a* \otimes (sumcheck chals), val_a>
         // <r_b* \otimes (sumcheck chals), val_b>
@@ -255,8 +256,8 @@ impl<E: PairingEngine> Proof<E> {
 
         transcript.append_scalar(b"r_val_chal_a", &r_val_chal_a);
         transcript.append_scalar(b"r_val_chal_b", &r_val_chal_b);
-        transcript.append_scalar(b"r_a_star_mu", &ralpha_star_mu.0);
-        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ralpha_star_mu.1);
+        // transcript.append_scalar(b"r_a_star_mu", &ralpha_star_acc_mu_proof);
+        // transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ralpha_star_mu.1);
 
         // Add to the list of inner-products claims (obtained from the entry product)
         // additional inner products:
@@ -507,7 +508,8 @@ impl<E: PairingEngine> Proof<E> {
             sorted_z_ep,
             sorted_z_commitment,
             ep_msgs: msgs,
-            ralpha_star_mu,
+            ralpha_star_acc_mu_evals,
+            ralpha_star_acc_mu_proof,
             rstars_vals: [r_val_chal_a, r_val_chal_b],
             third_sumcheck_msgs: sumcheck3.prover_messages(),
             tensor_check_proof,
