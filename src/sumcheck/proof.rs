@@ -80,7 +80,7 @@ impl<F: Field> Sumcheck<F> {
             // compute the non-oracle messagein the sumcheck:
             let message = round_messages
                 .zip(coefficients.iter()) // take the combination of messages and coefficients
-                .filter_map(|(m, c)| m.map(|m| m.mul(c))) // multiply them if there's an actual message
+                .filter_map(|(m, c)| m.map(|m| m.mul(&c))) // multiply them if there's an actual message
                 .sum(); // finally, add them up.
             messages.push(message); // add the message sent to the transcript
             transcript.append_prover_message(b"evaluations", &message);

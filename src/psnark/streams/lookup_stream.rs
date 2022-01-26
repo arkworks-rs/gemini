@@ -74,13 +74,15 @@ where
         let &index = self.index_stream.next()?.borrow();
         if self.current_height == index {
             self.current_item
-        } else {
+        } else if self.current_height > index {
             let delta = self.current_height - index - 1;
             self.item_stream.advance_by(delta).ok()?;
             let item = self.item_stream.next();
             self.current_height = index;
             self.current_item = item;
             item
+        } else {
+            panic!("unsorted indices!")
         }
     }
 

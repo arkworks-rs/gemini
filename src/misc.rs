@@ -33,11 +33,6 @@ pub fn ceil_div(x: usize, y: usize) -> usize {
     (x + y - 1) / y
 }
 
-/// Return the scalar product of `scalar * v`.
-pub fn scalar_prod<F: Field>(scalar: &F, v: &[F]) -> Vec<F> {
-    v.iter().map(|&x| x * scalar).collect()
-}
-
 /// Compute a linear combination of the polynomials `polynomials` with the given challenges.
 pub fn linear_combination<F: Field, PP>(polynomials: &[PP], challenges: &[F]) -> Option<Vec<F>>
 where

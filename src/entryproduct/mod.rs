@@ -46,7 +46,6 @@ pub struct ProverMsgs<E: PairingEngine> {
     claimed_sumchecks: Vec<E::Fr>,
 }
 
-
 /// The entryproduct transcript and subclaims.
 pub struct EntryProduct<E: PairingEngine, P: Prover<E::Fr>> {
     /// The messages sent by the prover.

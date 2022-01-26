@@ -187,6 +187,7 @@ pub(crate) fn matrix_into_row_major_slice<F: Field>(
             for &(val, col) in elements.iter().rev() {
                 match col.cmp(&column) {
                     Ordering::Equal => {
+                        println!("({}, {})", row, col);
                         a_row_flat.push(MatrixElement::Element((val, row)));
                     }
                     Ordering::Less => {

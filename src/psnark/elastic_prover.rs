@@ -17,8 +17,8 @@ use crate::iterable::Iterable;
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
-    HadamardStreamer, IndexStream, IntoField, JointValStream, LineStream, LookupStreamer,
-    MergeStream, TensorIStreamer, TensorStreamer,
+    HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream, LookupStreamer,
+    LookupTensorStreamer, TensorStreamer,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -53,18 +53,17 @@ impl<E: PairingEngine> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
     /// and the _streaming_ committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
-    #[allow(unused_assignments)]
     pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: &R1csStream<SM, SZ, SW>,
         ck: &CommitterKeyStream<E, SG>,
     ) -> Proof<E>
     where
         SM: Iterable + Copy,
-        SZ: Iterable<Item = E::Fr> + Copy,
+        SZ: Iterable + Copy,
         SW: Iterable + Copy,
         SG: Iterable,
         SM::Item: Borrow<MatrixElement<E::Fr>>,
-        SZ::Item: Borrow<E::Fr>,
+        SZ::Item: Borrow<E::Fr> + Copy,
         SW::Item: Borrow<E::Fr>,
         SZ::Item: Borrow<E::Fr>,
         SG::Item: Borrow<E::G1Affine>,
@@ -89,19 +88,20 @@ impl<E: PairingEngine> Proof<E> {
         let sumcheck1 = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(sumcheck_time);
 
-        // define the joint row polynomial
-        let row_a = LineStream::new(r1cs.a_colm);
-        let row_b = LineStream::new(r1cs.b_colm);
-        let row_c = LineStream::new(r1cs.c_colm);
-        let row_ab = MergeStream::new(&row_a, &row_b);
-        let row = MergeStream::new(&row_ab, &row_c);
-        // define the joint col polynomial
-        let col_a = IndexStream::new(r1cs.a_colm);
-        let col_b = IndexStream::new(r1cs.b_colm);
-        let col_c = IndexStream::new(r1cs.c_colm);
-        let col_ab = MergeStream::new(&col_a, &col_b);
-        let col = MergeStream::new(&col_ab, &col_c);
-        // define the joint val polynomials, one for each R1CS matrix
+        let row = JointRowStream::new(
+            &r1cs.a_colm,
+            &r1cs.b_colm,
+            &r1cs.c_colm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
+        let colcodio = JointRowStream::new(
+            &r1cs.a_rowm,
+            &r1cs.b_rowm,
+            &r1cs.c_rowm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
         let val_a = JointValStream::new(
             &r1cs.a_colm,
             &r1cs.b_colm,
@@ -111,7 +111,7 @@ impl<E: PairingEngine> Proof<E> {
         );
         let val_b = JointValStream::new(
             &r1cs.b_colm,
-            &r1cs.b_colm,
+            &r1cs.c_colm,
             &r1cs.a_colm,
             r1cs.nonzero,
             r1cs.joint_len,
@@ -124,7 +124,7 @@ impl<E: PairingEngine> Proof<E> {
             r1cs.joint_len,
         );
         // lookup in z for the nonzero positions
-        let z_star = LookupStreamer::new(&r1cs.z, &col);
+        let z_star = LookupStreamer::new(&r1cs.z, &row);
         // compose the randomness for the A-, B-, C-matrices
         let len = sumcheck1.challenges.len();
         let r_short = &sumcheck1.challenges;
@@ -134,9 +134,9 @@ impl<E: PairingEngine> Proof<E> {
         let rs = TensorStreamer::new(r_short, 1 << len);
         let alphas = TensorStreamer::new(alpha_short, 1 << len);
         // lookup in the randomness for the nonzero positions
-        let ralpha_star = TensorIStreamer::new(ralpha_short, &row, 1 << len);
-        let r_star = TensorIStreamer::new(r_short, &row, 1 << len);
-        let alpha_star = TensorIStreamer::new(alpha_short, &row, 1 << len);
+        let ralpha_star = LookupTensorStreamer::new(ralpha_short, &row);
+        let r_star = LookupTensorStreamer::new(r_short, &row);
+        let alpha_star = LookupTensorStreamer::new(alpha_short, &row);
 
         // commit to the looked up vectors
         let ralpha_star_commitment = ck.commit(&ralpha_star);
@@ -158,6 +158,8 @@ impl<E: PairingEngine> Proof<E> {
         // batch the randomness for the three matrices and invoke the sumcheck protocol.
         let challenge = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(challenge, 3);
+        // assert_eq!(val_a.len(), val_b.len());
+        assert_eq!(val_a.len(), val_c.len());
         let ralpha_star_val_a = HadamardStreamer::new(&ralpha_star, &val_a);
         let r_star_val_b = HadamardStreamer::new(&r_star, &val_b);
         let alpha_star_val_c = HadamardStreamer::new(&alpha_star, &val_c);
@@ -172,8 +174,8 @@ impl<E: PairingEngine> Proof<E> {
         let z = transcript.get_challenge(b"zeta");
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
             plookup_streams(&alphas, &alpha_star, &row, y, z);
-        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&rs, &r_star, &row, y, z);
-        let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &col, y, z);
+        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&rs, &r_star, &colcodio, y, z);
+        let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &row, y, z);
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();
@@ -186,7 +188,6 @@ impl<E: PairingEngine> Proof<E> {
         let subset_z_ep = pl_subset_z.iter().product();
         let sorted_z_ep = pl_sorted_r.iter().product();
         // compute the commitments to the sorted polynomials
-        println!("{}", pl_sorted_alpha.len());
         let sorted_alpha_commitment = ck.commit(&pl_sorted_alpha);
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
         let sorted_z_commitment = ck.commit(&pl_sorted_z);
@@ -426,7 +427,7 @@ impl<E: PairingEngine> Proof<E> {
             ),
             evaluate_base_polynomial(
                 &mut transcript,
-                &IntoField::<_, E::Fr>::new(&col),
+                &IntoField::<_, E::Fr>::new(&colcodio),
                 &eval_points,
             ),
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),

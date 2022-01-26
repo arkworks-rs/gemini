@@ -3,6 +3,7 @@ mod sorted_stream;
 mod subset_stream;
 
 use ark_ff::Field;
+use ark_std::borrow::Borrow;
 pub use set_stream::LookupSetStreamer;
 pub use sorted_stream::LookupSortedStreamer;
 pub use subset_stream::LookupSubsetStreamer;
@@ -31,8 +32,10 @@ pub fn plookup_streams<'a, SET, SUB, IND, F>(
 )
 where
     F: Field,
-    SET: Iterable<Item = F>,
-    SUB: Iterable<Item = F>,
+    SET: Iterable,
+    SET::Item: Borrow<F>,
+    SUB: Iterable,
+    SUB::Item: Borrow<F>,
     IND: Iterable<Item = usize>,
 {
     let pl_set = LookupSetStreamer::new(set, y, z);

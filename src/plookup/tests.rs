@@ -52,5 +52,4 @@ fn test_consistency() {
     // test sorted beforehand as it internally relies on the same sub-procedure as set.
     assert_eq!(space_products[2], time_products[2]);
     assert_eq!(space_products[1], time_products[1]);
-
 }

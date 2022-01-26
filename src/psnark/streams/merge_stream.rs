@@ -1,5 +1,6 @@
 use crate::iterable::Iterable;
 use ark_std::borrow::Borrow;
+use ark_std::cmp::Ordering;
 
 #[derive(Clone, Copy)]
 pub struct MergeStream<'a, S0, S1> {
@@ -34,8 +35,8 @@ impl<'a, S0, S1> Iterable for MergeStream<'a, S0, S1>
 where
     S0: Iterable,
     S1: Iterable,
-    S0::Item: Borrow<usize>,
-    S1::Item: Borrow<usize>,
+    S0::Item: Borrow<usize> + Copy,
+    S1::Item: Borrow<usize> + Copy,
 {
     type Item = usize;
 
@@ -57,7 +58,7 @@ where
     }
 
     fn len(&self) -> usize {
-        usize::max(self.lhs.len(), self.rhs.len())
+        self.iter().count() //usize::max(self.lhs.len(), self.rhs.len())
     }
 }
 
@@ -65,33 +66,35 @@ impl<'a, I0, I1> Iterator for MergeStreamIter<I0, I1>
 where
     I0: Iterator,
     I1: Iterator,
-    I0::Item: Borrow<usize>,
-    I1::Item: Borrow<usize>,
+    I0::Item: Borrow<usize> + Copy,
+    I1::Item: Borrow<usize> + Copy,
 {
     type Item = usize;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
-        let a = self.current_lhs.take();
-        let b = self.current_rhs.take();
+        let a = self.current_lhs;
+        let b = self.current_rhs;
 
         match (a, b) {
             (None, None) => None,
             (Some(e), None) => Some(*e.borrow()),
             (None, Some(e)) => Some(*e.borrow()),
-            (Some(a), Some(b)) => match a.borrow().cmp(b.borrow()) {
-                std::cmp::Ordering::Equal => {
+            (Some(aa), Some(bb)) => match aa.borrow().cmp(bb.borrow()) {
+                Ordering::Equal => {
                     self.current_lhs = self.lhs.next();
                     self.current_rhs = self.rhs.next();
-                    Some(*a.borrow())
+                    Some(*aa.borrow())
                 }
-                std::cmp::Ordering::Less => {
+                Ordering::Less => {
                     self.current_rhs = self.rhs.next();
-                    Some(*b.borrow())
+                    self.current_lhs = a;
+                    Some(*bb.borrow())
                 }
-                std::cmp::Ordering::Greater => {
+                Ordering::Greater => {
                     self.current_lhs = self.lhs.next();
-                    Some(*a.borrow())
+                    self.current_rhs = b;
+                    Some(*aa.borrow())
                 }
             },
         }
