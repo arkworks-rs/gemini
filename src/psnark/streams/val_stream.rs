@@ -606,41 +606,24 @@ fn test_matrix() {
     let b_rowm = Mat(browm.as_slice(), rows);
     let c_rowm = Mat(crowm.as_slice(), rows);
 
-    // let joint_len = a_colm.iter().filter(|&x| x != &MatrixElement::EOL).count();
-
-    // let r1cs_stream = R1csStream {
-    //     z: Reversed::new(r1cs.z.as_slice()),
-    //     a_rowm: Mat(a_rowm.as_slice(), rows),
-    //     b_rowm: Mat(b_rowm.as_slice(), rows),
-    //     c_rowm: Mat(c_rowm.as_slice(), rows),
-    //     a_colm: Mat(a_colm.as_slice(), rows),
-    //     b_colm: Mat(b_colm.as_slice(), rows),
-    //     c_colm: Mat(c_colm.as_slice(), rows),
-    //     witness: Reversed::new(r1cs.w.as_slice()),
-    //     z_a: Reversed::new(z_a.as_slice()),
-    //     z_b: Reversed::new(z_b.as_slice()),
-    //     z_c: Reversed::new(z_c.as_slice()),
-    //     nonzero: num_constraints,
-    //     joint_len,
-    // };
 
     let nonzero = num_constraints;
     let joint_len = num_constraints * 3;
-    // let row = JointRowStream::new(&a_colm, &b_colm, &c_colm, nonzero, joint_len);
-    // let col = JointColStream::new(&a_colm, &b_colm, &c_colm, nonzero, joint_len);
-    // // in row major, the rows should be plain decreasing
-    // let mut state = row.iter().next().unwrap();
-    // for (x, _y) in row.iter().zip(col.iter()) {
-    //     assert!(state >= x);
-    //     state = x;
-    // }
+    let row = JointRowStream::new(&a_colm, &b_colm, &c_colm, nonzero, joint_len);
+    let col = JointColStream::new(&a_colm, &b_colm, &c_colm, nonzero, joint_len);
+    // in row major, the rows should be plain decreasing
+    let mut state = row.iter().next().unwrap();
+    for (x, _y) in row.iter().zip(col.iter()) {
+        assert!(state >= x);
+        state = x;
+    }
 
     let row = JointColStream::new(&a_rowm, &b_rowm, &c_rowm, nonzero, joint_len);
     let col = JointRowStream::new(&a_rowm, &b_rowm, &c_rowm, nonzero, joint_len);
     // in row major, the rows should be plain decreasing
     let mut state = col.iter().next().unwrap();
     for (x, y) in row.iter().zip(col.iter()) {
-        println!("pos: ({}, {})", x, y);
+        // println!("pos: ({}, {})", x, y);
         assert!(state >= y);
         state = y;
     }

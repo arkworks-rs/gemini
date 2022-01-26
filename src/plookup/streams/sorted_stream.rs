@@ -97,7 +97,6 @@ where
         match &self.current_address {
             None => self.it.next(),
             Some(current_address) => {
-                println!("{}, {}", self.current_it, *current_address.borrow());
                 let current_address = *current_address.borrow();
                 if self.current_it > current_address {
                     self.current_it -= 1;

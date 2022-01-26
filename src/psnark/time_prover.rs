@@ -289,7 +289,6 @@ impl<E: PairingEngine> Proof<E> {
                 &hadamard(&mu_powers2, &third_proof.challenges)[..],
             ),
         ];
-        println!("?");
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensor_check_proof = TensorcheckProof::new_time(
