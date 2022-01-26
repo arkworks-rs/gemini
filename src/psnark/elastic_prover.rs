@@ -95,7 +95,12 @@ impl<E: PairingEngine> Proof<E> {
             r1cs.nonzero,
             r1cs.joint_len,
         );
-        let colcodio = JointRowStream::new(
+        // When considering the row-major streams,
+        // the sparse representation is (val, row)
+        // which ends up filled in SparseMatrixStream with (col, row, val)
+        // and therefore with JointRowStream cut in the first element, col
+        // (Yes I know the name is miserable.)
+        let col = JointRowStream::new(
             &r1cs.a_rowm,
             &r1cs.b_rowm,
             &r1cs.c_rowm,
@@ -152,7 +157,7 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"ra*", &ralpha_star_commitment);
         transcript.append_commitment(b"rb*", &r_star_commitment);
         transcript.append_commitment(b"rc*", &alpha_star_commitment);
-        transcript.append_commitment(b"rb*", &z_star_commitment);
+        transcript.append_commitment(b"z*", &z_star_commitment);
 
         // second sumcheck
         // batch the randomness for the three matrices and invoke the sumcheck protocol.
@@ -170,12 +175,13 @@ impl<E: PairingEngine> Proof<E> {
 
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
-        let y = transcript.get_challenge(b"y");
-        let z = transcript.get_challenge(b"zeta");
+        let gamma = transcript.get_challenge(b"gamma");
+        let chi = transcript.get_challenge::<E::Fr>(b"chi");
+        let zeta = transcript.get_challenge(b"zeta");
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
-            plookup_streams(&alphas, &alpha_star, &row, y, z);
-        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&rs, &r_star, &colcodio, y, z);
-        let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &row, y, z);
+            plookup_streams(&alphas, &alpha_star, &row, gamma, zeta);
+        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&rs, &r_star, &col, gamma, zeta);
+        let (pl_set_z, pl_subset_z, pl_sorted_z) = plookup_streams(&r1cs.z, &z_star, &row, gamma, zeta);
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();
@@ -428,7 +434,7 @@ impl<E: PairingEngine> Proof<E> {
             ),
             evaluate_base_polynomial(
                 &mut transcript,
-                &IntoField::<_, E::Fr>::new(&colcodio),
+                &IntoField::<_, E::Fr>::new(&col),
                 &eval_points,
             ),
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),

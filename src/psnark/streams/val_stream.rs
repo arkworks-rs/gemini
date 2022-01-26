@@ -622,7 +622,7 @@ fn test_matrix() {
     let col = JointRowStream::new(&a_rowm, &b_rowm, &c_rowm, nonzero, joint_len);
     // in row major, the rows should be plain decreasing
     let mut state = col.iter().next().unwrap();
-    for (x, y) in row.iter().zip(col.iter()) {
+    for (_x, y) in row.iter().zip(col.iter()) {
         // println!("pos: ({}, {})", x, y);
         assert!(state >= y);
         state = y;
