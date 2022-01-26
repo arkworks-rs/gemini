@@ -192,7 +192,7 @@ impl<E: PairingEngine> Proof<E> {
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
         let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(
-            &[&r_a_star, &accumulated_vec.into_iter().flatten().collect()],
+            &[&r_a_star, &accumulated_vec.iter().flatten().cloned().collect()],
             &[mu],
             &open_chal,
         );
