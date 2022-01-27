@@ -2,7 +2,6 @@ use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
-
 #[derive(Clone, Copy)]
 pub struct LookupSetStreamer<'a, F, S> {
     base_streamer: &'a S,
@@ -38,8 +37,6 @@ where
         self.base_streamer.len()
     }
 }
-
-
 
 pub struct PlookupSetIterator<F, I>
 where

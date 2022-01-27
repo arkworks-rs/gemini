@@ -114,7 +114,6 @@ where
     }
 }
 
-
 #[test]
 fn test_sorted_iterator() {
     let base = vec!["1", "2", "3", "4"];

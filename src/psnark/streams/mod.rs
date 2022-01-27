@@ -14,11 +14,11 @@ pub use index_stream::IndexStream;
 pub use line_stream::LineStream;
 pub use tensor_stream::TensorStreamer;
 // XXX. this struct should probably replace TensorStreamer.
-pub use tensor_stream::TensorIStreamer;
+pub use tensor_stream::LookupTensorStreamer;
 
 pub use lookup_stream::LookupStreamer;
 
-pub use val_stream::{JointValStream, ValStream};
+pub use val_stream::{JointColStream, JointRowStream, JointValStream, ValStream};
 
 pub use intofield_stream::IntoField;
 

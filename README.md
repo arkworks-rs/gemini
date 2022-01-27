@@ -15,7 +15,7 @@ cargo rustdoc --open
 ```
 This include a detailed protocol description.
 
-## Feature
+## Features
 
 Gemini can be compiled with the following feature flags:
 

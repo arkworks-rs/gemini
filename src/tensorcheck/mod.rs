@@ -371,8 +371,6 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .for_each(|e| transcript.append_scalar(b"eval", e));
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
-        println!("----");
-
         vk.verify_multi_points(
             &all_commitments,
             &[eval_chal2, eval_chal, minus_eval_chal],

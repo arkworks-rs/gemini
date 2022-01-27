@@ -66,17 +66,24 @@ impl<E: PairingEngine> Proof<E> {
         let r_a_star = lookup(&a_challenges, &row_index);
         let r_b_star = lookup(&b_challenges, &row_index);
         let r_c_star = lookup(&c_challenges, &row_index);
-        let z_star = lookup(&r1cs.z, &col_index);
+        // MXXX: changed `col_index` into `row_index`. I'm now confused about which ordering is which,
+        // but it's important to keep in mind that:
+        // - row is monotone column major
+        // - col is monotone row major
+        let z_star = lookup(&r1cs.z, &row_index);
 
         let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
         let z_r_commitments = ck.batch_commit(vec![&r_a_star, &r_b_star, &r_c_star, &z_star]);
         end_timer!(z_r_commitments_time);
 
-        z_r_commitments
-            .iter()
-            .for_each(|c| transcript.append_commitment(b"commitment", c));
+        // MXXX: changed this to a more descriptive transcript, and to be consistent with the elastic prover.
+        transcript.append_commitment(b"ra*", &z_r_commitments[0]);
+        transcript.append_commitment(b"rb*", &z_r_commitments[1]);
+        transcript.append_commitment(b"rc*", &z_r_commitments[2]);
+        transcript.append_commitment(b"z*", &z_r_commitments[3]);
 
-        let eta = transcript.get_challenge::<E::Fr>(b"eta");
+        // MXXX: changed "eta" to "chal"
+        let eta = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(eta, 3);
 
         let r_star_val = linear_combination(
@@ -192,7 +199,7 @@ impl<E: PairingEngine> Proof<E> {
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
         let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(
-            &[&r_a_star, &accumulated_vec.into_iter().flatten().collect()],
+            &[&r_a_star, &accumulated_vec.iter().flatten().cloned().collect()],
             &[mu],
             &open_chal,
         );
@@ -289,7 +296,6 @@ impl<E: PairingEngine> Proof<E> {
                 &hadamard(&mu_powers2, &third_proof.challenges)[..],
             ),
         ];
-        println!("?");
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensor_check_proof = TensorcheckProof::new_time(

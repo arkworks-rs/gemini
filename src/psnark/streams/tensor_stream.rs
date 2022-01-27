@@ -1,4 +1,5 @@
 use ark_ff::Field;
+use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
 use crate::misc::{expand_tensor, PartialTensor, TENSOR_EXPANSION, TENSOR_EXPANSION_LOG};
@@ -79,12 +80,8 @@ where
     }
 }
 
-//////////////////////////////////////////////\
-
-use ark_std::borrow::Borrow;
-
 #[derive(Clone)]
-pub struct TensorIStreamer<'a, F, S>
+pub struct LookupTensorStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,
@@ -92,7 +89,6 @@ where
 {
     tensor: PartialTensor<F>,
     index: &'a S,
-    len: usize,
 }
 
 pub struct TensorIIter<F, I>
@@ -104,19 +100,19 @@ where
     index: I,
     tensor: PartialTensor<F>,
 }
-impl<'a, F, S> TensorIStreamer<'a, F, S>
+impl<'a, F, S> LookupTensorStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,
     S::Item: Borrow<usize>,
 {
-    pub fn new(v: &[F], index: &'a S, len: usize) -> Self {
+    pub fn new(v: &[F], index: &'a S) -> Self {
         let tensor = expand_tensor(v);
-        Self { tensor, index, len }
+        Self { tensor, index }
     }
 }
 
-impl<'a, F, S> Iterable for TensorIStreamer<'a, F, S>
+impl<'a, F, S> Iterable for LookupTensorStreamer<'a, F, S>
 where
     F: Field,
     S: Iterable,
@@ -133,7 +129,7 @@ where
     }
 
     fn len(&self) -> usize {
-        self.len
+        self.index.len()
     }
 }
 
