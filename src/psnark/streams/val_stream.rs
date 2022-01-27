@@ -606,7 +606,6 @@ fn test_matrix() {
     let b_rowm = Mat(browm.as_slice(), rows);
     let c_rowm = Mat(crowm.as_slice(), rows);
 
-
     let nonzero = num_constraints;
     let joint_len = num_constraints * 3;
     let row = JointRowStream::new(&a_colm, &b_colm, &c_colm, nonzero, joint_len);

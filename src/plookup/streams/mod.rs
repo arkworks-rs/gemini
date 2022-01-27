@@ -49,7 +49,8 @@ where
 fn test_plookup_relation() {
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
-    use ark_std::Zero;
+    use ark_std::test_rng;
+    use crate::ark_std::UniformRand;
 
     let set = [
         F::from(10u64),
@@ -65,14 +66,16 @@ fn test_plookup_relation() {
         F::from(15u64),
         F::from(42u64),
     ];
+
+    let rng = &mut test_rng();
     let indices = [5, 3, 1, 0];
     let set_stream = &set[..];
     let subset_stream = &subset[..];
     let indices_stream = &indices[..];
-    let y = F::zero();
-    let z = F::zero();
+    let y = F::rand(rng);
+    let z = F::rand(rng);
     let pl_set = LookupSetStreamer::new(&set_stream, y, z);
-    let pl_subset = LookupSubsetStreamer::new(&subset_stream, z);
+    let pl_subset = LookupSubsetStreamer::new(&subset_stream, y);
     let pl_sorted = LookupSortedStreamer::new(&set_stream, &indices_stream, y, z);
     let entry_product_pl_set = pl_set.iter().product::<F>();
     let entry_product_pl_subset = pl_subset.iter().product::<F>();
