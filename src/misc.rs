@@ -253,7 +253,7 @@ pub fn sum_matrices<F: Field>(
         .zip(b)
         .zip(c)
         .enumerate()
-        .map(|(row, ((row_a, row_b), row_c))| {
+        .for_each(|(row, ((row_a, row_b), row_c))| {
             row_a
                 .iter()
                 .map(|(_, i)| *i)
