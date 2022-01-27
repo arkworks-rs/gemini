@@ -247,21 +247,32 @@ where
 }
 
 #[inline]
-pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
+pub fn sum_matrices<F: Field>(
+    a: &Matrix<F>,
+    b: &Matrix<F>,
+    c: &Matrix<F>,
+    num_variables: usize,
+) -> Vec<Vec<usize>> {
+    let mut new_matrix = vec![BTreeSet::new(); num_variables];
     a.iter()
         .zip(b)
         .zip(c)
-        .map(|((row_a, row_b), row_c)| {
+        .enumerate()
+        .map(|(row, ((row_a, row_b), row_c))| {
             row_a
                 .iter()
                 .map(|(_, i)| *i)
                 .chain(row_b.iter().map(|(_, i)| *i))
                 .chain(row_c.iter().map(|(_, i)| *i))
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect()
-        })
-        .collect()
+                .for_each(|col| {
+                    new_matrix[col].insert(row);
+                });
+        });
+    let mut res = Vec::new();
+    new_matrix
+        .iter()
+        .for_each(|set| res.push(set.iter().cloned().collect()));
+    res
 }
 
 #[inline]
@@ -311,19 +322,19 @@ pub fn joint_matrices<F: Field>(
         .flatten()
         .collect::<BTreeMap<(usize, usize), F>>();
 
-    for (r, row) in joint_matrix.into_iter().enumerate() {
-        for i in row {
-            let row_val = F::from(r as u64);
-            let col_val = F::from(*i as u64);
+    for (cc, col) in joint_matrix.into_iter().enumerate() {
+        for i in col {
+            let row_val = F::from(*i as u64);
+            let col_val = F::from(cc as u64);
 
-            row_index_vec.push(r);
-            col_index_vec.push(*i);
+            row_index_vec.push(*i);
+            col_index_vec.push(cc);
             row_vec.push(row_val);
             col_vec.push(col_val);
             // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
-            val_a_vec.push(a.get(&(r, *i)).copied().unwrap_or(F::zero()));
-            val_b_vec.push(b.get(&(r, *i)).copied().unwrap_or(F::zero()));
-            val_c_vec.push(c.get(&(r, *i)).copied().unwrap_or(F::zero()));
+            val_a_vec.push(a.get(&(*i, cc)).copied().unwrap_or(F::zero()));
+            val_b_vec.push(b.get(&(*i, cc)).copied().unwrap_or(F::zero()));
+            val_c_vec.push(c.get(&(*i, cc)).copied().unwrap_or(F::zero()));
         }
     }
 

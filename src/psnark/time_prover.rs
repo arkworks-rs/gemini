@@ -51,7 +51,7 @@ impl<E: PairingEngine> Proof<E> {
         let num_constraints = r1cs.a.len();
         let num_variables = r1cs.z.len();
 
-        let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c);
+        let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c, num_variables);
         let (row, col, row_index, col_index, val_a, val_b, val_c) = joint_matrices(
             &joint_matrix,
             num_constraints,
