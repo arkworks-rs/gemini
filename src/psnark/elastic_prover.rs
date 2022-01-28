@@ -115,23 +115,23 @@ impl<E: PairingEngine> Proof<E> {
             r1cs.joint_len,
         );
         let val_a = JointValStream::new(
-            &r1cs.a_colm,
-            &r1cs.b_colm,
-            &r1cs.c_colm,
+            &r1cs.a_rowm,
+            &r1cs.b_rowm,
+            &r1cs.c_rowm,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_b = JointValStream::new(
-            &r1cs.b_colm,
-            &r1cs.c_colm,
-            &r1cs.a_colm,
+            &r1cs.b_rowm,
+            &r1cs.c_rowm,
+            &r1cs.a_rowm,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_c = JointValStream::new(
-            &r1cs.c_colm,
-            &r1cs.b_colm,
-            &r1cs.a_colm,
+            &r1cs.c_rowm,
+            &r1cs.b_rowm,
+            &r1cs.a_rowm,
             r1cs.nonzero,
             r1cs.joint_len,
         );

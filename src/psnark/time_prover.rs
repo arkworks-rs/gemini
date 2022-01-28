@@ -66,10 +66,6 @@ impl<E: PairingEngine> Proof<E> {
         let r_a_star = lookup(&a_challenges, &row_index);
         let r_b_star = lookup(&b_challenges, &row_index);
         let r_c_star = lookup(&c_challenges, &row_index);
-        // MXXX: changed `col_index` into `row_index`. I'm now confused about which ordering is which,
-        // but it's important to keep in mind that:
-        // - row is monotone column major
-        // - col is monotone row major
         let z_star = lookup(&r1cs.z, &col_index);
 
         let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
@@ -96,7 +92,6 @@ impl<E: PairingEngine> Proof<E> {
         )
         .unwrap();
 
-        println!("{}", eta);
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
         let second_challenges = tensor(&second_proof.challenges);
