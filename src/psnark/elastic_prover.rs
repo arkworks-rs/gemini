@@ -88,10 +88,17 @@ impl<E: PairingEngine> Proof<E> {
         let sumcheck1 = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(sumcheck_time);
 
-        let row = JointRowStream::new(
+        let row_sorted = JointRowStream::new(
             &r1cs.a_colm,
             &r1cs.b_colm,
             &r1cs.c_colm,
+            r1cs.nonzero,
+            r1cs.joint_len,
+        );
+        let row = JointColStream::new(
+            &r1cs.a_rowm,
+            &r1cs.b_rowm,
+            &r1cs.c_rowm,
             r1cs.nonzero,
             r1cs.joint_len,
         );
@@ -129,7 +136,7 @@ impl<E: PairingEngine> Proof<E> {
             r1cs.joint_len,
         );
         // lookup in z for the nonzero positions
-        let z_star = LookupStreamer::new(&r1cs.z, &row);
+        let z_star = LookupStreamer::new(&r1cs.z, &col);
         // compose the randomness for the A-, B-, C-matrices
         let len = sumcheck1.challenges.len();
         let r_short = &sumcheck1.challenges;
@@ -173,6 +180,8 @@ impl<E: PairingEngine> Proof<E> {
             &challenges
         );
 
+        println!("{}", challenge);
+
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let gamma = transcript.get_challenge(b"gamma");
@@ -180,10 +189,10 @@ impl<E: PairingEngine> Proof<E> {
         let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
-            plookup_streams(&alpha_star, &alphas, &row, gamma, chi);
-        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_star, &rs, &row, gamma, chi);
+            plookup_streams(&alpha_star, &alphas, &row_sorted, gamma, chi);
+        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_star, &rs, &row_sorted, gamma, chi);
         let (pl_set_z, pl_subset_z, pl_sorted_z) =
-            plookup_streams(&z_star, &r1cs.z, &row, gamma, chi);
+            plookup_streams(&z_star, &r1cs.z, &col, gamma, chi);
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();

@@ -70,7 +70,7 @@ impl<E: PairingEngine> Proof<E> {
         // but it's important to keep in mind that:
         // - row is monotone column major
         // - col is monotone row major
-        let z_star = lookup(&r1cs.z, &row_index);
+        let z_star = lookup(&r1cs.z, &col_index);
 
         let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
         let z_r_commitments = ck.batch_commit(vec![&r_a_star, &r_b_star, &r_c_star, &z_star]);
@@ -96,6 +96,7 @@ impl<E: PairingEngine> Proof<E> {
         )
         .unwrap();
 
+        println!("{}", eta);
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
         let second_challenges = tensor(&second_proof.challenges);
