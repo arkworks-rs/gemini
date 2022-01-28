@@ -183,7 +183,7 @@ impl<E: PairingEngine> Proof<E> {
             plookup_streams(&alpha_star, &alphas, &row, gamma, chi);
         let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_star, &rs, &row, gamma, chi);
         let (pl_set_z, pl_subset_z, pl_sorted_z) =
-            plookup_streams( &z_star, &r1cs.z, &row, gamma, chi);
+            plookup_streams(&z_star, &r1cs.z, &row, gamma, chi);
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();

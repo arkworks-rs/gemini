@@ -75,9 +75,12 @@ fn test_consistency() {
         elastic_proof.r_star_commitments[2],
         time_proof.r_star_commitments[2]
     );
-    assert_eq!(elastic_proof.second_sumcheck_msgs,
-        time_proof.second_sumcheck_msgs);
+    assert_eq!(
+        elastic_proof.second_sumcheck_msgs,
+        time_proof.second_sumcheck_msgs
+    );
 
-    assert_eq!(elastic_proof.set_r_ep,
-        time_proof.set_r_ep)
+    assert_eq!(elastic_proof.set_r_ep, time_proof.set_r_ep);
+    assert_eq!(elastic_proof.subset_r_ep, time_proof.subset_r_ep);
+    assert_eq!(elastic_proof.sorted_r_ep, time_proof.sorted_r_ep);
 }

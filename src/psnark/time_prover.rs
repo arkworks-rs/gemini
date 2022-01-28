@@ -158,7 +158,6 @@ impl<E: PairingEngine> Proof<E> {
         let mut z_accumulated_vec = accproduct3(&z_lookup_vec);
         lookup_vec.append(&mut z_lookup_vec.to_vec());
         accumulated_vec.append(&mut z_accumulated_vec);
-
         vec![
             r_b_prod_vec[0],
             r_b_prod_vec[1],
@@ -199,7 +198,10 @@ impl<E: PairingEngine> Proof<E> {
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
         let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(
-            &[&r_a_star, &accumulated_vec.iter().flatten().cloned().collect()],
+            &[
+                &r_a_star,
+                &accumulated_vec.iter().flatten().cloned().collect(),
+            ],
             &[mu],
             &open_chal,
         );

@@ -76,6 +76,6 @@ where
         let index = self.idx_it.next()?;
         let index = *index.borrow() as u64;
         let element = self.elt_it.next()?;
-        Some(F::from(index) + self.chal * element.borrow())
+        Some(self.chal * F::from(index) + element.borrow())
     }
 }

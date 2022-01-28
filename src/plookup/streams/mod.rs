@@ -46,11 +46,45 @@ where
 }
 
 #[test]
+fn test_consistency() {
+    use super::time_prover::plookup_set;
+    use ark_bls12_381::Fr as F;
+    use ark_std::Zero;
+
+    let set = [
+        F::from(10u64),
+        F::from(12u64),
+        F::from(13u64),
+        F::from(14u64),
+        F::from(15u64),
+        F::from(42u64),
+    ];
+    let subset = [
+        F::from(10u64),
+        F::from(13u64),
+        F::from(15u64),
+        F::from(42u64),
+    ];
+    let indices = [5, 3, 1, 0];
+    let y = F::from(0u64);
+    let z = F::from(0u64);
+
+    let set = plookup_set(&set, &y, &z, &F::zero());
+    let mut set_stream = LookupSetStreamer::new(&&set[..], y, z)
+        .iter()
+        .collect::<Vec<_>>();
+    set_stream.reverse();
+
+    assert_eq!(set.len(), set_stream.len());
+    assert_eq!(set.iter().product::<F>(), set_stream.iter().product::<F>());
+}
+
+#[test]
 fn test_plookup_relation() {
+    use crate::ark_std::UniformRand;
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
-    use crate::ark_std::UniformRand;
 
     let set = [
         F::from(10u64),

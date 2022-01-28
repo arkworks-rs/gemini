@@ -13,21 +13,12 @@ fn alg_hash<F: Field>(v: &[F], chal: &F) -> Vec<F> {
         .collect()
 }
 
-fn plookup_set<F: Field>(v: &[F], y: &F, z: &F, zeta: &F) -> Vec<F> {
+pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, z: &F, zeta: &F) -> Vec<F> {
     let y1z = (F::one() + z) * y;
-
-    // XXX.
-    // This block of code can probably be replaced by something smarter as:
-    // (0..len).map(|i| y * (Fr::one() + z) + z * w[i] + w[(i + 1) % len]).collect::<Vec<_>>();
-    // But reqires the algebraic hashing with zeta to be done *outside* the function
-    let mut res = Vec::new();
-    let mut prev = *v.last().unwrap() + F::from(v.len() as u64) * zeta;
-    v.iter().enumerate().for_each(|(i, &e)| {
-        let curr = e + F::from(i as u64) * zeta;
-        res.push(y1z + curr + prev * z);
-        prev = curr
-    });
-    res
+    let len = v.len();
+    (0..len)
+        .map(|i| y1z + v[i] * z + v[(i + len - 1) % len])
+        .collect::<Vec<_>>()
 }
 
 fn plookup_subset<F: Field>(v: &[F], index: &[usize], y: &F, zeta: &F) -> Vec<F> {
@@ -57,7 +48,11 @@ pub fn plookup<F: Field>(
     z: &F,
     zeta: &F,
 ) -> ([Vec<F>; 3], Vec<F>) {
-    // if zeta != zero : alg_hash(set, chal); alg_hash
+    // let (set, subset) = if zeta != F::zero() {
+    //     (alg_hash(set, zeta), alg_hash(subset, zeta))
+    // } else {
+    //     (set.to_vec(), subset.to_vec())
+    // };
 
     let lookup_set = plookup_set(set, y, z, zeta);
     let lookup_subset = plookup_subset(subset, index, y, zeta);
