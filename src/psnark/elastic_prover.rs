@@ -18,7 +18,7 @@ use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last,
 use crate::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
     HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream, LookupStreamer,
-    LookupTensorStreamer, TensorStreamer,
+    LookupTensorStreamer, TensorStreamer, AlgebraicHash,
 };
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::ElasticProver;
@@ -180,19 +180,22 @@ impl<E: PairingEngine> Proof<E> {
             &challenges
         );
 
-        println!("{}", challenge);
-
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let gamma = transcript.get_challenge(b"gamma");
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
+
+        let idx_z = crate::iterable::slice::IterableRange(r1cs.z.len());
+        let hashed_z = AlgebraicHash::new(&r1cs.z, &idx_z, zeta);
+        let hashed_zstar = AlgebraicHash::new(&z_star, &row_sorted, zeta);
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
             plookup_streams(&alpha_star, &alphas, &row_sorted, gamma, chi);
-        let (pl_set_r, pl_subset_r, pl_sorted_r) = plookup_streams(&r_star, &rs, &row_sorted, gamma, chi);
+        let (pl_set_r, pl_subset_r, pl_sorted_r) =
+            plookup_streams(&r_star, &rs, &row_sorted, gamma, chi);
         let (pl_set_z, pl_subset_z, pl_sorted_z) =
-            plookup_streams(&z_star, &r1cs.z, &col, gamma, chi);
+            plookup_streams(&hashed_zstar, &hashed_z, &col, gamma, chi);
         // compute the products to send to the verifier.
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();

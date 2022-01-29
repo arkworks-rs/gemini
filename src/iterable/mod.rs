@@ -5,7 +5,7 @@
 
 // DummyStream
 pub mod dummy;
-mod slice;
+pub(crate) mod slice;
 
 pub use slice::Reversed;
 

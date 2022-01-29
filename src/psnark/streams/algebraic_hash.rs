@@ -3,13 +3,13 @@ use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
 
-struct AlgebraicHash<'a, F, EltS, IdxS> {
+pub struct AlgebraicHash<'a, F, EltS, IdxS> {
     chal: F,
     elt_stream: &'a EltS,
     idx_stream: &'a IdxS,
 }
 
-struct AlgebraicHashIterator<EltI, IdxI, F> {
+pub struct AlgebraicHashIterator<EltI, IdxI, F> {
     elt_it: EltI,
     idx_it: IdxI,
     chal: F,
@@ -23,7 +23,7 @@ where
     EltS::Item: Borrow<F>,
     F: Field,
 {
-    fn new(elt_stream: &'a EltS, idx_stream: &'a IdxS, chal: F) -> Self {
+    pub fn new(elt_stream: &'a EltS, idx_stream: &'a IdxS, chal: F) -> Self {
         assert_eq!(elt_stream.len(), idx_stream.len());
         Self {
             elt_stream,
