@@ -80,11 +80,11 @@ where
             (Some(current), Some(previous)) => {
                 let current = *current.borrow();
                 self.previous = Some(current);
-                Some(self.y1z + self.z * previous.borrow() + current)
+                Some(self.y1z + previous.borrow() + self.z * current)
             }
             (None, Some(previous)) => {
                 self.previous = None;
-                Some(self.y1z + self.z * previous.borrow() + self.first)
+                Some(self.y1z + previous.borrow() + self.z * self.first)
             }
             (None, None) => None,
             (Some(_), None) => panic!(

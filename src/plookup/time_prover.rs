@@ -17,21 +17,17 @@ pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, z: &F, zeta: &F) -> Vec<F> {
     let y1z = (F::one() + z) * y;
     let len = v.len();
     (0..len)
-        .map(|i| y1z + v[i] * z + v[(i + len - 1) % len])
+        .map(|i| y1z + v[i] + v[(i + len - 1) % len] * z)
         .collect::<Vec<_>>()
 }
 
 fn plookup_subset<F: Field>(v: &[F], index: &[usize], y: &F, zeta: &F) -> Vec<F> {
-    v.iter()
-        .zip(index.iter())
-        .map(|(e, f)| *e + *zeta * F::from(*f as u64) + y)
-        .collect()
+    v.iter().zip(index.iter()).map(|(e, f)| *e + y).collect()
 }
 
 fn sorted<F: Field>(set: &[F], index: &[usize]) -> Vec<F> {
     let mut frequency = vec![1; set.len()];
     index.iter().for_each(|i| frequency[*i] += 1);
-    frequency.reverse();
     let mut sorted = Vec::new();
     frequency
         .iter()
@@ -81,7 +77,7 @@ fn test_plookup_relation() {
         F::from(15u64),
         F::from(42u64),
     ];
-    let indices = [5, 3, 1, 0];
+    let indices = [0, 2, 4, 5];
     let y = F::from(47u64);
     let z = F::from(52u64);
 

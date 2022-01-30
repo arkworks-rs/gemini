@@ -73,7 +73,6 @@ fn test_consistency() {
     let mut set_stream = LookupSetStreamer::new(&&set[..], y, z)
         .iter()
         .collect::<Vec<_>>();
-    set_stream.reverse();
 
     assert_eq!(set.len(), set_stream.len());
     assert_eq!(set.iter().product::<F>(), set_stream.iter().product::<F>());
