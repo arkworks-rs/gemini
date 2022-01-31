@@ -82,4 +82,6 @@ fn test_consistency() {
 
     assert_eq!(elastic_proof.set_r_ep, time_proof.set_r_ep);
     assert_eq!(elastic_proof.subset_r_ep, time_proof.subset_r_ep);
+    assert_eq!(elastic_proof.sorted_r_commitment, time_proof.sorted_r_commitment);
+    assert_eq!(elastic_proof.ep_msgs, time_proof.ep_msgs);
 }

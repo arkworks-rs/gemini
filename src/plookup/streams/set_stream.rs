@@ -94,25 +94,3 @@ where
     }
 }
 
-#[test]
-fn test_set_stream() {
-    use ark_bls12_381::Fr;
-    use ark_ff::One;
-    use ark_std::UniformRand;
-
-    let rng = &mut ark_std::test_rng();
-    let size = 1000;
-    let test_vector = (0..size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
-
-    let y = Fr::rand(rng);
-    let z = Fr::rand(rng);
-
-    let expected = (0..size)
-        .map(|i| y * (Fr::one() + z) + z * test_vector[i] + test_vector[(i + 1) % size])
-        .collect::<Vec<_>>();
-
-    let test_vector_stream = test_vector.as_slice();
-    let st = LookupSetStreamer::new(&test_vector_stream, y, z);
-    let got = st.iter().collect::<Vec<_>>();
-    assert_eq!(got, expected);
-}

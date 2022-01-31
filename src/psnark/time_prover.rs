@@ -20,6 +20,24 @@ use crate::PROTOCOL_NAME;
 
 use super::Proof;
 
+
+fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
+    vec![
+        // can't use product() bc borrow confuses the multiplication.
+        v[0].iter().fold(F::one(), |x, y| x * y),
+        v[1].iter().fold(F::one(), |x, y| x * y),
+        v[2].iter().fold(F::one(), |x, y| x * y),
+    ]
+}
+
+fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
+    vec![
+        accumulated_product(&v[0]),
+        accumulated_product(&v[1]),
+        accumulated_product(&v[2]),
+    ]
+}
+
 impl<E: PairingEngine> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
@@ -98,14 +116,11 @@ impl<E: PairingEngine> Proof<E> {
         let second_challenges_head = &second_challenges[..num_non_zero];
         end_timer!(second_sumcheck_time);
 
-        let gamma = transcript.get_challenge::<E::Fr>(b"gamma");
-        let chi = transcript.get_challenge::<E::Fr>(b"chi");
-        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
+        let gamma = transcript.get_challenge(b"gamma");
+        let chi = transcript.get_challenge(b"chi");
+        let zeta = transcript.get_challenge(b"zeta");
 
-        let mut lookup_vec = Vec::new();
-        let mut accumulated_vec = Vec::new();
-
-        let (r_b_lookup_vec, r_b_sorted) = plookup(
+        let r_b_lookup_vec = plookup(
             &r_b_star,
             &b_challenges,
             &row_index,
@@ -113,30 +128,10 @@ impl<E: PairingEngine> Proof<E> {
             &chi,
             &E::Fr::zero(),
         );
-
-        fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
-            vec![
-                // can't use product() bc borrow confuses the multiplication.
-                v[0].iter().fold(F::one(), |x, y| x * y),
-                v[1].iter().fold(F::one(), |x, y| x * y),
-                v[2].iter().fold(F::one(), |x, y| x * y),
-            ]
-        }
-
-        fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
-            vec![
-                accumulated_product(&v[0]),
-                accumulated_product(&v[1]),
-                accumulated_product(&v[2]),
-            ]
-        }
-
         let r_b_prod_vec = product3(&r_b_lookup_vec);
         let mut r_b_accumulated_vec = accproduct3(&r_b_lookup_vec);
-        lookup_vec.append(&mut r_b_lookup_vec.to_vec());
-        accumulated_vec.append(&mut r_b_accumulated_vec);
 
-        let (r_c_lookup_vec, r_c_sorted) = plookup(
+        let r_c_lookup_vec = plookup(
             &r_c_star,
             &c_challenges,
             &row_index,
@@ -146,32 +141,37 @@ impl<E: PairingEngine> Proof<E> {
         );
         let r_c_prod_vec = product3(&r_c_lookup_vec);
         let mut r_c_accumulated_vec = accproduct3(&r_c_lookup_vec);
-        lookup_vec.append(&mut r_c_lookup_vec.to_vec());
-        accumulated_vec.append(&mut r_c_accumulated_vec);
 
-        let (z_lookup_vec, z_sorted) = plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
+        let z_lookup_vec = plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
         let z_prod_vec = product3(&z_lookup_vec);
         let mut z_accumulated_vec = accproduct3(&z_lookup_vec);
-        lookup_vec.append(&mut z_lookup_vec.to_vec());
+
+        let mut lookup_vec = Vec::new();
+        lookup_vec.extend_from_slice(&r_b_lookup_vec);
+        lookup_vec.extend_from_slice(&r_c_lookup_vec);
+        lookup_vec.extend_from_slice(&z_lookup_vec);
+
+
+        let mut accumulated_vec = Vec::new();
+        accumulated_vec.append(&mut r_b_accumulated_vec);
+        accumulated_vec.append(&mut r_c_accumulated_vec);
         accumulated_vec.append(&mut z_accumulated_vec);
-        vec![
-            r_b_prod_vec[0],
-            r_b_prod_vec[1],
-            r_c_prod_vec[0],
-            r_c_prod_vec[1],
-            z_prod_vec[0],
-            z_prod_vec[1],
-        ]
-        .iter()
-        .for_each(|c| transcript.append_scalar(b"entryprod", c));
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
-        let sorted_commitments = ck.batch_commit(vec![&r_b_sorted, &r_c_sorted, &z_sorted]);
+        let polynomials = [&r_b_lookup_vec[2], &r_c_lookup_vec[2], &z_lookup_vec[2]];
+        let sorted_commitments = ck.batch_commit(polynomials);
         end_timer!(sorted_commitments_time);
 
-        sorted_commitments
-            .iter()
-            .for_each(|c| transcript.append_commitment(b"commitment", c));
+        transcript.append_scalar(b"set_r_ep", &r_c_prod_vec[0]);
+        transcript.append_scalar(b"subset_r_ep", &r_c_prod_vec[1]);
+        transcript.append_scalar(b"set_r_ep", &r_b_prod_vec[0]);
+        transcript.append_scalar(b"subset_r_ep", &r_b_prod_vec[1]);
+        transcript.append_scalar(b"set_z_ep", &z_prod_vec[0]);
+        transcript.append_scalar(b"subset_z_ep", &z_prod_vec[1]);
+        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);
+        transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
+        transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
+
 
         let mut entry_products = EntryProduct::new_time_batch(
             &mut transcript,
@@ -256,9 +256,9 @@ impl<E: PairingEngine> Proof<E> {
             &val_a,
             &val_b,
             &val_c,
-            &r_b_sorted,
-            &r_c_sorted,
-            &z_sorted,
+            &r_b_lookup_vec[2],
+            &r_c_lookup_vec[2],
+            &z_lookup_vec[2],
         ];
 
         let accumulated_product_vec = [&accumulated_vec.into_iter().flatten().collect()];

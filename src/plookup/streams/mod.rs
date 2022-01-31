@@ -8,7 +8,7 @@ pub use set_stream::LookupSetStreamer;
 pub use sorted_stream::LookupSortedStreamer;
 pub use subset_stream::LookupSubsetStreamer;
 
-use crate::iterable::Iterable;
+use crate::iterable::{Iterable, Reversed};
 
 /// Given a lookup instance of the form
 /// `subset` (denoted \\(\vec f^*\\)),
@@ -47,16 +47,16 @@ where
 
 #[test]
 fn test_consistency() {
-    use super::time_prover::plookup_set;
+    use super::time_prover::{plookup_set, sorted};
     use ark_bls12_381::Fr as F;
     use ark_std::Zero;
 
     let set = [
-        F::from(10u64),
-        F::from(12u64),
-        F::from(13u64),
-        F::from(14u64),
-        F::from(15u64),
+        F::from(0xAu64),
+        F::from(0xCu64),
+        F::from(0xDu64),
+        F::from(0xEu64),
+        F::from(0xFu64),
         F::from(42u64),
     ];
     let subset = [
@@ -69,13 +69,20 @@ fn test_consistency() {
     let y = F::from(0u64);
     let z = F::from(0u64);
 
-    let set = plookup_set(&set, &y, &z, &F::zero());
-    let mut set_stream = LookupSetStreamer::new(&&set[..], y, z)
+    let set = plookup_set(&set, &y, &z);
+    let set_stream = LookupSetStreamer::new(&&set[..], y, z)
         .iter()
         .collect::<Vec<_>>();
 
     assert_eq!(set.len(), set_stream.len());
     assert_eq!(set.iter().product::<F>(), set_stream.iter().product::<F>());
+    assert_eq!(&set, &set_stream);
+
+
+    let sorted = sorted(&set, &indices);
+    let mut sorted_stream = sorted_stream::SortedIterator::new(set.iter().rev(), indices.iter(), set.len()).cloned().collect::<Vec<_>>();
+    sorted_stream.reverse();
+    assert_eq!(&sorted, &sorted_stream);
 }
 
 #[test]

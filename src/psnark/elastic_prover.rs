@@ -186,10 +186,9 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
-
         let idx_z = crate::iterable::slice::IterableRange(r1cs.z.len());
         let hashed_z = AlgebraicHash::new(&r1cs.z, &idx_z, zeta);
-        let hashed_zstar = AlgebraicHash::new(&z_star, &row_sorted, zeta);
+        let hashed_zstar = AlgebraicHash::new(&z_star, &col, zeta);
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
             plookup_streams(&alpha_star, &alphas, &row_sorted, gamma, chi);
         let (pl_set_r, pl_subset_r, pl_sorted_r) =
@@ -222,8 +221,8 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
-        // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated, so that its lifetime
-        // will not conflict with the lifetime of the `provers`.
+        // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated,
+        // so that its lifetime will not conflict with the lifetime of the `provers`.
         let ep_r = TensorStreamer::new(&sumcheck2.challenges, r_star.len());
         let lhs_ralpha_star = HadamardStreamer::new(&ralpha_star, &ep_r);
         let lhs_r_star = HadamardStreamer::new(&r_star, &ep_r);

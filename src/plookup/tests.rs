@@ -27,10 +27,10 @@ fn test_consistency() {
     ];
     let indices = [5, 3, 1, 0];
     let indices_time = [0, 2, 4, 5];
-    let y = F::from(0);
+    let y = F::from(0u64);
     let z = F::from(1u64);
 
-    let (lookup_vec, _sorted) = plookup(&subset, &set, &indices_time, &y, &z, &F::zero());
+    let lookup_vec = plookup(&subset, &set, &indices_time, &y, &z, &F::zero());
     let time_products = [
         lookup_vec[0].iter().product::<F>(),
         lookup_vec[1].iter().product(),

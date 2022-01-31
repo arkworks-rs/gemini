@@ -56,7 +56,7 @@ where
     J: Iterator,
     J::Item: Borrow<usize>,
 {
-    current_it: usize,
+    counter: usize,
     cache: Option<T>,
     it: I,
     current_address: Option<J::Item>,
@@ -69,12 +69,12 @@ where
     J: Iterator,
     J::Item: Borrow<usize>,
 {
-    fn new(it: I, mut addresses: J, len: usize) -> Self {
-        let current_it = len;
+    pub(crate) fn new(it: I, mut addresses: J, len: usize) -> Self {
+        let counter = len;
         let cache = None;
         let current_address = addresses.next();
         Self {
-            current_it,
+            counter,
             cache,
             it,
             current_address,
@@ -98,11 +98,11 @@ where
             None => self.it.next(),
             Some(current_address) => {
                 let current_address = *current_address.borrow();
-                if self.current_it > current_address {
-                    self.current_it -= 1;
+                if self.counter > current_address {
+                    self.counter -= 1;
                     self.cache = self.it.next();
                     self.cache.clone()
-                } else if self.current_it == current_address {
+                } else if self.counter == current_address {
                     self.current_address = self.addresses.next();
                     self.cache.clone()
                 } else {

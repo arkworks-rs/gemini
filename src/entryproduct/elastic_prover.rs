@@ -97,7 +97,7 @@ macro_rules! impl_elastic_batch {
 
             let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
 
-            let mut claimed_sumchecks = vec![];
+            let mut claimed_sumchecks = Vec::new();
             let mut provers = Vec::<Box<dyn Prover<E::Fr> + 'a>>::new();
             let mut claimed_products_it = claimed_products.into_iter();
 

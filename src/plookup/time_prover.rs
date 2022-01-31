@@ -1,3 +1,5 @@
+use ark_std::borrow::Borrow;
+
 use ark_ff::Field;
 
 #[inline]
@@ -6,14 +8,16 @@ pub fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
 }
 
 #[inline]
-fn alg_hash<F: Field>(v: &[F], chal: &F) -> Vec<F> {
+fn alg_hash<F, J>(v: &[F], index: J, chal: &F) -> Vec<F>
+where J: IntoIterator,
+J::Item: Borrow<usize>, F: Field {
     v.iter()
-        .enumerate()
-        .map(|(i, &v_i)| v_i + F::from(i as u64) * chal)
+        .zip(index)
+        .map(|(&v_i, i )| v_i + F::from(*i.borrow() as u64) * chal)
         .collect()
 }
 
-pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, z: &F, zeta: &F) -> Vec<F> {
+pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, z: &F) -> Vec<F> {
     let y1z = (F::one() + z) * y;
     let len = v.len();
     (0..len)
@@ -21,13 +25,13 @@ pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, z: &F, zeta: &F) -> Vec<F> {
         .collect::<Vec<_>>()
 }
 
-fn plookup_subset<F: Field>(v: &[F], index: &[usize], y: &F, zeta: &F) -> Vec<F> {
-    v.iter().zip(index.iter()).map(|(e, f)| *e + y).collect()
+fn plookup_subset<F: Field>(v: &[F], y: &F) -> Vec<F> {
+    v.iter().map(|e| *e + y).collect()
 }
 
-fn sorted<F: Field>(set: &[F], index: &[usize]) -> Vec<F> {
+pub(crate) fn sorted<F: Field>(set: &[F], index: &[usize]) -> Vec<F> {
     let mut frequency = vec![1; set.len()];
-    index.iter().for_each(|i| frequency[*i] += 1);
+    index.iter().for_each(|&i| frequency[i] += 1);
     let mut sorted = Vec::new();
     frequency
         .iter()
@@ -43,18 +47,18 @@ pub fn plookup<F: Field>(
     y: &F,
     z: &F,
     zeta: &F,
-) -> ([Vec<F>; 3], Vec<F>) {
-    // let (set, subset) = if zeta != F::zero() {
-    //     (alg_hash(set, zeta), alg_hash(subset, zeta))
-    // } else {
-    //     (set.to_vec(), subset.to_vec())
-    // };
+) -> [Vec<F>; 3] {
+    let (set, subset) = if zeta != &F::zero() {
+        (alg_hash(set, 0..set.len(), zeta), alg_hash(subset, index, zeta))
+    } else {
+        (set.to_vec(), subset.to_vec())
+    };
 
-    let lookup_set = plookup_set(set, y, z, zeta);
-    let lookup_subset = plookup_subset(subset, index, y, zeta);
-    let sorted = sorted(set, index);
-    let lookup_sorted = plookup_set(&sorted, y, z, zeta);
-    ([lookup_set, lookup_subset, lookup_sorted], sorted)
+    let lookup_set = plookup_set(&set, y, z);
+    let lookup_subset = plookup_subset(&subset, y);
+    let sorted = sorted(&set, &index);
+    let lookup_sorted = plookup_set(&sorted, y, z);
+    [lookup_set, lookup_subset, lookup_sorted]
 }
 
 #[test]
@@ -81,7 +85,7 @@ fn test_plookup_relation() {
     let y = F::from(47u64);
     let z = F::from(52u64);
 
-    let (lookup_vec, _sorted) = plookup(&subset, &set, &indices, &y, &z, &F::zero());
+    let lookup_vec = plookup(&subset, &set, &indices, &y, &z, &F::zero());
     let prod_vec = [
         lookup_vec[0].iter().product::<F>(),
         lookup_vec[1].iter().product(),
