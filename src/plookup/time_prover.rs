@@ -9,11 +9,14 @@ pub fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
 
 #[inline]
 fn alg_hash<F, J>(v: &[F], index: J, chal: &F) -> Vec<F>
-where J: IntoIterator,
-J::Item: Borrow<usize>, F: Field {
+where
+    J: IntoIterator,
+    J::Item: Borrow<usize>,
+    F: Field,
+{
     v.iter()
         .zip(index)
-        .map(|(&v_i, i )| v_i + F::from(*i.borrow() as u64) * chal)
+        .map(|(&v_i, i)| v_i + F::from(*i.borrow() as u64) * chal)
         .collect()
 }
 
@@ -49,7 +52,10 @@ pub fn plookup<F: Field>(
     zeta: &F,
 ) -> [Vec<F>; 3] {
     let (set, subset) = if zeta != &F::zero() {
-        (alg_hash(set, 0..set.len(), zeta), alg_hash(subset, index, zeta))
+        (
+            alg_hash(set, 0..set.len(), zeta),
+            alg_hash(subset, index, zeta),
+        )
     } else {
         (set.to_vec(), subset.to_vec())
     };

@@ -40,7 +40,7 @@ impl Iterable for IterableRange {
     type Iter = ark_std::iter::Rev<ark_std::ops::Range<usize>>;
 
     fn iter(&self) -> Self::Iter {
-        (0 .. self.0).into_iter().rev()
+        (0..self.0).into_iter().rev()
     }
 
     fn len(&self) -> usize {

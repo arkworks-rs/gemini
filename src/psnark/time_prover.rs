@@ -20,7 +20,6 @@ use crate::PROTOCOL_NAME;
 
 use super::Proof;
 
-
 fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
     vec![
         // can't use product() bc borrow confuses the multiplication.
@@ -129,7 +128,7 @@ impl<E: PairingEngine> Proof<E> {
             &E::Fr::zero(),
         );
         let r_b_prod_vec = product3(&r_b_lookup_vec);
-        let mut r_b_accumulated_vec = accproduct3(&r_b_lookup_vec);
+        let r_b_accumulated_vec = accproduct3(&r_b_lookup_vec);
 
         let r_c_lookup_vec = plookup(
             &r_c_star,
@@ -140,22 +139,21 @@ impl<E: PairingEngine> Proof<E> {
             &E::Fr::zero(),
         );
         let r_c_prod_vec = product3(&r_c_lookup_vec);
-        let mut r_c_accumulated_vec = accproduct3(&r_c_lookup_vec);
+        let r_c_accumulated_vec = accproduct3(&r_c_lookup_vec);
 
         let z_lookup_vec = plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
         let z_prod_vec = product3(&z_lookup_vec);
-        let mut z_accumulated_vec = accproduct3(&z_lookup_vec);
+        let z_accumulated_vec = accproduct3(&z_lookup_vec);
 
         let mut lookup_vec = Vec::new();
         lookup_vec.extend_from_slice(&r_b_lookup_vec);
         lookup_vec.extend_from_slice(&r_c_lookup_vec);
         lookup_vec.extend_from_slice(&z_lookup_vec);
 
-
         let mut accumulated_vec = Vec::new();
-        accumulated_vec.append(&mut r_b_accumulated_vec);
-        accumulated_vec.append(&mut r_c_accumulated_vec);
-        accumulated_vec.append(&mut z_accumulated_vec);
+        accumulated_vec.extend(&r_b_accumulated_vec);
+        accumulated_vec.extend(&r_c_accumulated_vec);
+        accumulated_vec.extend(&z_accumulated_vec);
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
         let polynomials = [&r_b_lookup_vec[2], &r_c_lookup_vec[2], &z_lookup_vec[2]];
@@ -189,27 +187,23 @@ impl<E: PairingEngine> Proof<E> {
             ],
         );
 
-        let mu = entry_products.chal;
+        let psi = entry_products.chal;
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
-        let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(
-            &[
-                &r_a_star,
-                &accumulated_vec.iter().flatten().cloned().collect(),
-            ],
-            &[mu],
-            &open_chal,
-        );
-        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&r_a_star, &mu)];
+        let mut polynomials = vec![&r_a_star];
+        polynomials.extend(accumulated_vec.iter());
+        let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(&polynomials, &[psi], &open_chal);
+
+        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&r_a_star, &psi)];
         accumulated_vec
             .iter()
-            .for_each(|v| ralpha_star_acc_mu_evals.push(evaluate_le(&v, &mu)));
+            .for_each(|v| ralpha_star_acc_mu_evals.push(evaluate_le(&v, &psi)));
 
         let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges_head);
         // let s_2_prime = scalar_prod(&hadamard(&r_c_star, &val_c), &second_challenges);
-        transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
-        transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
+        // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
+        // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
         ralpha_star_acc_mu_evals
             .iter()
             .for_each(|e| transcript.append_scalar(b"r_a_star_acc_mu", e));
@@ -237,7 +231,7 @@ impl<E: PairingEngine> Proof<E> {
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &r_b_star, &r_c_star, &mu,
+            &r_b_star, &r_c_star, &psi,
         ))));
 
         let third_sumcheck_time = start_timer!(|| "Third sumcheck");
@@ -260,7 +254,8 @@ impl<E: PairingEngine> Proof<E> {
             &z_lookup_vec[2],
         ];
 
-        let accumulated_product_vec = [&accumulated_vec.into_iter().flatten().collect()];
+        // XXX what is going on?
+        let accumulated_product_vec = [&accumulated_vec.into_iter().flatten().cloned().collect()];
         let twist_powers2 = powers2(entry_products.chal, third_proof.challenges.len());
         let accumulated_vec_randomness = hadamard(&third_proof.challenges, &twist_powers2);
 
@@ -272,7 +267,7 @@ impl<E: PairingEngine> Proof<E> {
             &r_c_star,
         ];
 
-        let mu_powers2 = powers2(mu, third_proof.challenges.len());
+        let mu_powers2 = powers2(psi, third_proof.challenges.len());
 
         // third_proof.challenges might be longer than second_proof.challenges because of
         // the batched sumcheck involves entry products polynomials.

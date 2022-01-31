@@ -40,6 +40,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
         transcript.append_commitment(b"acc_v", &acc_v_commitments[0]);
 
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+
         let claimed_sumchecks = vec![
             chal * evaluate_be(acc_v.iter(), &chal) + claimed_product
                 - chal.pow(&[acc_v.len() as u64]),

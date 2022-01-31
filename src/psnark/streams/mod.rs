@@ -22,5 +22,5 @@ pub use val_stream::{JointColStream, JointRowStream, JointValStream, ValStream};
 
 pub use intofield_stream::IntoField;
 
-pub use merge_stream::MergeStream;
 pub use algebraic_hash::AlgebraicHash;
+pub use merge_stream::MergeStream;
