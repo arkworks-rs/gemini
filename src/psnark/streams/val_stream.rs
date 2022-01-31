@@ -571,12 +571,12 @@ fn test_joint_val() {
 fn test_matrix() {
     use crate::circuit::{
         generate_relation, matrix_into_col_major_slice, matrix_into_row_major_slice,
-        random_circuit, Circuit, R1csStream,
+        random_circuit, Circuit,
     };
     use ark_std::test_rng;
     // use crate::iterable::Reversed;
     use crate::iterable::dummy::Mat;
-    use crate::misc::product_matrix_vector;
+
     use ark_bls12_381::Fr;
 
     let rng = &mut test_rng();

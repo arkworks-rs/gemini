@@ -8,7 +8,7 @@ pub use set_stream::LookupSetStreamer;
 pub use sorted_stream::LookupSortedStreamer;
 pub use subset_stream::LookupSubsetStreamer;
 
-use crate::iterable::{Iterable, Reversed};
+use crate::iterable::{Iterable};
 
 /// Given a lookup instance of the form
 /// `subset` (denoted \\(\vec f^*\\)),
@@ -49,7 +49,7 @@ where
 fn test_consistency() {
     use super::time_prover::{plookup_set, sorted};
     use ark_bls12_381::Fr as F;
-    use ark_std::Zero;
+
 
     let set = [
         F::from(0xAu64),
@@ -57,12 +57,6 @@ fn test_consistency() {
         F::from(0xDu64),
         F::from(0xEu64),
         F::from(0xFu64),
-        F::from(42u64),
-    ];
-    let subset = [
-        F::from(10u64),
-        F::from(13u64),
-        F::from(15u64),
         F::from(42u64),
     ];
     let indices = [5, 3, 1, 0];

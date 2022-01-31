@@ -172,7 +172,6 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
 
-
         let mut entry_products = EntryProduct::new_time_batch(
             &mut transcript,
             ck,

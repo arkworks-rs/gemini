@@ -205,7 +205,7 @@ impl<E: PairingEngine> Proof<E> {
         let sorted_r_ep = pl_sorted_r.iter().product();
         let set_z_ep = pl_set_z.iter().product();
         let subset_z_ep = pl_subset_z.iter().product();
-        let sorted_z_ep = pl_sorted_r.iter().product();
+        let sorted_z_ep = pl_sorted_z.iter().product();
         // compute the commitments to the sorted polynomials
         let sorted_alpha_commitment = ck.commit(&pl_sorted_alpha);
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
