@@ -42,5 +42,5 @@ pub struct Proof<E: PairingEngine> {
     ralpha_star_acc_mu_proof: EvaluationProof<E>,
     rstars_vals: [E::Fr; 2],
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
-    tensor_check_proof: TensorcheckProof<E>,
+    tensorcheck_proof: TensorcheckProof<E>,
 }

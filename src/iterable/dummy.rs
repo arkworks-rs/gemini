@@ -203,12 +203,12 @@ pub fn dummy_r1cs_stream<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> Du
     let e = F::rand(rng);
     let inv_e = e.inverse().expect("Buy a lottery ticket and retry");
     R1csStream {
-        a_rowm: DiagonalMatrixStreamer::new(inv_e, n),
-        b_rowm: DiagonalMatrixStreamer::new(inv_e, n),
-        c_rowm: DiagonalMatrixStreamer::new(inv_e, n),
-        a_colm: DiagonalMatrixStreamer::new(inv_e, n),
-        b_colm: DiagonalMatrixStreamer::new(inv_e, n),
-        c_colm: DiagonalMatrixStreamer::new(inv_e, n),
+        a_colmaj: DiagonalMatrixStreamer::new(inv_e, n),
+        b_colmaj: DiagonalMatrixStreamer::new(inv_e, n),
+        c_colmaj: DiagonalMatrixStreamer::new(inv_e, n),
+        a_rowmaj: DiagonalMatrixStreamer::new(inv_e, n),
+        b_rowmaj: DiagonalMatrixStreamer::new(inv_e, n),
+        c_rowmaj: DiagonalMatrixStreamer::new(inv_e, n),
         witness: DummyStreamer::new(e, n - 1),
         z: DummyStreamer::new(e, n),
         z_a: DummyStreamer::new(F::one(), n),

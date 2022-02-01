@@ -89,16 +89,16 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(sumcheck_time);
 
         let row_sorted = JointRowStream::new(
-            &r1cs.a_colm,
-            &r1cs.b_colm,
-            &r1cs.c_colm,
+            &r1cs.a_rowmaj,
+            &r1cs.b_rowmaj,
+            &r1cs.c_rowmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let row = JointColStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
@@ -108,30 +108,30 @@ impl<E: PairingEngine> Proof<E> {
         // and therefore with JointRowStream cut in the first element, col
         // (Yes I know the name is miserable.)
         let col = JointRowStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_a = JointValStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_b = JointValStream::new(
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
-            &r1cs.a_rowm,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
+            &r1cs.a_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_c = JointValStream::new(
-            &r1cs.c_rowm,
-            &r1cs.b_rowm,
-            &r1cs.a_rowm,
+            &r1cs.c_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.a_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
@@ -522,7 +522,7 @@ impl<E: PairingEngine> Proof<E> {
         .into_iter()
         .sum();
 
-        let tensor_check_proof = TensorcheckProof {
+        let tensorcheck_proof = TensorcheckProof {
             folded_polynomials_commitments,
             folded_polynomials_evaluations,
             evaluation_proof,
@@ -551,7 +551,7 @@ impl<E: PairingEngine> Proof<E> {
             ralpha_star_acc_mu_proof,
             rstars_vals: [r_val_chal_a, r_val_chal_b],
             third_sumcheck_msgs: sumcheck3.prover_messages(),
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

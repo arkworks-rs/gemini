@@ -499,7 +499,7 @@ fn test_joint_val() {
 #[test]
 fn test_matrix() {
     use crate::circuit::{
-        generate_relation, matrix_into_col_major_slice, matrix_into_row_major_slice,
+        generate_relation, matrix_into_rowmaj, matrix_into_colmaj,
         random_circuit, Circuit,
     };
     use ark_std::test_rng;
@@ -520,17 +520,17 @@ fn test_matrix() {
     // let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
     // let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
 
-    let acolm = matrix_into_col_major_slice(&r1cs.a);
-    let bcolm = matrix_into_col_major_slice(&r1cs.b);
-    let ccolm = matrix_into_col_major_slice(&r1cs.c);
+    let acolm = matrix_into_rowmaj(&r1cs.a);
+    let bcolm = matrix_into_rowmaj(&r1cs.b);
+    let ccolm = matrix_into_rowmaj(&r1cs.c);
 
     let a_colm = Mat(acolm.as_slice(), rows);
     let b_colm = Mat(bcolm.as_slice(), rows);
     let c_colm = Mat(ccolm.as_slice(), rows);
 
-    let arowm = matrix_into_row_major_slice(&r1cs.a, rows);
-    let browm = matrix_into_row_major_slice(&r1cs.b, rows);
-    let crowm = matrix_into_row_major_slice(&r1cs.c, rows);
+    let arowm = matrix_into_colmaj(&r1cs.a, rows);
+    let browm = matrix_into_colmaj(&r1cs.b, rows);
+    let crowm = matrix_into_colmaj(&r1cs.c, rows);
     let a_rowm = Mat(arowm.as_slice(), rows);
     let b_rowm = Mat(browm.as_slice(), rows);
     let c_rowm = Mat(crowm.as_slice(), rows);

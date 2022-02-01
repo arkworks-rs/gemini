@@ -296,7 +296,7 @@ impl<E: PairingEngine> Proof<E> {
         ];
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        let tensor_check_proof = TensorcheckProof::new_time(
+        let tensorcheck_proof = TensorcheckProof::new_time(
             &mut transcript,
             ck,
             tc_base_polynomials,
@@ -324,7 +324,7 @@ impl<E: PairingEngine> Proof<E> {
             ralpha_star_acc_mu_evals,
             rstars_vals: [s_0_prime, s_1_prime],
             third_sumcheck_msgs: third_proof.prover_messages(),
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

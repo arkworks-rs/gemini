@@ -22,7 +22,7 @@ pub struct Proof<E: PairingEngine> {
     zc_alpha: E::Fr,
     first_sumcheck_msgs: ProverMsgs<E::Fr>,
     second_sumcheck_msgs: ProverMsgs<E::Fr>,
-    tensor_check_proof: TensorcheckProof<E>,
+    tensorcheck_proof: TensorcheckProof<E>,
 }
 
 impl<E: PairingEngine> ark_std::fmt::Debug for Proof<E> {

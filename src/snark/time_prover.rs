@@ -91,7 +91,7 @@ impl<E: PairingEngine> Proof<E> {
             &second_proof.challenges[..],
         )];
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        let tensor_check_proof = TensorcheckProof::new_time(
+        let tensorcheck_proof = TensorcheckProof::new_time(
             &mut transcript,
             ck,
             tc_base_polynomials,
@@ -105,7 +105,7 @@ impl<E: PairingEngine> Proof<E> {
             zc_alpha,
             first_sumcheck_msgs,
             second_sumcheck_msgs,
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

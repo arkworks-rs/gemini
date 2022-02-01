@@ -211,9 +211,9 @@ impl<E: PairingEngine> Proof<E> {
         let a_tensors = &hadamard(b_tensors, c_tensors);
 
         let len = r1cs.z.len();
-        let a_alpha = MatrixTensor::new(r1cs.a_rowm, a_tensors, len);
-        let b_alpha = MatrixTensor::new(r1cs.b_rowm, b_tensors, len);
-        let c_alpha = MatrixTensor::new(r1cs.c_rowm, c_tensors, len);
+        let a_alpha = MatrixTensor::new(r1cs.a_colmaj, a_tensors, len);
+        let b_alpha = MatrixTensor::new(r1cs.b_colmaj, b_tensors, len);
+        let c_alpha = MatrixTensor::new(r1cs.c_colmaj, c_tensors, len);
         let sumcheck_batch_challenges = powers(eta, 3);
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 
@@ -226,7 +226,7 @@ impl<E: PairingEngine> Proof<E> {
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensorcheck_batch_challenges = powers(batch_challenge, 2);
         let tensorcheck_polynomials = lincomb!((lhs, r1cs.z), &tensorcheck_batch_challenges);
-        let tensor_check_proof = tensorcheck(
+        let tensorcheck_proof = tensorcheck(
             &mut transcript,
             ck,
             &r1cs.witness,
@@ -240,7 +240,7 @@ impl<E: PairingEngine> Proof<E> {
             zc_alpha,
             first_sumcheck_msgs: first_proof.prover_messages(),
             second_sumcheck_msgs: second_proof.prover_messages(),
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }
