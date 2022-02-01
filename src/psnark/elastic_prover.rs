@@ -5,8 +5,8 @@ use ark_std::borrow::Borrow;
 use ark_std::One;
 use merlin::Transcript;
 
-use crate::entryproduct::streams::{entry_product_streams, NMonic};
-use crate::entryproduct::EntryProduct;
+use crate::subprotocols::entryproduct::streams::{entry_product_streams, NMonic};
+use crate::subprotocols::entryproduct::EntryProduct;
 use crate::kzg::CommitterKeyStream;
 // use crate::psnark::streams::memcheck::memcheck_streams;
 // use crate::psnark::streams::plookup::plookup_streams;
@@ -15,16 +15,16 @@ use crate::psnark::Proof;
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
-use crate::plookup::streams::plookup_streams;
+use crate::subprotocols::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
     AlgebraicHash, HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream,
     LookupStreamer, LookupTensorStreamer, TensorStreamer,
 };
-use crate::sumcheck::proof::Sumcheck;
-use crate::sumcheck::ElasticProver;
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::sumcheck::ElasticProver;
 
-use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, TensorcheckProof};
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
+use crate::subprotocols::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
 

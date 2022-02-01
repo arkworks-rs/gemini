@@ -8,8 +8,8 @@ use crate::kzg::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
-use crate::sumcheck::proof::Sumcheck;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 

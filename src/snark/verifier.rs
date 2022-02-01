@@ -7,7 +7,7 @@ use crate::kzg::VerifierKey;
 use crate::misc::{evaluate_le, ip};
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
-use crate::sumcheck::Subclaim;
+use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::{VerificationError, VerificationResult, PROTOCOL_NAME};
 

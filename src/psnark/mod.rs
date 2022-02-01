@@ -14,10 +14,10 @@ mod tests;
 
 use ark_ec::PairingEngine;
 
-use crate::entryproduct;
+use crate::subprotocols::entryproduct;
 use crate::kzg::{Commitment, EvaluationProof};
-use crate::sumcheck::prover::ProverMsgs;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The preprocessing SNARK proof, containing all prover's messages.
 #[allow(unused)]

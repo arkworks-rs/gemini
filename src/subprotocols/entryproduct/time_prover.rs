@@ -4,10 +4,10 @@ use merlin::Transcript;
 
 use super::{EntryProduct, ProverMsgs};
 use crate::misc::evaluate_le;
-use crate::sumcheck::time_prover::Witness;
-use crate::sumcheck::Prover;
+use crate::subprotocols::sumcheck::time_prover::Witness;
+use crate::subprotocols::sumcheck::{Prover, TimeProver};
 use crate::transcript::GeminiTranscript;
-use crate::{kzg::CommitterKey, sumcheck::TimeProver};
+use crate::kzg::CommitterKey;
 
 /// Perform the right notation of a vector `v`.
 fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {

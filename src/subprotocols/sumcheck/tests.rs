@@ -11,12 +11,12 @@ use crate::misc::fold_polynomial;
 use crate::misc::hadamard;
 use crate::misc::ip;
 use crate::misc::powers;
-use crate::sumcheck::proof::Sumcheck;
-use crate::sumcheck::prover::Prover;
-use crate::sumcheck::space_prover::SpaceProver;
-use crate::sumcheck::streams::FoldedPolynomialStream;
-use crate::sumcheck::time_prover::{TimeProver, Witness};
-use crate::sumcheck::Subclaim;
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::sumcheck::prover::Prover;
+use crate::subprotocols::sumcheck::space_prover::SpaceProver;
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialStream;
+use crate::subprotocols::sumcheck::time_prover::{TimeProver, Witness};
+use crate::subprotocols::sumcheck::Subclaim;
 
 #[test]
 fn test_rounds() {

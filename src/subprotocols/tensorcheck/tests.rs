@@ -7,7 +7,7 @@ use ark_poly::UVPolynomial;
 
 use crate::kzg::CommitterKey;
 use crate::misc::{ip, tensor};
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use ark_std::{log2, One, UniformRand, Zero};
 

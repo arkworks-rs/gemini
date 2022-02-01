@@ -12,9 +12,9 @@ use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, evaluate_le, hadamard, powers, powers2, strip_last, MatrixElement};
 use crate::snark::streams::MatrixTensor;
 use crate::snark::Proof;
-use crate::sumcheck::proof::Sumcheck;
-use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, partially_foldtree, TensorcheckProof};
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
+use crate::subprotocols::tensorcheck::{evaluate_folding, partially_foldtree, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME, SPACE_TIME_THRESHOLD};
 

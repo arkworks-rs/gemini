@@ -5,7 +5,7 @@ use ark_ff::Field;
 use ark_std::log2;
 
 use crate::misc::fold_polynomial;
-use crate::sumcheck::prover::{Prover, RoundMsg};
+use crate::subprotocols::sumcheck::prover::{Prover, RoundMsg};
 
 /// The witness for the Twisted Scalar product relation.
 #[derive(Clone)]

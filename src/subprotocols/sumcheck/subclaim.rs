@@ -3,7 +3,8 @@ use merlin::Transcript;
 
 use crate::misc::ip;
 use crate::transcript::GeminiTranscript;
-use crate::{sumcheck::prover::ProverMsgs, VerificationError};
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
+use crate::VerificationError;
 
 use super::prover::RoundMsg;
 

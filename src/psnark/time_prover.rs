@@ -4,16 +4,16 @@ use ark_ff::Field;
 use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
-use crate::entryproduct::time_prover::accumulated_product;
-use crate::entryproduct::EntryProduct;
+use crate::subprotocols::entryproduct::time_prover::accumulated_product;
+use crate::subprotocols::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
     product_matrix_vector, sum_matrices, tensor,
 };
-use crate::plookup::time_prover::{lookup, plookup};
-use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::plookup::time_prover::{lookup, plookup};
+use crate::subprotocols::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 
 use crate::PROTOCOL_NAME;

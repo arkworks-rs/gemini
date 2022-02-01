@@ -9,7 +9,7 @@ use ark_ff::One;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 
-use ark_gemini::sumcheck::proof::Sumcheck;
+use ark_gemini::subprotocols::sumcheck::proof::Sumcheck;
 
 fn bench_sumcheck(c: &mut Criterion) {
     let mut group = c.benchmark_group("sumcheck");

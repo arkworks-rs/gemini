@@ -8,7 +8,7 @@ use crate::iterable::Iterable;
 
 use super::prover::{ProverMsgs, RoundMsg};
 use super::Prover;
-use crate::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
+use crate::subprotocols::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
 use crate::transcript::GeminiTranscript;
 
 /// A scalar product proof, containing non-oracle messages, and oracle messages together with their queries and evaluations.

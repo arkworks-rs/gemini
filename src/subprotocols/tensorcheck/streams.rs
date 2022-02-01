@@ -34,7 +34,7 @@ pub struct LinCombStream<'a, F, T> {
 #[macro_export]
 macro_rules! lincomb {
     (($($B:expr),*), $coeffs:expr) => {
-        crate::tensorcheck::streams::LinCombStream { t: ($(&$B,)*), coeffs: $coeffs }
+        crate::subprotocols::tensorcheck::streams::LinCombStream { t: ($(&$B,)*), coeffs: $coeffs }
     }
 }
 

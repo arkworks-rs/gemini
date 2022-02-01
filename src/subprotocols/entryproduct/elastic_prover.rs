@@ -7,7 +7,7 @@ use merlin::Transcript;
 use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::evaluate_be;
-use crate::sumcheck::{ElasticProver, Prover, SpaceProver, TimeProver};
+use crate::subprotocols::sumcheck::{ElasticProver, Prover, SpaceProver, TimeProver};
 
 use super::streams::{entry_product_streams, ProductStream, RightRotationStreamer};
 use super::{EntryProduct, ProverMsgs};

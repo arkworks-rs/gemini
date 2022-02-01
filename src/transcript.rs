@@ -5,7 +5,7 @@ use ark_ec::{group::Group, PairingEngine};
 use ark_ff::{to_bytes, Field};
 
 use crate::kzg::{Commitment, EvaluationProof};
-use crate::sumcheck::prover::RoundMsg;
+use crate::subprotocols::sumcheck::prover::RoundMsg;
 
 /// A Transcript with some shorthands for feeding scalars, group elements, and obtaining challenges as field elements.
 pub trait GeminiTranscript {

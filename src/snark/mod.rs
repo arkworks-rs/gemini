@@ -12,8 +12,8 @@ mod tests;
 use ark_ec::PairingEngine;
 
 use crate::kzg::Commitment;
-use crate::sumcheck::prover::ProverMsgs;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The SNARK proof, composed of all prover's messages sent throughout the protocol.
 #[derive(PartialEq, Eq)]
