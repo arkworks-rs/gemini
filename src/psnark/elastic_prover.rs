@@ -391,12 +391,9 @@ impl<E: PairingEngine> Proof<E> {
             &tc_challenges
         );
         let body_polynomials_2 = &z_star;
-        let body_polynomials_3 = &lincomb!((r_star, alpha_star), &tc_challenges);
-        let body_polynomials_4 = &r_star.clone();
+        let body_polynomials_3 = &lincomb!((r_star, alpha_star, ralpha_star), &tc_challenges);
 
         let psi_squares = powers2(psi, sumcheck3.challenges.len());
-        let mu_squares = powers2(psi, sumcheck3.challenges.len());
-
         // 1st challenges:
         let tensorcheck_challenges_0 = hadamard(&sumcheck3.challenges, &psi_squares);
         let tensorcheck_challenges_0 = strip_last(&tensorcheck_challenges_0);
@@ -410,9 +407,6 @@ impl<E: PairingEngine> Proof<E> {
             &sumcheck3.challenges[..sumcheck2.challenges.len()],
         );
         let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
-        // 5th challenges:
-        let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &mu_squares);
-        let tensorcheck_challenges_4 = strip_last(&tensorcheck_challenges_4);
 
         let tensorcheck_foldings_0 =
             FoldedPolynomialTree::new(body_polynomials_0, tensorcheck_challenges_0);
@@ -422,15 +416,12 @@ impl<E: PairingEngine> Proof<E> {
             FoldedPolynomialTree::new(body_polynomials_2, tensorcheck_challenges_2);
         let tensorcheck_foldings_3 =
             FoldedPolynomialTree::new(body_polynomials_3, tensorcheck_challenges_3);
-        let tensorcheck_foldings_4 =
-            FoldedPolynomialTree::new(body_polynomials_4, tensorcheck_challenges_4);
 
         let mut folded_polynomials_commitments = Vec::new();
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_0));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_1));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_2));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_3));
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_4));
 
         // add commitments to transcript
         folded_polynomials_commitments
@@ -438,6 +429,7 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|c| transcript.append_commitment(b"commitment", c));
 
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        println!("{}", eval_chal);
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
         let mut folded_polynomials_evaluations = vec![];
@@ -465,12 +457,6 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_folding(&tensorcheck_foldings_3, eval_points[1])
                 .into_iter()
                 .zip(evaluate_folding(&tensorcheck_foldings_3, eval_points[2]))
-                .map(|(x, y)| [x, y]),
-        );
-        folded_polynomials_evaluations.extend(
-            evaluate_folding(&tensorcheck_foldings_4, eval_points[1])
-                .into_iter()
-                .zip(evaluate_folding(&tensorcheck_foldings_4, eval_points[2]))
                 .map(|(x, y)| [x, y]),
         );
 
@@ -509,7 +495,7 @@ impl<E: PairingEngine> Proof<E> {
         // XXXX are the base polynomials added in the snark??
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_4.len()
+        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.len()
             + 3 * base_polynomials_evaluations.len(); // adjuct with the numebr of base polynomials
         let open_chals = powers(open_chal, open_chal_len);
 
@@ -532,8 +518,6 @@ impl<E: PairingEngine> Proof<E> {
             ck.open_folding(tensorcheck_foldings_2, &eval_points, &open_chals[3..])
                 .1,
             ck.open_folding(tensorcheck_foldings_3, &eval_points, &open_chals[3..])
-                .1,
-            ck.open_folding(tensorcheck_foldings_4, &eval_points, &open_chals[3..])
                 .1,
         ]
         .into_iter()

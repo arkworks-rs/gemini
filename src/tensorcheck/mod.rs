@@ -201,6 +201,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
         let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
 
+
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
             (
                 linear_combination(polynomials, &batch_challenges).expect(EMPTY_CHALLENGES_ERR_MSG),
@@ -218,6 +219,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        println!("{}", eval_chal);
         let minus_eval_chal = -eval_chal;
         let eval_chal2 = eval_chal.square();
 

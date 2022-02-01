@@ -137,49 +137,49 @@ fn test_sorted_iterator() {
     assert_eq!(sorted_iterator, expected);
 }
 
-#[test]
-fn test_sorted_stream() {
-    use ark_bls12_381::Fr;
-    use ark_ff::One;
-    use ark_std::rand::Rng;
-    use ark_std::UniformRand;
+// #[test]
+// fn test_sorted_stream() {
+//     use ark_bls12_381::Fr;
+//     use ark_ff::One;
+//     use ark_std::rand::Rng;
+//     use ark_std::UniformRand;
 
-    let rng = &mut ark_std::test_rng();
-    let set_size = 5;
-    let subset_size = 10;
-    let test_vector = (0..set_size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+//     let rng = &mut ark_std::test_rng();
+//     let set_size = 5;
+//     let subset_size = 10;
+//     let test_vector = (0..set_size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
 
-    // assume the subset indices are sorted.
-    let mut subset_indices = (0..subset_size)
-        .map(|_| rng.gen_range(0..set_size))
-        .collect::<Vec<_>>();
-    subset_indices.sort_unstable();
-    // create the array for merged indices and the sorted vector `w `
-    let mut merged_indices = subset_indices.clone();
-    merged_indices.extend(0..set_size);
-    merged_indices.sort_unstable();
-    merged_indices.reverse();
-    let w = merged_indices
-        .iter()
-        .map(|&i| test_vector[i])
-        .collect::<Vec<_>>();
+//     // assume the subset indices are sorted.
+//     let mut subset_indices = (0..subset_size)
+//         .map(|_| rng.gen_range(0..set_size))
+//         .collect::<Vec<_>>();
+//     subset_indices.sort_unstable();
+//     // create the array for merged indices and the sorted vector `w `
+//     let mut merged_indices = subset_indices.clone();
+//     merged_indices.extend(0..set_size);
+//     merged_indices.sort_unstable();
+//     merged_indices.reverse();
+//     let w = merged_indices
+//         .iter()
+//         .map(|&i| test_vector[i])
+//         .collect::<Vec<_>>();
 
-    let y = Fr::rand(rng);
-    let z = Fr::rand(rng);
-    let len = set_size + subset_size;
-    let ans = (0..len)
-        .map(|i| y * (Fr::one() + z) + z * w[i] + w[(i + 1) % len])
-        .collect::<Vec<_>>();
+//     let y = Fr::rand(rng);
+//     let z = Fr::rand(rng);
+//     let len = set_size + subset_size;
+//     let ans = (0..len)
+//         .map(|i| y * (Fr::one() + z) + z * w[i] + w[(i + 1) % len])
+//         .collect::<Vec<_>>();
 
-    let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();
-    let test_vector_stream = test_vector.iter().rev().cloned().collect::<Vec<_>>();
-    let sorted_stream = LookupSortedStreamer::new(
-        &test_vector_stream.as_slice(),
-        &subset_indices_stream.as_slice(),
-        y,
-        z,
-    )
-    .iter()
-    .collect::<Vec<_>>();
-    assert_eq!(sorted_stream, ans);
-}
+//     let subset_indices_stream = subset_indices.iter().rev().cloned().collect::<Vec<_>>();
+//     let test_vector_stream = test_vector.iter().rev().cloned().collect::<Vec<_>>();
+//     let sorted_stream = LookupSortedStreamer::new(
+//         &test_vector_stream.as_slice(),
+//         &subset_indices_stream.as_slice(),
+//         y,
+//         z,
+//     )
+//     .iter()
+//     .collect::<Vec<_>>();
+//     assert_eq!(sorted_stream, ans);
+// }

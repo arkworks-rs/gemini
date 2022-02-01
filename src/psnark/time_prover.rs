@@ -151,9 +151,9 @@ impl<E: PairingEngine> Proof<E> {
         lookup_vec.extend_from_slice(&z_lookup_vec);
 
         let mut accumulated_vec = Vec::new();
-        accumulated_vec.extend(&r_accumulated_vec);
-        accumulated_vec.extend(&alpha_accumulated_vec);
-        accumulated_vec.extend(&z_accumulated_vec);
+        accumulated_vec.extend_from_slice(&r_accumulated_vec);
+        accumulated_vec.extend_from_slice(&alpha_accumulated_vec);
+        accumulated_vec.extend_from_slice(&z_accumulated_vec);
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
         let polynomials = [&r_lookup_vec[2], &alpha_lookup_vec[2], &z_lookup_vec[2]];
@@ -255,26 +255,36 @@ impl<E: PairingEngine> Proof<E> {
             &z_lookup_vec[2],
         ];
 
-        // XXX what is going on?
-        let accumulated_product_vec = [&accumulated_vec.into_iter().flatten().cloned().collect()];
         let twist_powers2 = powers2(entry_products.chal, third_proof.challenges.len());
 
-        let third_proof_vec = [
-            &lookup_vec.into_iter().flatten().collect(),
+        let mut third_proof_vec = Vec::new();
+        third_proof_vec.extend(&lookup_vec);
+        third_proof_vec.extend(
+         &[
             &val_a,
             &val_b,
             &val_c,
             &alpha_star,
-        ];
-
-        let mu_powers2 = powers2(psi, third_proof.challenges.len());
+        ]);
 
         // third_proof.challenges might be longer than second_proof.challenges because of
         // the batched sumcheck involves entry products polynomials.
+        let body_polynomials_0 = [
+            &accumulated_vec[0],
+            &accumulated_vec[1],
+            &accumulated_vec[2],
+            &accumulated_vec[3],
+            &accumulated_vec[4],
+            &accumulated_vec[5],
+            &accumulated_vec[6],
+            &accumulated_vec[7],
+            &accumulated_vec[8],
+            &r_star
+        ];
         let third_proof_challlenges_head = &third_proof.challenges[..second_proof.challenges.len()];
         let tc_body_polynomials = [
             (
-                &accumulated_product_vec[..],
+                &body_polynomials_0[..],
                 &hadamard(&third_proof.challenges, &twist_powers2)[..],
             ),
             (&third_proof_vec, &third_proof.challenges[..]),
@@ -282,10 +292,6 @@ impl<E: PairingEngine> Proof<E> {
             (
                 &[&ralpha_star, &r_star, &alpha_star],
                 &hadamard(&second_proof.challenges, &third_proof_challlenges_head)[..],
-            ),
-            (
-                &[&r_star],
-                &hadamard(&mu_powers2, &third_proof.challenges)[..],
             ),
         ];
 
