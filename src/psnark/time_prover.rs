@@ -80,13 +80,13 @@ impl<E: PairingEngine> Proof<E> {
 
         let num_non_zero = row.len();
 
-        let r_a_star = lookup(&a_challenges, &row_index);
-        let r_b_star = lookup(&b_challenges, &row_index);
-        let r_c_star = lookup(&c_challenges, &row_index);
+        let ralpha_star = lookup(&a_challenges, &row_index);
+        let r_star = lookup(&b_challenges, &row_index);
+        let alpha_star = lookup(&c_challenges, &row_index);
         let z_star = lookup(&r1cs.z, &col_index);
 
         let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
-        let z_r_commitments = ck.batch_commit(vec![&r_a_star, &r_b_star, &r_c_star, &z_star]);
+        let z_r_commitments = ck.batch_commit(vec![&ralpha_star, &r_star, &alpha_star, &z_star]);
         end_timer!(z_r_commitments_time);
 
         // MXXX: changed this to a more descriptive transcript, and to be consistent with the elastic prover.
@@ -101,9 +101,9 @@ impl<E: PairingEngine> Proof<E> {
 
         let r_star_val = linear_combination(
             &[
-                hadamard(&r_a_star, &val_a),
-                hadamard(&r_b_star, &val_b),
-                hadamard(&r_c_star, &val_c),
+                hadamard(&ralpha_star, &val_a),
+                hadamard(&r_star, &val_b),
+                hadamard(&alpha_star, &val_c),
             ],
             &challenges,
         )
@@ -119,51 +119,51 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge(b"zeta");
 
-        let r_b_lookup_vec = plookup(
-            &r_b_star,
+        let r_lookup_vec = plookup(
+            &r_star,
             &b_challenges,
             &row_index,
             &gamma,
             &chi,
             &E::Fr::zero(),
         );
-        let r_b_prod_vec = product3(&r_b_lookup_vec);
-        let r_b_accumulated_vec = accproduct3(&r_b_lookup_vec);
+        let r_prod_vec = product3(&r_lookup_vec);
+        let r_accumulated_vec = accproduct3(&r_lookup_vec);
 
-        let r_c_lookup_vec = plookup(
-            &r_c_star,
+        let alpha_lookup_vec = plookup(
+            &alpha_star,
             &c_challenges,
             &row_index,
             &gamma,
             &chi,
             &E::Fr::zero(),
         );
-        let r_c_prod_vec = product3(&r_c_lookup_vec);
-        let r_c_accumulated_vec = accproduct3(&r_c_lookup_vec);
+        let alpha_prod_vec = product3(&alpha_lookup_vec);
+        let alpha_accumulated_vec = accproduct3(&alpha_lookup_vec);
 
         let z_lookup_vec = plookup(&z_star, &r1cs.z, &col_index, &gamma, &chi, &zeta);
         let z_prod_vec = product3(&z_lookup_vec);
         let z_accumulated_vec = accproduct3(&z_lookup_vec);
 
         let mut lookup_vec = Vec::new();
-        lookup_vec.extend_from_slice(&r_b_lookup_vec);
-        lookup_vec.extend_from_slice(&r_c_lookup_vec);
+        lookup_vec.extend_from_slice(&r_lookup_vec);
+        lookup_vec.extend_from_slice(&alpha_lookup_vec);
         lookup_vec.extend_from_slice(&z_lookup_vec);
 
         let mut accumulated_vec = Vec::new();
-        accumulated_vec.extend(&r_b_accumulated_vec);
-        accumulated_vec.extend(&r_c_accumulated_vec);
+        accumulated_vec.extend(&r_accumulated_vec);
+        accumulated_vec.extend(&alpha_accumulated_vec);
         accumulated_vec.extend(&z_accumulated_vec);
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
-        let polynomials = [&r_b_lookup_vec[2], &r_c_lookup_vec[2], &z_lookup_vec[2]];
+        let polynomials = [&r_lookup_vec[2], &alpha_lookup_vec[2], &z_lookup_vec[2]];
         let sorted_commitments = ck.batch_commit(polynomials);
         end_timer!(sorted_commitments_time);
 
-        transcript.append_scalar(b"set_r_ep", &r_c_prod_vec[0]);
-        transcript.append_scalar(b"subset_r_ep", &r_c_prod_vec[1]);
-        transcript.append_scalar(b"set_r_ep", &r_b_prod_vec[0]);
-        transcript.append_scalar(b"subset_r_ep", &r_b_prod_vec[1]);
+        transcript.append_scalar(b"set_r_ep", &alpha_prod_vec[0]);
+        transcript.append_scalar(b"subset_r_ep", &alpha_prod_vec[1]);
+        transcript.append_scalar(b"set_r_ep", &r_prod_vec[0]);
+        transcript.append_scalar(b"subset_r_ep", &r_prod_vec[1]);
         transcript.append_scalar(b"set_z_ep", &z_prod_vec[0]);
         transcript.append_scalar(b"subset_z_ep", &z_prod_vec[1]);
         transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);
@@ -175,12 +175,12 @@ impl<E: PairingEngine> Proof<E> {
             ck,
             &lookup_vec,
             &[
-                r_b_prod_vec[0],
-                r_b_prod_vec[1],
-                r_b_prod_vec[2],
-                r_c_prod_vec[0],
-                r_c_prod_vec[1],
-                r_c_prod_vec[2],
+                r_prod_vec[0],
+                r_prod_vec[1],
+                r_prod_vec[2],
+                alpha_prod_vec[0],
+                alpha_prod_vec[1],
+                alpha_prod_vec[2],
                 z_prod_vec[0],
                 z_prod_vec[1],
                 z_prod_vec[2],
@@ -190,48 +190,49 @@ impl<E: PairingEngine> Proof<E> {
         let psi = entry_products.chal;
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
-        let mut polynomials = vec![&r_a_star];
+        let mut polynomials = vec![&ralpha_star];
         polynomials.extend(accumulated_vec.iter());
         let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(&polynomials, &[psi], &open_chal);
 
-        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&r_a_star, &psi)];
+        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&ralpha_star, &psi)];
         accumulated_vec
             .iter()
             .for_each(|v| ralpha_star_acc_mu_evals.push(evaluate_le(&v, &psi)));
 
-        let s_0_prime = ip(&hadamard(&r_a_star, &val_a), &second_challenges_head);
-        let s_1_prime = ip(&hadamard(&r_b_star, &val_b), &second_challenges_head);
-        // let s_2_prime = scalar_prod(&hadamard(&r_c_star, &val_c), &second_challenges);
+        let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), &second_challenges_head);
+        let s_1_prime = ip(&hadamard(&r_star, &val_b), &second_challenges_head);
+        // let s_2_prime = scalar_prod(&hadamard(&alpha_star, &val_c), &second_challenges);
         // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
         ralpha_star_acc_mu_evals
             .iter()
-            .for_each(|e| transcript.append_scalar(b"r_a_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ralpha_star_acc_mu_proof);
+            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
+        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
+
 
         let mut provers = Vec::new();
         provers.append(&mut entry_products.provers);
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_a_star, &second_challenges_head),
+            &hadamard(&ralpha_star, &second_challenges_head),
             &val_a,
             &E::Fr::one(),
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_b_star, &second_challenges_head),
+            &hadamard(&r_star, &second_challenges_head),
             &val_b,
             &E::Fr::one(),
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_c_star, &second_challenges_head),
+            &hadamard(&alpha_star, &second_challenges_head),
             &val_c,
             &E::Fr::one(),
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &r_b_star, &r_c_star, &psi,
+            &r_star, &alpha_star, &psi,
         ))));
 
         let third_sumcheck_time = start_timer!(|| "Third sumcheck");
@@ -240,31 +241,30 @@ impl<E: PairingEngine> Proof<E> {
 
         let tc_base_polynomials = [
             &r1cs.w,
-            &r_a_star,
-            &r_b_star,
-            &r_c_star,
+            &ralpha_star,
+            &r_star,
+            &alpha_star,
             &z_star,
             &row,
             &col,
             &val_a,
             &val_b,
             &val_c,
-            &r_b_lookup_vec[2],
-            &r_c_lookup_vec[2],
+            &r_lookup_vec[2],
+            &alpha_lookup_vec[2],
             &z_lookup_vec[2],
         ];
 
         // XXX what is going on?
         let accumulated_product_vec = [&accumulated_vec.into_iter().flatten().cloned().collect()];
         let twist_powers2 = powers2(entry_products.chal, third_proof.challenges.len());
-        let accumulated_vec_randomness = hadamard(&third_proof.challenges, &twist_powers2);
 
         let third_proof_vec = [
             &lookup_vec.into_iter().flatten().collect(),
             &val_a,
             &val_b,
             &val_c,
-            &r_c_star,
+            &alpha_star,
         ];
 
         let mu_powers2 = powers2(psi, third_proof.challenges.len());
@@ -275,16 +275,16 @@ impl<E: PairingEngine> Proof<E> {
         let tc_body_polynomials = [
             (
                 &accumulated_product_vec[..],
-                &accumulated_vec_randomness[..],
+                &hadamard(&third_proof.challenges, &twist_powers2)[..],
             ),
-            (&third_proof_vec[..], &third_proof.challenges[..]),
+            (&third_proof_vec, &third_proof.challenges[..]),
             (&[&z_star], &second_proof.challenges[..]),
             (
-                &[&r_a_star, &r_b_star, &r_c_star],
+                &[&ralpha_star, &r_star, &alpha_star],
                 &hadamard(&second_proof.challenges, &third_proof_challlenges_head)[..],
             ),
             (
-                &[&r_b_star],
+                &[&r_star],
                 &hadamard(&mu_powers2, &third_proof.challenges)[..],
             ),
         ];
@@ -304,11 +304,11 @@ impl<E: PairingEngine> Proof<E> {
             r_star_commitments: [z_r_commitments[0], z_r_commitments[1], z_r_commitments[2]],
             z_star_commitment: z_r_commitments[3],
             second_sumcheck_msgs: second_proof.prover_messages(),
-            set_r_ep: r_b_prod_vec[0],
-            subset_r_ep: r_b_prod_vec[1],
+            set_r_ep: r_prod_vec[0],
+            subset_r_ep: r_prod_vec[1],
             sorted_r_commitment: sorted_commitments[0],
-            set_alpha_ep: r_c_prod_vec[0],
-            subset_alpha_ep: r_c_prod_vec[1],
+            set_alpha_ep: alpha_prod_vec[0],
+            subset_alpha_ep: alpha_prod_vec[1],
             sorted_alpha_commitment: sorted_commitments[1],
             set_z_ep: z_prod_vec[0],
             subset_z_ep: z_prod_vec[1],

@@ -324,8 +324,9 @@ impl<E: PairingEngine> Proof<E> {
 
         ralpha_star_acc_mu_evals
             .iter()
-            .for_each(|e| transcript.append_scalar(b"r_a_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"r_a_star_mu_proof", &ralpha_star_acc_mu_proof);
+            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
+        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
+
 
         // Add to the list of inner-products claims (obtained from the entry product)
         // additional inner products:
@@ -349,10 +350,11 @@ impl<E: PairingEngine> Proof<E> {
             alpha_star.clone(),
             psi,
         )));
+
         let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
 
         // tensorcheck protocol
-        let tc_chal = transcript.get_challenge::<E::Fr>(b"tc");
+        let tc_chal = transcript.get_challenge::<E::Fr>(b"batch_challenge");
         let tc_challenges = powers(tc_chal, 13);
 
         let body_polynomials_0 = &lincomb!(
@@ -366,9 +368,7 @@ impl<E: PairingEngine> Proof<E> {
                 pl_set_acc_z,
                 pl_subset_acc_z,
                 pl_sorted_acc_z,
-                pl_set_acc_z,
-                pl_subset_acc_z,
-                pl_sorted_acc_z
+                r_star
             ),
             &tc_challenges
         );
