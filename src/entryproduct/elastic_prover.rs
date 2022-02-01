@@ -40,6 +40,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
         transcript.append_commitment(b"acc_v", &acc_v_commitments[0]);
 
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+
         let claimed_sumchecks = vec![
             chal * evaluate_be(acc_v.iter(), &chal) + claimed_product
                 - chal.pow(&[acc_v.len() as u64]),
@@ -55,17 +56,6 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
             msgs,
         }
     }
-}
-
-#[inline]
-fn sumcheck_subclaim<F, S>(claimed_product: &F, acc_v: &S, chal: &F) -> F
-where
-    F: Field,
-    S: Iterable<Item = F>,
-{
-    let acc_v_chal = evaluate_be(acc_v.iter(), &chal);
-    let chal_n = chal.pow(&[acc_v.len() as u64]);
-    acc_v_chal * chal + claimed_product - chal_n
 }
 
 macro_rules! impl_elastic_batch {
@@ -97,24 +87,28 @@ macro_rules! impl_elastic_batch {
 
             let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
 
-            let mut claimed_sumchecks = vec![];
+            let mut claimed_sumchecks = Vec::new();
             let mut provers = Vec::<Box<dyn Prover<E::Fr> + 'a>>::new();
             let mut claimed_products_it = claimed_products.into_iter();
+
 
             $(
                 let rrot_v = RightRotationStreamer::new($B, E::Fr::one());
                 let acc_v = ProductStream::new($B);
                 let claimed_product = claimed_products_it.next().expect("mismatch in claimed prod len");
-                let claimed_sumcheck = sumcheck_subclaim(claimed_product, &acc_v, &chal);
+
+                let acc_v_chal = evaluate_be(acc_v.iter(), &chal);
+                let chal_n = chal.pow(&[acc_v.len() as u64]);
+                let claimed_sumcheck =  acc_v_chal * chal + claimed_product - chal_n;
 
                 claimed_sumchecks.push(claimed_sumcheck);
-                // XXXX. should we send also the claimed sumchecks?
                 let sumcheck_prover = ElasticProver::new(rrot_v, acc_v, chal);
                 provers.push(Box::new(sumcheck_prover));
             )*
 
             let msgs = ProverMsgs {
                 acc_v_commitments,
+                // XXXX. should we send also the claimed sumchecks?
                 claimed_sumchecks,
             };
             EntryProduct { msgs, chal, provers }

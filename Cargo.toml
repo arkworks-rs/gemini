@@ -89,8 +89,6 @@ version = "0.3.4"
 
 [features]
 default = ["asm", "parallel", "std"]
-# the "asm" flag doesn't buy much on the top of rustflags="-C target-cpu=native".
-# I measure ~1second of improvement over ark of size 2^22.g
 asm = ["ark-ff/asm"]
 print-trace = ["ark-std/print-trace"]
 parallel = [ "std", "ark-ff/parallel", "ark-poly/parallel", "ark-std/parallel", "ark-ec/parallel", "rayon"]

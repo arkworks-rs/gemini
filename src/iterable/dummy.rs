@@ -215,6 +215,7 @@ pub fn dummy_r1cs_stream<F: PrimeField, R: RngCore>(rng: &mut R, n: usize) -> Du
         z_b: DummyStreamer::new(F::one(), n),
         z_c: DummyStreamer::new(F::one(), n),
         nonzero: n,
+        joint_len: n,
     }
 }
 
@@ -242,4 +243,24 @@ fn test_dummy_matrix_streamer() {
     assert_eq!(stream.next(), Some(MatrixElement::EOL));
     assert_eq!(stream.next(), Some(MatrixElement::Element((e, 0))));
     assert_eq!(stream.next(), Some(MatrixElement::EOL));
+}
+
+#[derive(Clone, Copy)]
+pub struct Mat<S>(pub S, pub usize);
+
+impl<S> Iterable for Mat<S>
+where
+    S: Iterable,
+{
+    type Item = S::Item;
+
+    type Iter = S::Iter;
+
+    fn iter(&self) -> Self::Iter {
+        self.0.iter()
+    }
+
+    fn len(&self) -> usize {
+        self.1
+    }
 }

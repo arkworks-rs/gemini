@@ -26,7 +26,7 @@ pub fn strip_last<T>(v: &[T]) -> &[T] {
     v.split_last().map(|(_, x)| x).unwrap_or(&[])
 }
 
-/// Return ceil(x / y)
+/// Return ceil(x / y).
 #[inline]
 pub fn ceil_div(x: usize, y: usize) -> usize {
     // XXX. warning: this expression can overflow.
@@ -34,10 +34,7 @@ pub fn ceil_div(x: usize, y: usize) -> usize {
 }
 
 /// Compute a linear combination of the polynomials `polynomials` with the given challenges.
-pub(crate) fn linear_combination<F: Field, PP>(
-    polynomials: &[PP],
-    challenges: &[F],
-) -> Option<Vec<F>>
+pub fn linear_combination<F: Field, PP>(polynomials: &[PP], challenges: &[F]) -> Option<Vec<F>>
 where
     PP: Borrow<Vec<F>>,
 {
@@ -224,17 +221,17 @@ pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
     lhs.iter().zip(rhs).map(|(&x, y)| x * y).collect()
 }
 
-/// Return the scalar product of `lhs` with `rhs`.
+/// Return the inner product of `lhs` with `rhs`.
 ///
 /// # Panics
 /// If the length of `lhs` and `rhs` are different.
 #[inline]
-pub fn scalar_prod<F: Field>(lhs: &[F], rhs: &[F]) -> F {
+pub fn ip<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     assert_eq!(lhs.len(), rhs.len());
-    scalar_prod_unsafe(lhs.iter(), rhs.iter())
+    ip_unsafe(lhs.iter(), rhs.iter())
 }
 
-pub fn scalar_prod_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
+pub fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
 where
     I: Iterator,
     J: Iterator,
@@ -245,28 +242,40 @@ where
 }
 
 #[inline]
-#[allow(unused)]
-pub fn sum_matrices<F: Field>(a: &Matrix<F>, b: &Matrix<F>, c: &Matrix<F>) -> Vec<Vec<usize>> {
+pub fn sum_matrices<F: Field>(
+    a: &Matrix<F>,
+    b: &Matrix<F>,
+    c: &Matrix<F>,
+    num_variables: usize,
+) -> Vec<Vec<usize>> {
+    let mut new_matrix = vec![BTreeSet::new(); num_variables];
     a.iter()
         .zip(b)
         .zip(c)
-        .map(|((row_a, row_b), row_c)| {
+        .enumerate()
+        .for_each(|(row, ((row_a, row_b), row_c))| {
             row_a
                 .iter()
                 .map(|(_, i)| *i)
                 .chain(row_b.iter().map(|(_, i)| *i))
                 .chain(row_c.iter().map(|(_, i)| *i))
-                .collect::<BTreeSet<_>>()
-                .into_iter()
-                .collect()
-        })
-        .collect()
+                .for_each(|col| {
+                    new_matrix[col].insert(row);
+                });
+        });
+    let mut res = Vec::new();
+    new_matrix
+        .iter()
+        .for_each(|set| res.push(set.iter().cloned().collect()));
+    res
 }
 
 #[inline]
 #[allow(unused)]
 pub fn joint_matrices<F: Field>(
     joint_matrix: &Vec<Vec<usize>>,
+    _num_constraints: usize,
+    _num_variables: usize,
     a: &Matrix<F>,
     b: &Matrix<F>,
     c: &Matrix<F>,
@@ -308,19 +317,19 @@ pub fn joint_matrices<F: Field>(
         .flatten()
         .collect::<BTreeMap<(usize, usize), F>>();
 
-    for (r, row) in joint_matrix.into_iter().enumerate() {
-        for i in row {
-            let row_val = F::from(r as u64);
-            let col_val = F::from(*i as u64);
+    for (cc, col) in joint_matrix.into_iter().enumerate() {
+        for i in col {
+            let row_val = F::from(*i as u64);
+            let col_val = F::from(cc as u64);
 
-            row_index_vec.push(r);
-            col_index_vec.push(*i);
+            row_index_vec.push(*i);
+            col_index_vec.push(cc);
             row_vec.push(row_val);
             col_vec.push(col_val);
             // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
-            val_a_vec.push(a.get(&(r, *i)).copied().unwrap_or(F::zero()));
-            val_b_vec.push(b.get(&(r, *i)).copied().unwrap_or(F::zero()));
-            val_c_vec.push(c.get(&(r, *i)).copied().unwrap_or(F::zero()));
+            val_a_vec.push(a.get(&(*i, cc)).copied().unwrap_or(F::zero()));
+            val_b_vec.push(b.get(&(*i, cc)).copied().unwrap_or(F::zero()));
+            val_c_vec.push(c.get(&(*i, cc)).copied().unwrap_or(F::zero()));
         }
     }
 

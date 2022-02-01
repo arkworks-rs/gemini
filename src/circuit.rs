@@ -35,6 +35,7 @@ pub struct R1csStream<SM, SZ, SW> {
     pub z_b: SZ,
     pub z_c: SZ,
     pub nonzero: usize,
+    pub joint_len: usize,
 }
 
 /// Represents a matrix.
@@ -227,6 +228,7 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
     // XXX. change this
     let nonzero = 0;
     let block_size = 0;
+    let joint_len = 0;
 
     let a_colm =
         RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.a), repeat, block_size);
@@ -254,9 +256,9 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
 
     let z = RepeatStreamer::new(&r1cs.z, repeat);
     let witness = RepeatStreamer::new(&r1cs.w, repeat);
-    let z_a = RepeatStreamer::new(&z_a, repeat);
-    let z_b = RepeatStreamer::new(&z_b, repeat);
-    let z_c = RepeatStreamer::new(&z_c, repeat);
+    let z_a = RepeatStreamer::new(z_a, repeat);
+    let z_b = RepeatStreamer::new(z_b, repeat);
+    let z_c = RepeatStreamer::new(z_c, repeat);
 
     R1csStream {
         a_colm,
@@ -271,6 +273,7 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
         z_b,
         z_c,
         nonzero,
+        joint_len,
     }
 }
 
@@ -314,8 +317,8 @@ fn test_repeated_r1cs() {
     use ark_bls12_381::Fr;
 
     use crate::misc::evaluate_be;
+    use crate::misc::ip;
     use crate::misc::product_matrix_vector;
-    use crate::misc::scalar_prod;
     use ark_std::{One, Zero};
 
     let rng = &mut ark_std::test_rng();
@@ -330,7 +333,7 @@ fn test_repeated_r1cs() {
     let repeated_r1cs = repeat_r1cs(&r1cs, repeat, [&za, &zb, &zc]);
 
     // test that <z_a, z_b> = z_c(1)
-    assert_eq!(scalar_prod(&za, &zb), evaluate_be(zc.iter(), &Fr::one()));
+    assert_eq!(ip(&za, &zb), evaluate_be(zc.iter(), &Fr::one()));
     assert_eq!(
         repeated_r1cs
             .z_a
@@ -365,7 +368,7 @@ pub fn dummy_r1cs<F: Field>(rng: &mut impl RngCore, n: usize) -> R1cs<F> {
     R1cs {
         a: diagonal_matrix.clone(),
         b: diagonal_matrix.clone(),
-        c: diagonal_matrix.clone(),
+        c: diagonal_matrix,
         z,
         w,
         x,

@@ -53,7 +53,7 @@ use crate::kzg::VerificationError;
 use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
-use crate::misc::{evaluate_le, fold_polynomial, linear_combination, powers, scalar_prod};
+use crate::misc::{evaluate_le, fold_polynomial, ip, linear_combination, powers};
 use crate::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;
@@ -201,6 +201,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
         let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
 
+
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
             (
                 linear_combination(polynomials, &batch_challenges).expect(EMPTY_CHALLENGES_ERR_MSG),
@@ -209,8 +210,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
         });
 
         let foldings_body_polynomials = batched_body_polynomials
-            .map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
-            .flatten()
+            .flat_map(|(polynomial, challenges)| foldings_polynomial(&polynomial, challenges))
             .collect::<Vec<_>>();
         let folded_polynomials_commitments = ck.batch_commit(&foldings_body_polynomials);
 
@@ -352,7 +352,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             );
 
             let batch_challenges = powers(batch_challenge, asserted_res.len());
-            let lc_asserted_res = scalar_prod(asserted_res, &batch_challenges);
+            let lc_asserted_res = ip(asserted_res, &batch_challenges);
 
             if subclaim != lc_asserted_res {
                 return Err(VerificationError);
@@ -371,8 +371,6 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-
-        println!("----");
 
         vk.verify_multi_points(
             &all_commitments,

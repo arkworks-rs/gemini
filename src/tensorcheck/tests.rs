@@ -6,7 +6,7 @@ use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 
 use crate::kzg::CommitterKey;
-use crate::misc::{scalar_prod, tensor};
+use crate::misc::{ip, tensor};
 use crate::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use ark_std::{log2, One, UniformRand, Zero};
@@ -47,7 +47,7 @@ fn test_tensor_check() {
 
     let mut asserted_res = Vec::new();
     for p in body_polynomials.iter() {
-        asserted_res.push(scalar_prod(p, &challenges[0..p.len()]));
+        asserted_res.push(ip(p, &challenges[0..p.len()]));
     }
 
     let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
@@ -76,10 +76,10 @@ fn test_tensor_check() {
         .verify(
             &mut transcript,
             &vk,
-            &vec![asserted_res],
+            &[asserted_res],
             &base_polynomials_commitments,
             &direct_base_polynomials_evaluations,
-            &vec![randomnesses],
+            &[randomnesses],
             eval_chal,
             batch_challenge,
         )

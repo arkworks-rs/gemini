@@ -11,6 +11,7 @@ pub use init_stream::InitStream;
 pub use read_stream::ReadStream;
 pub use write_stream::WriteStream;
 
+use crate::entryproduct::streams::entry_product_streams;
 use crate::stream::Streamer;
 
 use crate::entry_product::streams::entry_product_streams;

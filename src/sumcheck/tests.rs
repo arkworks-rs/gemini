@@ -9,8 +9,8 @@ use merlin::Transcript;
 use crate::iterable::Reversed;
 use crate::misc::fold_polynomial;
 use crate::misc::hadamard;
+use crate::misc::ip;
 use crate::misc::powers;
-use crate::misc::scalar_prod;
 use crate::sumcheck::proof::Sumcheck;
 use crate::sumcheck::prover::Prover;
 use crate::sumcheck::space_prover::SpaceProver;
@@ -212,7 +212,7 @@ fn test_sumcheck_correctness() {
 
     // compute the inner product of f, g naively.
     let twisted_f = hadamard(&twist_powers, &f);
-    let asserted_sum = scalar_prod(&twisted_f, &g);
+    let asserted_sum = ip(&twisted_f, &g);
 
     // produce the proof for <f, g>
     let mut prover_transcript = Transcript::new(crate::PROTOCOL_NAME);

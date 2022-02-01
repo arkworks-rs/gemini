@@ -45,3 +45,4 @@ fn test_entry_product_consistency() {
     let ep_space = EntryProduct::new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
     assert_eq!(ep_time.msgs, ep_space.msgs)
 }
+
