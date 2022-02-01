@@ -429,7 +429,6 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|c| transcript.append_commitment(b"commitment", c));
 
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
-        println!("{}", eval_chal);
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
         let mut folded_polynomials_evaluations = vec![];

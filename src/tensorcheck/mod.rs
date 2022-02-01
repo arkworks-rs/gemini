@@ -219,7 +219,6 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
-        println!("{}", eval_chal);
         let minus_eval_chal = -eval_chal;
         let eval_chal2 = eval_chal.square();
 
