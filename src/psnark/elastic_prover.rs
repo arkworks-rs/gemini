@@ -478,9 +478,22 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
+            // sorted polynomials r*, alpha*, z*
             evaluate_base_polynomial(&mut transcript, &pl_sorted_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_alpha, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_z, &eval_points),
+            // accumulated polynomials alpha*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_alpha, &eval_points),
+            // accumulated polynomials r*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_r, &eval_points),
+            // accumulated polynomials z*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_z, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_z, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_z, &eval_points),
         ];
 
         base_polynomials_evaluations
