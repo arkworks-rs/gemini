@@ -1,16 +1,13 @@
 //! A space-efficient implementation of Pippenger's algorithm.
-use std::ops::AddAssign;
-
+use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{BigInteger, PrimeField};
 use ark_ff::{FpParameters, Zero};
-
-use ark_ec::{AffineCurve, ProjectiveCurve};
-
 use ark_std::borrow::Borrow;
-
-use crate::iterable::Iterable;
+use ark_std::ops::AddAssign;
+use ark_std::vec::Vec;
 
 use super::bounded_ln_without_floats;
+use crate::iterable::Iterable;
 
 /// Streaming multi-scalar multiplication algorithm.
 pub fn msm<G, F, I, J>(
@@ -360,6 +357,7 @@ mod test {
     use super::StreamPippenger;
     use ark_ec::{AffineCurve, ProjectiveCurve};
     use ark_ff::PrimeField;
+    use ark_std::vec::Vec;
 
     fn test_var_base_msm<G: AffineCurve>() {
         use ark_ec::msm::VariableBaseMSM;

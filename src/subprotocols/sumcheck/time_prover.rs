@@ -3,6 +3,7 @@
 
 use ark_ff::Field;
 use ark_std::log2;
+use ark_std::vec::Vec;
 
 use crate::misc::fold_polynomial;
 use crate::subprotocols::sumcheck::prover::{Prover, RoundMsg};

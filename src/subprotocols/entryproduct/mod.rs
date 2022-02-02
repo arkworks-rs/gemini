@@ -22,6 +22,7 @@
 //! \\]
 //!
 use ark_ec::PairingEngine;
+use ark_std::vec::Vec;
 
 use crate::kzg::Commitment;
 use crate::subprotocols::sumcheck::Prover;

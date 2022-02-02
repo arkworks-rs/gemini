@@ -9,6 +9,7 @@ use ark_relations::{
     },
 };
 use ark_std::rand::RngCore;
+use ark_std::vec::Vec;
 
 use crate::iterable::dummy::{RepeatMatrixStreamer, RepeatStreamer};
 use crate::iterable::Iterable;
@@ -230,29 +231,17 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
     let block_size = 0;
     let joint_len = 0;
 
-    let a_colm =
-        RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.a), repeat, block_size);
-    let b_colm =
-        RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.b), repeat, block_size);
-    let c_colm =
-        RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.c), repeat, block_size);
+    let a_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.a), repeat, block_size);
+    let b_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.b), repeat, block_size);
+    let c_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.c), repeat, block_size);
 
     let col_number = a_colm.len();
-    let a_rowm = RepeatMatrixStreamer::new(
-        matrix_into_colmaj(&r1cs.a, col_number),
-        repeat,
-        block_size,
-    );
-    let b_rowm = RepeatMatrixStreamer::new(
-        matrix_into_colmaj(&r1cs.b, col_number),
-        repeat,
-        block_size,
-    );
-    let c_rowm = RepeatMatrixStreamer::new(
-        matrix_into_colmaj(&r1cs.c, col_number),
-        repeat,
-        block_size,
-    );
+    let a_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.a, col_number), repeat, block_size);
+    let b_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.b, col_number), repeat, block_size);
+    let c_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.c, col_number), repeat, block_size);
 
     let z = RepeatStreamer::new(&r1cs.z, repeat);
     let witness = RepeatStreamer::new(&r1cs.w, repeat);

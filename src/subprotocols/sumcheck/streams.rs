@@ -1,6 +1,7 @@
 use crate::{iterable::Iterable, misc::ceil_div};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 
 /// A `Streamer` folding a vector of coefficients
 /// with the given challenges, and producing a stream of items

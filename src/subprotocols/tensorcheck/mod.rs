@@ -38,12 +38,13 @@
 //! we are effectively
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
-use merlin::Transcript;
-
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 use ark_std::One;
+
+use merlin::Transcript;
 
 use crate::iterable::Iterable;
 use crate::kzg::Commitment;
@@ -200,7 +201,6 @@ impl<E: PairingEngine> TensorcheckProof<E> {
 
         let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
-
 
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
             (

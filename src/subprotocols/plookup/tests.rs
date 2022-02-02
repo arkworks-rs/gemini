@@ -3,9 +3,9 @@ use ark_std::Zero;
 
 use crate::iterable::Iterable;
 use crate::subprotocols::plookup::{
-        streams::{LookupSetStreamer, LookupSortedStreamer, LookupSubsetStreamer},
-        time_prover::plookup,
-    };
+    streams::{LookupSetStreamer, LookupSortedStreamer, LookupSubsetStreamer},
+    time_prover::plookup,
+};
 
 #[test]
 fn test_consistency() {

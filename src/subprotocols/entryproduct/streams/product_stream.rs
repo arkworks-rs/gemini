@@ -73,6 +73,7 @@ fn test_product_stream() {
     use ark_bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
+    use ark_std::vec::Vec;
     use ark_std::One;
 
     let rng = &mut test_rng();

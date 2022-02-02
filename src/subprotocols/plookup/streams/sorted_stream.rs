@@ -1,6 +1,7 @@
-use crate::iterable::Iterable;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+
+use crate::iterable::Iterable;
 
 use super::set_stream::PlookupSetIterator;
 
@@ -116,6 +117,8 @@ where
 
 #[test]
 fn test_sorted_iterator() {
+    use ark_std::vec::Vec;
+
     let base = vec!["1", "2", "3", "4"];
     let addresses = vec![2usize, 2, 2, 1, 0, 0, 0];
     let expected = vec!["4", "3", "3", "3", "3", "2", "2", "1", "1", "1", "1"];

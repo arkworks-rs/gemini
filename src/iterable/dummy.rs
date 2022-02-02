@@ -1,6 +1,7 @@
 //! DummyStream: A stream that comes in handy for testing purposes.
 //! This stream will always return the same element `e`.
 use ark_ff::{PrimeField, Zero};
+use ark_std::vec::Vec;
 use ark_std::{iter, rand::RngCore};
 
 use crate::{circuit::R1csStream, iterable::Iterable, misc::MatrixElement};
@@ -34,7 +35,7 @@ pub struct RepeatStreamer<'a, T> {
 impl<'a, T> Iterable for RepeatStreamer<'a, T> {
     type Item = &'a T;
 
-    type Iter = iter::Take<iter::Cycle<std::slice::Iter<'a, T>>>;
+    type Iter = iter::Take<iter::Cycle<ark_std::slice::Iter<'a, T>>>;
 
     fn iter(&self) -> Self::Iter {
         self.m.iter().cycle().take(self.len())

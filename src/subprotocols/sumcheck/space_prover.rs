@@ -8,6 +8,7 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::cmp::Ordering;
 use ark_std::log2;
+use ark_std::vec::Vec;
 
 use super::{prover::Prover, time_prover::TimeProver};
 use crate::iterable::Iterable;

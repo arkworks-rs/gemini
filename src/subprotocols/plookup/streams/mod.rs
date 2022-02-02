@@ -2,11 +2,12 @@ mod set_stream;
 mod sorted_stream;
 mod subset_stream;
 
-use ark_ff::Field;
-use ark_std::borrow::Borrow;
 pub use set_stream::LookupSetStreamer;
 pub use sorted_stream::LookupSortedStreamer;
 pub use subset_stream::LookupSubsetStreamer;
+
+use ark_ff::Field;
+use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
 
@@ -49,6 +50,7 @@ where
 fn test_consistency() {
     use super::time_prover::{plookup_set, sorted};
     use ark_bls12_381::Fr as F;
+    use ark_std::vec::Vec;
 
     let set = [
         F::from(0xAu64),

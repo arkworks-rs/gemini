@@ -1,10 +1,9 @@
 use ark_bls12_381::{Bls12_381, Fr};
-
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
-use ark_std::UniformRand;
-
 use ark_std::test_rng;
+use ark_std::vec::Vec;
+use ark_std::UniformRand;
 
 use crate::iterable::{Iterable, Reversed};
 use crate::kzg::space::CommitterKeyStream;

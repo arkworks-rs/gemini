@@ -1,16 +1,15 @@
 //! Space-efficient implementation of the polynomial commitment of Kate et al.
+use ark_ec::{PairingEngine, ProjectiveCurve};
+use ark_ff::{PrimeField, Zero};
 use ark_poly::Polynomial;
 use ark_std::borrow::Borrow;
 use ark_std::collections::VecDeque;
+use ark_std::vec::Vec;
 
-use ark_ec::{PairingEngine, ProjectiveCurve};
-use ark_ff::{PrimeField, Zero};
-
+use crate::iterable::{Iterable, Reversed};
 use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
 use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
 use crate::misc::ceil_div;
-
-use crate::iterable::{Iterable, Reversed};
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
 
 use super::{time::CommitterKey, VerifierKey};

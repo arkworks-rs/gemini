@@ -4,7 +4,6 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
 
-
 #[derive(Clone, Copy)]
 pub struct SparseMatrixStream<'a, F, S>
 where
@@ -499,8 +498,7 @@ fn test_joint_val() {
 #[test]
 fn test_matrix() {
     use crate::circuit::{
-        generate_relation, matrix_into_rowmaj, matrix_into_colmaj,
-        random_circuit, Circuit,
+        generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit,
     };
     use ark_std::test_rng;
     // use crate::iterable::Reversed;

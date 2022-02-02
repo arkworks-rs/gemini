@@ -1,5 +1,6 @@
-use crate::iterable::Iterable;
 use ark_std::borrow::Borrow;
+
+use crate::iterable::Iterable;
 
 #[derive(Clone, Copy)]
 pub struct LookupStreamer<'a, S, I>
@@ -93,6 +94,8 @@ where
 
 #[test]
 fn test_index() {
+    use ark_std::vec::Vec;
+
     let indices = &[4, 4, 3, 2, 1, 0];
     let items = &[8, 7, 6, 5, 4, 3, 2, 1, 0];
 

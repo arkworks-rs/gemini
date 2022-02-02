@@ -1,4 +1,4 @@
-//! A *non-preprocessing* SNARK for R1CS.
+//! Elastic *non-preprocessing* SNARK for R1CS.
 //!
 mod elastic_prover;
 mod time_prover;
@@ -26,7 +26,7 @@ pub struct Proof<E: PairingEngine> {
 }
 
 impl<E: PairingEngine> ark_std::fmt::Debug for Proof<E> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut ark_std::fmt::Formatter<'_>) -> ark_std::fmt::Result {
         f.debug_struct("Proof").finish()
     }
 }

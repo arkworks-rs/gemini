@@ -1,7 +1,6 @@
 use super::Proof;
 use crate::circuit::{
-    generate_relation, matrix_into_rowmaj, matrix_into_colmaj, random_circuit,
-    Circuit, R1csStream,
+    generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit, R1csStream,
 };
 use crate::iterable::dummy::Mat;
 use crate::iterable::Reversed;

@@ -2,6 +2,7 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 use ark_std::One;
 use log::debug;
 use merlin::Transcript;

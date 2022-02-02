@@ -1,13 +1,15 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
 use merlin::Transcript;
 
 use super::{EntryProduct, ProverMsgs};
+use crate::kzg::CommitterKey;
 use crate::misc::evaluate_le;
 use crate::subprotocols::sumcheck::time_prover::Witness;
 use crate::subprotocols::sumcheck::{Prover, TimeProver};
 use crate::transcript::GeminiTranscript;
-use crate::kzg::CommitterKey;
 
 /// Perform the right notation of a vector `v`.
 fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {

@@ -1,9 +1,10 @@
+use ark_bls12_381::Fr as F;
 use ark_ff::One;
 use ark_ff::UniformRand;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
+use ark_std::vec::Vec;
 
-use ark_bls12_381::Fr as F;
 use merlin::Transcript;
 
 use crate::iterable::Reversed;

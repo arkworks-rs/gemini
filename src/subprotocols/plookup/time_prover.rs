@@ -1,6 +1,6 @@
-use ark_std::borrow::Borrow;
-
 use ark_ff::Field;
+use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 
 #[inline]
 pub fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {

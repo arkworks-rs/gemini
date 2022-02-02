@@ -1,9 +1,8 @@
 //! Implementation of Peppinger's algorithm.
-use std::cmp::Ordering;
-
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{BigInteger, PrimeField};
 use ark_ff::{FpParameters, Zero};
+use ark_std::cmp::Ordering;
 use ark_std::vec::Vec;
 
 // #[cfg(feature = "parallel")]
@@ -136,7 +135,7 @@ impl VariableBaseMSM {
                             let basem = -*base;
                             buckets[(-scalar - 1) as usize].add_assign_mixed(&basem);
                         }
-                        std::cmp::Ordering::Equal => (),
+                        Ordering::Equal => (),
                     }
                 }
                 // Compute sum_{i in 0..num_buckets} (sum_{j in i..num_buckets} bucket[j])

@@ -1,8 +1,8 @@
 use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
 
-use crate::circuit::matrix_into_rowmaj;
 use crate::circuit::matrix_into_colmaj;
+use crate::circuit::matrix_into_rowmaj;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::iterable::Reversed;
 use crate::kzg::CommitterKey;

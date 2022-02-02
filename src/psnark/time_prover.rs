@@ -1,18 +1,23 @@
-/// Time-efficient preprocessing SNARK for R1CS.
+//! Time-efficient preprocessing SNARK for R1CS.
+
 use ark_ec::PairingEngine;
 use ark_ff::Field;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
 use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
-use crate::subprotocols::entryproduct::time_prover::accumulated_product;
-use crate::subprotocols::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
     product_matrix_vector, sum_matrices, tensor,
 };
+use crate::subprotocols::entryproduct::time_prover::accumulated_product;
+use crate::subprotocols::entryproduct::EntryProduct;
 use crate::subprotocols::plookup::time_prover::{lookup, plookup};
-use crate::subprotocols::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
+use crate::subprotocols::sumcheck::{
+    proof::Sumcheck, time_prover::TimeProver, time_prover::Witness,
+};
 use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 
@@ -209,7 +214,6 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
         transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
-
         let mut provers = Vec::new();
         provers.append(&mut entry_products.provers);
 
@@ -232,7 +236,9 @@ impl<E: PairingEngine> Proof<E> {
         ))));
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &r_star, &alpha_star, &psi,
+            &r_star,
+            &alpha_star,
+            &psi,
         ))));
 
         let third_sumcheck_time = start_timer!(|| "Third sumcheck");
@@ -259,13 +265,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let mut third_proof_vec = Vec::new();
         third_proof_vec.extend(&lookup_vec);
-        third_proof_vec.extend(
-         &[
-            &val_a,
-            &val_b,
-            &val_c,
-            &alpha_star,
-        ]);
+        third_proof_vec.extend(&[&val_a, &val_b, &val_c, &alpha_star]);
 
         // third_proof.challenges might be longer than second_proof.challenges because of
         // the batched sumcheck involves entry products polynomials.
@@ -279,7 +279,7 @@ impl<E: PairingEngine> Proof<E> {
             &accumulated_vec[6],
             &accumulated_vec[7],
             &accumulated_vec[8],
-            &r_star
+            &r_star,
         ];
         let third_proof_challlenges_head = &third_proof.challenges[..second_proof.challenges.len()];
         let tc_body_polynomials = [
