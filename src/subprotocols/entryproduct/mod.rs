@@ -34,6 +34,8 @@ pub(crate) mod time_prover;
 
 pub mod streams;
 
+#[cfg(test)]
+mod tests;
 /// The message sent by the prover during the protocol execution.
 ///
 /// # Note

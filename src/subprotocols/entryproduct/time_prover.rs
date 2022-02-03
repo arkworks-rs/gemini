@@ -12,7 +12,7 @@ use crate::subprotocols::sumcheck::{Prover, TimeProver};
 use crate::transcript::GeminiTranscript;
 
 /// Perform the right notation of a vector `v`.
-fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
+pub(crate) fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
     match v.split_last() {
         Some((head, tail)) => {
             let mut rrot_v = vec![head.clone()];
@@ -47,7 +47,7 @@ pub fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
 /// Given as input \\(f(x) \in \FF[x]\\) of degree \\(N\\)
 /// represented as a vector of its coefficient (in little-endian),
 /// return \\(f(x) + x^N\\).
-fn monic<F: Field>(v: &[F]) -> Vec<F> {
+pub(crate) fn monic<F: Field>(v: &[F]) -> Vec<F> {
     let mut monic_v = v.to_vec();
     monic_v.push(F::one());
     monic_v
