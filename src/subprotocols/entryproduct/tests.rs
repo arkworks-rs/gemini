@@ -7,6 +7,7 @@ use merlin::Transcript;
 
 use super::time_prover::{accumulated_product, right_rotation, monic};
 use super::EntryProduct;
+use crate::kzg::{CommitterKey, CommitterKeyStream};
 use crate::misc::{evaluate_le, hadamard, powers, ip};
 
 use crate::iterable::dummy::DummyStreamer;
@@ -32,21 +33,21 @@ fn test_entry_product_relation() {
     );
 }
 
-// #[test]
-// fn test_entry_product_consistency() {
-//     let rng = &mut ark_std::test_rng();
-//     let n = 1000usize;
-//     let r = F::rand(rng);
-//     let v = ark_std::iter::repeat(r).take(n).collect::<Vec<_>>();
-//     let v_stream = DummyStreamer::new(r, n);
-//     let product = v.iter().product::<F>();
-//     let ck = CommitterKey::<Bls12_381>::new(n + 1, 1, rng);
-//     let stream_ck = CommitterKeyStream::from(&ck);
+#[test]
+fn test_entry_product_consistency() {
+    let rng = &mut ark_std::test_rng();
+    let n = 1000usize;
+    let r = F::rand(rng);
+    let v = ark_std::iter::repeat(r).take(n).collect::<Vec<_>>();
+    let v_stream = DummyStreamer::new(r, n);
+    let product = v.iter().product::<F>();
+    let ck = CommitterKey::<Bls12_381>::new(n + 1, 1, rng);
+    let stream_ck = CommitterKeyStream::from(&ck);
 
-//     let time_transcript = &mut Transcript::new(b"test");
-//     let ep_time = EntryProduct::new_time(time_transcript, &ck, &v, product);
-//     let elastic_transcript = &mut Transcript::new(b"test");
-//     let ep_space = EntryProduct::new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
-//     assert_eq!(ep_time.msgs, ep_space.msgs)
-// }
+    let time_transcript = &mut Transcript::new(b"test");
+    let ep_time = EntryProduct::new_time(time_transcript, &ck, &v, product);
+    let elastic_transcript = &mut Transcript::new(b"test");
+    let ep_space = EntryProduct::new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
+    assert_eq!(ep_time.msgs, ep_space.msgs)
+}
 

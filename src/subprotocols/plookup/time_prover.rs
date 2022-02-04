@@ -1,4 +1,4 @@
-use ark_ff::{Field, Zero};
+use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 
@@ -45,7 +45,7 @@ fn test_plookup_set_correct() {
     let rng = &mut test_rng();
     let set = (0..3).map(|_| F::rand(rng)).collect::<Vec<_>>();
     let y = F::rand(rng);
-    let z = F::zero();//(rng);
+    let z = F::rand(rng);
 
     let pl_set = plookup_set(&set, &y, &z);
     // evaluate pl_set in a random point.
