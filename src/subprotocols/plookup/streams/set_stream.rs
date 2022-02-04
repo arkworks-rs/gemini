@@ -34,7 +34,7 @@ where
     }
 
     fn len(&self) -> usize {
-        self.base_streamer.len()
+        self.base_streamer.len() + 1
     }
 }
 
@@ -44,7 +44,6 @@ where
 {
     y1z: F,
     z: F,
-    first: F,
     previous: Option<F>,
     it: I,
 }
@@ -55,14 +54,13 @@ where
     I: Iterator,
     I::Item: Borrow<F>,
 {
-    pub fn new(mut it: I, y: F, z: F) -> Self {
-        let next = *it.next().unwrap().borrow();
+    pub fn new(it: I, y: F, z: F) -> Self {
+        let previous = None;
         Self {
             z,
             y1z: y * (F::one() + z),
             it,
-            first: next,
-            previous: Some(next),
+            previous,
         }
     }
 }
@@ -77,19 +75,22 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         match (self.it.next(), self.previous) {
+            //
+            (None, None) => None,
             (Some(current), Some(previous)) => {
                 let current = *current.borrow();
                 self.previous = Some(current);
-                Some(self.y1z + previous.borrow() + self.z * current)
+                Some(self.y1z + current.borrow() + self.z * previous)
             }
             (None, Some(previous)) => {
                 self.previous = None;
-                Some(self.y1z + previous.borrow() + self.z * self.first)
+                Some(self.y1z + self.z * previous)
             }
-            (None, None) => None,
-            (Some(_), None) => panic!(
-                "Something wrong with the iterator: previous position is None, current is Some(_)."
-            ),
+            (Some(current), None) => {
+                let current = *current.borrow();
+                self.previous = Some(current);
+                Some(self.y1z + current.borrow())
+            },
         }
     }
 }

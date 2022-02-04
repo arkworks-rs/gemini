@@ -48,38 +48,27 @@ where
 
 #[test]
 fn test_consistency() {
-    use super::time_prover::{plookup_set, sorted};
     use ark_bls12_381::Fr as F;
     use ark_std::vec::Vec;
+    use ark_std::test_rng;
+    use ark_std::UniformRand;
 
-    let set = [
-        F::from(0xAu64),
-        F::from(0xCu64),
-        F::from(0xDu64),
-        F::from(0xEu64),
-        F::from(0xFu64),
-        F::from(42u64),
-    ];
-    let indices = [5, 3, 1, 0];
-    let y = F::from(0u64);
-    let z = F::from(0u64);
+    use super::time_prover::plookup_set;
+    use crate::iterable::Reversed;
 
-    let set = plookup_set(&set, &y, &z);
-    let set_stream = LookupSetStreamer::new(&&set[..], y, z)
+    let rng = &mut test_rng();
+    let v = (0.. 5).map(|_| F::rand(rng)).collect::<Vec<_>>();
+    let y = F::rand(rng);
+    let z = F::rand(rng);
+    let time_set = plookup_set(&v, &y, &z);
+    let set_stream = Reversed::new(&v);
+    let mut elastic_set = LookupSetStreamer::new(&set_stream, y, z)
         .iter()
         .collect::<Vec<_>>();
 
-    assert_eq!(set.len(), set_stream.len());
-    assert_eq!(set.iter().product::<F>(), set_stream.iter().product::<F>());
-    assert_eq!(&set, &set_stream);
-
-    let sorted = sorted(&set, &indices);
-    let mut sorted_stream =
-        sorted_stream::SortedIterator::new(set.iter().rev(), indices.iter(), set.len())
-            .cloned()
-            .collect::<Vec<_>>();
-    sorted_stream.reverse();
-    assert_eq!(&sorted, &sorted_stream);
+    elastic_set.reverse();
+    assert_eq!(time_set.len(), elastic_set.len());
+    assert_eq!(&time_set, &elastic_set);
 }
 
 #[test]

@@ -47,7 +47,7 @@ where
     }
 
     fn len(&self) -> usize {
-        self.base_streamer.len() + self.addr_streamer.len()
+        self.base_streamer.len() + self.addr_streamer.len() + 1
     }
 }
 

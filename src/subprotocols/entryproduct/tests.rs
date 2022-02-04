@@ -7,8 +7,8 @@ use merlin::Transcript;
 
 use super::time_prover::{accumulated_product, right_rotation, monic};
 use super::EntryProduct;
-use crate::kzg::{CommitterKeyStream, CommitterKey};
 use crate::misc::{evaluate_le, hadamard, powers, ip};
+
 use crate::iterable::dummy::DummyStreamer;
 
 
@@ -20,13 +20,15 @@ fn test_entry_product_relation() {
     let monic_v = monic(&v);
     let rrot_v = right_rotation(&monic_v);
     let acc_v = accumulated_product(&monic_v);
+    let nm_rrot_v = right_rotation(&v);
+    let nm_acc_v = accumulated_product(&v);
     let entry_product = monic_v.iter().product::<F>();
     let chal = F::one();
     let twist = powers(chal, rrot_v.len());
     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
     assert_eq!(
         lhs,
-        chal * evaluate_le(&acc_v, &chal) + entry_product - chal.pow(&[acc_v.len() as u64])
+        chal * evaluate_le(&nm_acc_v, &chal) + entry_product + chal.pow(&[nm_acc_v.len() as u64]) * (chal - F::one())
     );
 }
 
