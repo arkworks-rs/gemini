@@ -1,12 +1,11 @@
 mod product_stream;
 mod rrot_stream;
 
-use std::iter::Skip;
-
-use ark_ff::Field;
-
 pub use product_stream::ProductStream;
 pub use rrot_stream::RightRotationStreamer;
+
+use ark_ff::Field;
+use ark_std::iter::Skip;
 
 use crate::iterable::Iterable;
 

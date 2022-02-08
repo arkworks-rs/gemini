@@ -2,29 +2,28 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
 use ark_std::One;
 use merlin::Transcript;
 
-use crate::entryproduct::streams::{entry_product_streams, NMonic};
-use crate::entryproduct::EntryProduct;
-use crate::kzg::CommitterKeyStream;
-// use crate::psnark::streams::memcheck::memcheck_streams;
-// use crate::psnark::streams::plookup::plookup_streams;
-use crate::psnark::Proof;
-
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
+use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
-use crate::plookup::streams::plookup_streams;
 use crate::psnark::streams::{
     AlgebraicHash, HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream,
     LookupStreamer, LookupTensorStreamer, TensorStreamer,
 };
-use crate::sumcheck::proof::Sumcheck;
-use crate::sumcheck::ElasticProver;
+use crate::psnark::Proof;
+use crate::subprotocols::entryproduct::streams::{entry_product_streams, NMonic};
+use crate::subprotocols::entryproduct::EntryProduct;
+use crate::subprotocols::plookup::streams::plookup_streams;
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::sumcheck::ElasticProver;
 
-use crate::sumcheck::streams::FoldedPolynomialTree;
-use crate::tensorcheck::{evaluate_folding, TensorcheckProof};
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
+use crate::subprotocols::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
 
@@ -89,16 +88,16 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(sumcheck_time);
 
         let row_sorted = JointRowStream::new(
-            &r1cs.a_colm,
-            &r1cs.b_colm,
-            &r1cs.c_colm,
+            &r1cs.a_rowmaj,
+            &r1cs.b_rowmaj,
+            &r1cs.c_rowmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let row = JointColStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
@@ -108,30 +107,30 @@ impl<E: PairingEngine> Proof<E> {
         // and therefore with JointRowStream cut in the first element, col
         // (Yes I know the name is miserable.)
         let col = JointRowStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_a = JointValStream::new(
-            &r1cs.a_rowm,
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
+            &r1cs.a_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_b = JointValStream::new(
-            &r1cs.b_rowm,
-            &r1cs.c_rowm,
-            &r1cs.a_rowm,
+            &r1cs.b_colmaj,
+            &r1cs.c_colmaj,
+            &r1cs.a_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
         let val_c = JointValStream::new(
-            &r1cs.c_rowm,
-            &r1cs.b_rowm,
-            &r1cs.a_rowm,
+            &r1cs.c_colmaj,
+            &r1cs.b_colmaj,
+            &r1cs.a_colmaj,
             r1cs.nonzero,
             r1cs.joint_len,
         );
@@ -327,7 +326,6 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
         transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
-
         // Add to the list of inner-products claims (obtained from the entry product)
         // additional inner products:
         provers.push(Box::new(ElasticProver::new(
@@ -391,12 +389,9 @@ impl<E: PairingEngine> Proof<E> {
             &tc_challenges
         );
         let body_polynomials_2 = &z_star;
-        let body_polynomials_3 = &lincomb!((r_star, alpha_star), &tc_challenges);
-        let body_polynomials_4 = &r_star.clone();
+        let body_polynomials_3 = &lincomb!((r_star, alpha_star, ralpha_star), &tc_challenges);
 
         let psi_squares = powers2(psi, sumcheck3.challenges.len());
-        let mu_squares = powers2(psi, sumcheck3.challenges.len());
-
         // 1st challenges:
         let tensorcheck_challenges_0 = hadamard(&sumcheck3.challenges, &psi_squares);
         let tensorcheck_challenges_0 = strip_last(&tensorcheck_challenges_0);
@@ -410,9 +405,6 @@ impl<E: PairingEngine> Proof<E> {
             &sumcheck3.challenges[..sumcheck2.challenges.len()],
         );
         let tensorcheck_challenges_3 = strip_last(&tensorcheck_challenges_3);
-        // 5th challenges:
-        let tensorcheck_challenges_4 = hadamard(&sumcheck3.challenges, &mu_squares);
-        let tensorcheck_challenges_4 = strip_last(&tensorcheck_challenges_4);
 
         let tensorcheck_foldings_0 =
             FoldedPolynomialTree::new(body_polynomials_0, tensorcheck_challenges_0);
@@ -422,15 +414,12 @@ impl<E: PairingEngine> Proof<E> {
             FoldedPolynomialTree::new(body_polynomials_2, tensorcheck_challenges_2);
         let tensorcheck_foldings_3 =
             FoldedPolynomialTree::new(body_polynomials_3, tensorcheck_challenges_3);
-        let tensorcheck_foldings_4 =
-            FoldedPolynomialTree::new(body_polynomials_4, tensorcheck_challenges_4);
 
         let mut folded_polynomials_commitments = Vec::new();
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_0));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_1));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_2));
         folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_3));
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_4));
 
         // add commitments to transcript
         folded_polynomials_commitments
@@ -467,12 +456,6 @@ impl<E: PairingEngine> Proof<E> {
                 .zip(evaluate_folding(&tensorcheck_foldings_3, eval_points[2]))
                 .map(|(x, y)| [x, y]),
         );
-        folded_polynomials_evaluations.extend(
-            evaluate_folding(&tensorcheck_foldings_4, eval_points[1])
-                .into_iter()
-                .zip(evaluate_folding(&tensorcheck_foldings_4, eval_points[2]))
-                .map(|(x, y)| [x, y]),
-        );
 
         let base_polynomials_evaluations = vec![
             evaluate_base_polynomial(&mut transcript, &r1cs.witness, &eval_points),
@@ -493,9 +476,22 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
+            // sorted polynomials r*, alpha*, z*
             evaluate_base_polynomial(&mut transcript, &pl_sorted_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_alpha, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_z, &eval_points),
+            // accumulated polynomials alpha*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_alpha, &eval_points),
+            // accumulated polynomials r*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_r, &eval_points),
+            // accumulated polynomials z*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_z, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_z, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_z, &eval_points),
         ];
 
         base_polynomials_evaluations
@@ -509,7 +505,7 @@ impl<E: PairingEngine> Proof<E> {
         // XXXX are the base polynomials added in the snark??
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_4.len()
+        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.len()
             + 3 * base_polynomials_evaluations.len(); // adjuct with the numebr of base polynomials
         let open_chals = powers(open_chal, open_chal_len);
 
@@ -533,13 +529,11 @@ impl<E: PairingEngine> Proof<E> {
                 .1,
             ck.open_folding(tensorcheck_foldings_3, &eval_points, &open_chals[3..])
                 .1,
-            ck.open_folding(tensorcheck_foldings_4, &eval_points, &open_chals[3..])
-                .1,
         ]
         .into_iter()
         .sum();
 
-        let tensor_check_proof = TensorcheckProof {
+        let tensorcheck_proof = TensorcheckProof {
             folded_polynomials_commitments,
             folded_polynomials_evaluations,
             evaluation_proof,
@@ -568,7 +562,7 @@ impl<E: PairingEngine> Proof<E> {
             ralpha_star_acc_mu_proof,
             rstars_vals: [r_val_chal_a, r_val_chal_b],
             third_sumcheck_msgs: sumcheck3.prover_messages(),
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

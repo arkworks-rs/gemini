@@ -8,11 +8,12 @@ use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::cmp::Ordering;
 use ark_std::log2;
+use ark_std::vec::Vec;
 
 use super::{prover::Prover, time_prover::TimeProver};
 use crate::iterable::Iterable;
-use crate::sumcheck::prover::RoundMsg;
-use crate::sumcheck::streams::FoldedPolynomialStream;
+use crate::subprotocols::sumcheck::prover::RoundMsg;
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialStream;
 // use crate::{misc::ceil_div, SUMCHECK_BUF_SIZE};
 
 /// This is the streaming alter-ego of `Witness`.

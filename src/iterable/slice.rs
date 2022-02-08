@@ -19,7 +19,7 @@ where
 {
     type Item = &'a T;
 
-    type Iter = ark_std::iter::Rev<std::slice::Iter<'a, T>>;
+    type Iter = ark_std::iter::Rev<ark_std::slice::Iter<'a, T>>;
 
     #[inline]
     fn iter(&self) -> Self::Iter {

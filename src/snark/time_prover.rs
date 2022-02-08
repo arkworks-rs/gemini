@@ -8,8 +8,8 @@ use crate::kzg::CommitterKey;
 use crate::misc::{evaluate_le, hadamard};
 use crate::misc::{powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
-use crate::sumcheck::proof::Sumcheck;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::sumcheck::proof::Sumcheck;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
@@ -91,7 +91,7 @@ impl<E: PairingEngine> Proof<E> {
             &second_proof.challenges[..],
         )];
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        let tensor_check_proof = TensorcheckProof::new_time(
+        let tensorcheck_proof = TensorcheckProof::new_time(
             &mut transcript,
             ck,
             tc_base_polynomials,
@@ -105,7 +105,7 @@ impl<E: PairingEngine> Proof<E> {
             zc_alpha,
             first_sumcheck_msgs,
             second_sumcheck_msgs,
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

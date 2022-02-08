@@ -143,7 +143,7 @@ fn test_matrix_tensor_len() {
 
     use crate::circuit::generate_relation;
     use crate::circuit::random_circuit;
-    use crate::circuit::{matrix_into_col_major_slice, matrix_into_row_major_slice};
+    use crate::circuit::{matrix_into_colmaj, matrix_into_rowmaj};
 
     let rng = &mut test_rng();
     let r = F::rand(rng);
@@ -159,11 +159,11 @@ fn test_matrix_tensor_len() {
     let one_tensor = vec![F::one(); log_n];
     let circuit = random_circuit(rng, n, n);
     let r1cs = generate_relation(circuit);
-    let matrix_rowm = matrix_into_row_major_slice(&r1cs.a, r1cs.z.len());
-    let matrix_colm = matrix_into_col_major_slice(&r1cs.a);
-    let matrix_tensor = MatrixTensor::new(matrix_rowm.as_slice(), &one_tensor, r1cs.z.len());
-    let matrix_cols = matrix_rowm.iter().filter(|x| x.is_eol()).count();
-    let matrix_rows = matrix_colm.iter().filter(|x| x.is_eol()).count();
+    let matrix_colmaj = matrix_into_colmaj(&r1cs.a, r1cs.z.len());
+    let matrix_rowmaj = matrix_into_rowmaj(&r1cs.a);
+    let matrix_tensor = MatrixTensor::new(matrix_colmaj.as_slice(), &one_tensor, r1cs.z.len());
+    let matrix_cols = matrix_colmaj.iter().filter(|x| x.is_eol()).count();
+    let matrix_rows = matrix_rowmaj.iter().filter(|x| x.is_eol()).count();
     // make sure that rA has the same number of elements of z
     // and that the length claimed coincides with the actual number of elements produced.
     assert_eq!(matrix_tensor.iter().count(), matrix_tensor.len());
@@ -178,6 +178,7 @@ fn test_matrix_tensor() {
     use ark_bls12_381::Fr;
     use ark_ff::{One, Zero};
     use ark_std::test_rng;
+    use ark_std::vec::Vec;
     use ark_std::UniformRand;
 
     use crate::iterable::dummy::DiagonalMatrixStreamer;

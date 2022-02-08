@@ -1,4 +1,4 @@
-//! A *non-preprocessing* SNARK for R1CS.
+//! Elastic *non-preprocessing* SNARK for R1CS.
 //!
 mod elastic_prover;
 mod time_prover;
@@ -12,8 +12,8 @@ mod tests;
 use ark_ec::PairingEngine;
 
 use crate::kzg::Commitment;
-use crate::sumcheck::prover::ProverMsgs;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The SNARK proof, composed of all prover's messages sent throughout the protocol.
 #[derive(PartialEq, Eq)]
@@ -22,11 +22,11 @@ pub struct Proof<E: PairingEngine> {
     zc_alpha: E::Fr,
     first_sumcheck_msgs: ProverMsgs<E::Fr>,
     second_sumcheck_msgs: ProverMsgs<E::Fr>,
-    tensor_check_proof: TensorcheckProof<E>,
+    tensorcheck_proof: TensorcheckProof<E>,
 }
 
 impl<E: PairingEngine> ark_std::fmt::Debug for Proof<E> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut ark_std::fmt::Formatter<'_>) -> ark_std::fmt::Result {
         f.debug_struct("Proof").finish()
     }
 }

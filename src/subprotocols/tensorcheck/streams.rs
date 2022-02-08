@@ -1,7 +1,7 @@
 //! Library for linear combination of streams.
 use ark_ff::Field;
-
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 
 /// The iterator struct for linear combination of streams.
 pub struct LinCombIter<'a, F, T> {
@@ -34,7 +34,7 @@ pub struct LinCombStream<'a, F, T> {
 #[macro_export]
 macro_rules! lincomb {
     (($($B:expr),*), $coeffs:expr) => {
-        crate::tensorcheck::streams::LinCombStream { t: ($(&$B,)*), coeffs: $coeffs }
+        crate::subprotocols::tensorcheck::streams::LinCombStream { t: ($(&$B,)*), coeffs: $coeffs }
     }
 }
 
@@ -251,29 +251,31 @@ fn test_lincomb() {
     use ark_ff::One;
     use ark_std::Zero;
 
-    let a0 = std::iter::repeat(F::one()).take(100);
-    let a1 = std::iter::repeat(F::one()).take(100);
-    let a2 = std::iter::repeat(F::one()).take(100);
-    let a3 = std::iter::repeat(F::one()).take(100);
-    let a4 = std::iter::repeat(F::one()).take(100);
-    let a5 = std::iter::repeat(F::one()).take(100);
-    let a6 = std::iter::repeat(F::one()).take(100);
-    let a7 = std::iter::repeat(F::one()).take(100);
-    let a8 = std::iter::repeat(F::one()).take(100);
-    let a9 = std::iter::repeat(F::one()).take(100);
-    let a10 = std::iter::repeat(F::one()).take(100);
-    let a11 = std::iter::repeat(F::one()).take(100);
-    let a12 = std::iter::repeat(F::one()).take(100);
-    let a13 = std::iter::repeat(F::one()).take(100);
-    let a14 = std::iter::repeat(F::one()).take(100);
-    let a15 = std::iter::repeat(F::one()).take(100);
-    let a16 = std::iter::repeat(F::one()).take(100);
-    let a17 = std::iter::repeat(F::one()).take(100);
-    let a18 = std::iter::repeat(F::one()).take(100);
-    let a19 = std::iter::repeat(F::one()).take(100);
+    let a0 = ark_std::iter::repeat(F::one()).take(100);
+    let a1 = ark_std::iter::repeat(F::one()).take(100);
+    let a2 = ark_std::iter::repeat(F::one()).take(100);
+    let a3 = ark_std::iter::repeat(F::one()).take(100);
+    let a4 = ark_std::iter::repeat(F::one()).take(100);
+    let a5 = ark_std::iter::repeat(F::one()).take(100);
+    let a6 = ark_std::iter::repeat(F::one()).take(100);
+    let a7 = ark_std::iter::repeat(F::one()).take(100);
+    let a8 = ark_std::iter::repeat(F::one()).take(100);
+    let a9 = ark_std::iter::repeat(F::one()).take(100);
+    let a10 = ark_std::iter::repeat(F::one()).take(100);
+    let a11 = ark_std::iter::repeat(F::one()).take(100);
+    let a12 = ark_std::iter::repeat(F::one()).take(100);
+    let a13 = ark_std::iter::repeat(F::one()).take(100);
+    let a14 = ark_std::iter::repeat(F::one()).take(100);
+    let a15 = ark_std::iter::repeat(F::one()).take(100);
+    let a16 = ark_std::iter::repeat(F::one()).take(100);
+    let a17 = ark_std::iter::repeat(F::one()).take(100);
+    let a18 = ark_std::iter::repeat(F::one()).take(100);
+    let a19 = ark_std::iter::repeat(F::one()).take(100);
     let pads = [0usize; 20];
 
-    let coeffs = std::iter::repeat(F::zero()).take(20).collect::<Vec<_>>();
+    let coeffs = ark_std::iter::repeat(F::zero())
+        .take(20)
+        .collect::<Vec<_>>();
     let lc = LinCombIter {
         t: (
             a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18,

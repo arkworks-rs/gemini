@@ -1,20 +1,25 @@
-/// Time-efficient preprocessing SNARK for R1CS.
+//! Time-efficient preprocessing SNARK for R1CS.
+
 use ark_ec::PairingEngine;
 use ark_ff::Field;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
 use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
-use crate::entryproduct::time_prover::{accumulated_product, monic, right_rotation};
-use crate::entryproduct::EntryProduct;
 use crate::kzg::CommitterKey;
 use crate::misc::{
     evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
     product_matrix_vector, sum_matrices, tensor,
 };
-use crate::plookup::time_prover::{lookup, plookup};
-use crate::sumcheck::Prover;
-use crate::sumcheck::{proof::Sumcheck, time_prover::TimeProver, time_prover::Witness};
-use crate::tensorcheck::TensorcheckProof;
+
+use crate::subprotocols::entryproduct::time_prover::{accumulated_product, monic, right_rotation};
+use crate::subprotocols::entryproduct::EntryProduct;
+use crate::subprotocols::plookup::time_prover::{lookup, plookup};
+use crate::subprotocols::sumcheck::{
+    proof::Sumcheck, time_prover::TimeProver, time_prover::Witness,
+};
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 
 use crate::PROTOCOL_NAME;
@@ -152,9 +157,9 @@ impl<E: PairingEngine> Proof<E> {
         lookup_vec.extend_from_slice(&z_lookup_vec);
 
         let mut accumulated_vec = Vec::new();
-        accumulated_vec.extend(&r_accumulated_vec);
-        accumulated_vec.extend(&alpha_accumulated_vec);
-        accumulated_vec.extend(&z_accumulated_vec);
+        accumulated_vec.extend_from_slice(&r_accumulated_vec);
+        accumulated_vec.extend_from_slice(&alpha_accumulated_vec);
+        accumulated_vec.extend_from_slice(&z_accumulated_vec);
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
         // TODO: Not sure if this sorted polynomial is sound.
@@ -211,7 +216,7 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
         transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
-        let mut provers: Vec<Box<dyn Prover<E::Fr>>> = Vec::new();
+        let mut provers = Vec::new();
         provers.extend(entry_products.provers);
 
         provers.push(Box::new(TimeProver::new(Witness::new(
@@ -304,7 +309,7 @@ impl<E: PairingEngine> Proof<E> {
         ];
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
-        let tensor_check_proof = TensorcheckProof::new_time(
+        let tensorcheck_proof = TensorcheckProof::new_time(
             &mut transcript,
             ck,
             tc_base_polynomials,
@@ -332,7 +337,7 @@ impl<E: PairingEngine> Proof<E> {
             ralpha_star_acc_mu_evals,
             rstars_vals: [s_0_prime, s_1_prime],
             third_sumcheck_msgs: third_proof.prover_messages(),
-            tensor_check_proof,
+            tensorcheck_proof,
         }
     }
 }

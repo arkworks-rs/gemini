@@ -38,12 +38,13 @@
 //! we are effectively
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
-use merlin::Transcript;
-
 use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 use ark_std::One;
+
+use merlin::Transcript;
 
 use crate::iterable::Iterable;
 use crate::kzg::Commitment;
@@ -54,7 +55,7 @@ use crate::kzg::VerificationResult;
 use crate::kzg::VerifierKey;
 use crate::misc::strip_last;
 use crate::misc::{evaluate_le, fold_polynomial, ip, linear_combination, powers};
-use crate::sumcheck::streams::FoldedPolynomialTree;
+use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
 use crate::transcript::GeminiTranscript;
 use crate::SPACE_TIME_THRESHOLD;
 
@@ -67,7 +68,7 @@ const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 
 /// Evaluate a folded polynomial tree at the point `x`.
 ///
-/// Make a single pass over the [`FoldedPolynomialTree`](crate::sumcheck::streams::FoldedPolynomialTree)
+/// Make a single pass over the [`FoldedPolynomialTree`](crate::subprotocols::sumcheck::streams::FoldedPolynomialTree)
 /// and return a vector storing \\(f^{(j)}(x)\\) at the \\(j-1\\)-th position.
 /// Foldings are in the interval \\(1, \dots, n-1\\).
 pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<F, S>, x: F) -> Vec<F>

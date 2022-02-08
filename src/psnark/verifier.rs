@@ -8,9 +8,10 @@ use crate::kzg::{Commitment, VerifierKey};
 use crate::misc::{evaluate_geometric_poly, evaluate_le, evaluate_tensor_poly};
 use crate::misc::{evaluate_index_poly, hadamard, powers, powers2};
 use crate::psnark::Proof;
-use crate::sumcheck::Subclaim;
+use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::{VerificationError, VerificationResult, PROTOCOL_NAME};
+use ark_std::vec::Vec;
 
 fn compute_entry_prod_eval<F: Field>(ori_eval: F, eval_point: F) -> F {
     // return ori_eval;
@@ -180,7 +181,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // Consistency check
         let batch_consistency = transcript.get_challenge::<E::Fr>(b"batch_challenge");
-        self.tensor_check_proof
+        self.tensorcheck_proof
             .folded_polynomials_commitments
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
@@ -224,15 +225,15 @@ impl<E: PairingEngine> Proof<E> {
         let mut tmp = E::Fr::one();
         for i in 13..22 {
             direct_base_polynomials_evaluations_1[0] +=
-                tmp * self.tensor_check_proof.base_polynomials_evaluations[i][1];
+                tmp * self.tensorcheck_proof.base_polynomials_evaluations[i][1];
             direct_base_polynomials_evaluations_1[1] +=
-                tmp * self.tensor_check_proof.base_polynomials_evaluations[i][2];
+                tmp * self.tensorcheck_proof.base_polynomials_evaluations[i][2];
             tmp *= batch_consistency;
         }
         direct_base_polynomials_evaluations_1[0] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[2][1];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[2][1];
         direct_base_polynomials_evaluations_1[1] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[2][2];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[2][2];
         tmp *= batch_consistency;
 
         // Second
@@ -262,7 +263,7 @@ impl<E: PairingEngine> Proof<E> {
 
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[2][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[2][1],
                 E::Fr::zero(),
                 beta,
                 y,
@@ -272,7 +273,7 @@ impl<E: PairingEngine> Proof<E> {
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[2][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[2][2],
                 E::Fr::zero(),
                 -beta,
                 y,
@@ -284,11 +285,11 @@ impl<E: PairingEngine> Proof<E> {
 
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[10][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[10][1],
                 beta,
             );
         // * compute_plookup_set_eval(
-        //     self.tensor_check_proof.base_polynomials_evaluations[10][1],
+        //     self.tensorcheck_proof.base_polynomials_evaluations[10][1],
         //     beta,
         //     y,
         //     z,
@@ -297,11 +298,11 @@ impl<E: PairingEngine> Proof<E> {
         // );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[10][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[10][2],
                 -beta,
             );
         // * compute_plookup_set_eval(
-        //     self.tensor_check_proof.base_polynomials_evaluations[10][2],
+        //     self.tensorcheck_proof.base_polynomials_evaluations[10][2],
         //     -beta,
         //     y,
         //     z,
@@ -333,7 +334,7 @@ impl<E: PairingEngine> Proof<E> {
         //
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[3][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[3][1],
                 E::Fr::zero(),
                 beta,
                 y,
@@ -343,7 +344,7 @@ impl<E: PairingEngine> Proof<E> {
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[3][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[3][2],
                 E::Fr::zero(),
                 -beta,
                 y,
@@ -355,12 +356,12 @@ impl<E: PairingEngine> Proof<E> {
         //
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[11][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[11][1],
                 beta,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[11][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[11][2],
                 -beta,
             );
         tmp *= batch_consistency;
@@ -368,13 +369,13 @@ impl<E: PairingEngine> Proof<E> {
         // lookup z*
         let beta_power = E::Fr::pow(&beta, &[r1cs.x.len() as u64]);
         let z_pos = evaluate_le(&r1cs.x, &beta)
-            + beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][1];
+            + beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][1];
         let z_neg = if (r1cs.x.len() & 1) == 0 {
             evaluate_le(&r1cs.x, &-beta)
-                + beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][2]
+                + beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][2]
         } else {
             evaluate_le(&r1cs.x, &-beta)
-                - beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][2]
+                - beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][2]
         };
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_set_eval(
@@ -398,8 +399,8 @@ impl<E: PairingEngine> Proof<E> {
         //
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[4][1],
-                self.tensor_check_proof.base_polynomials_evaluations[6][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[4][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[6][1],
                 beta,
                 y,
                 z,
@@ -408,8 +409,8 @@ impl<E: PairingEngine> Proof<E> {
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_subset_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[4][2],
-                self.tensor_check_proof.base_polynomials_evaluations[6][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[4][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[6][2],
                 -beta,
                 y,
                 z,
@@ -420,12 +421,12 @@ impl<E: PairingEngine> Proof<E> {
         //
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[12][1],
+                self.tensorcheck_proof.base_polynomials_evaluations[12][1],
                 beta,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_entry_prod_eval(
-                self.tensor_check_proof.base_polynomials_evaluations[12][2],
+                self.tensorcheck_proof.base_polynomials_evaluations[12][2],
                 -beta,
             );
         tmp *= batch_consistency;
@@ -433,39 +434,39 @@ impl<E: PairingEngine> Proof<E> {
         // val_a, val_b, val_c, alpha*
         for i in 7..10 {
             direct_base_polynomials_evaluations_2[0] +=
-                tmp * self.tensor_check_proof.base_polynomials_evaluations[i][1];
+                tmp * self.tensorcheck_proof.base_polynomials_evaluations[i][1];
             direct_base_polynomials_evaluations_2[1] +=
-                tmp * self.tensor_check_proof.base_polynomials_evaluations[i][2];
+                tmp * self.tensorcheck_proof.base_polynomials_evaluations[i][2];
             tmp *= batch_consistency;
         }
         direct_base_polynomials_evaluations_2[0] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[3][1];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[3][1];
         direct_base_polynomials_evaluations_2[1] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[3][2];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[3][2];
         tmp *= batch_consistency;
         //
         // Third
         let direct_base_polynomials_evaluations_3 = [
-            self.tensor_check_proof.base_polynomials_evaluations[4][1],
-            self.tensor_check_proof.base_polynomials_evaluations[4][2],
+            self.tensorcheck_proof.base_polynomials_evaluations[4][1],
+            self.tensorcheck_proof.base_polynomials_evaluations[4][2],
         ];
         // // Fourth
         let mut direct_base_polynomials_evaluations_4 = [E::Fr::zero(); 2];
         let mut tmp = E::Fr::one();
         direct_base_polynomials_evaluations_4[0] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[1][1];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[1][1];
         direct_base_polynomials_evaluations_4[1] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[1][2];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[1][2];
         tmp *= batch_consistency;
         direct_base_polynomials_evaluations_4[0] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[2][1];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[2][1];
         direct_base_polynomials_evaluations_4[1] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[2][2];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[2][2];
         tmp *= batch_consistency;
         direct_base_polynomials_evaluations_4[0] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[3][1];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[3][1];
         direct_base_polynomials_evaluations_4[1] +=
-            tmp * self.tensor_check_proof.base_polynomials_evaluations[3][2];
+            tmp * self.tensorcheck_proof.base_polynomials_evaluations[3][2];
         tmp *= batch_consistency;
 
         // base_polynomials_commitments
@@ -488,7 +489,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let mu_powers2 = powers2(mu, subclaim_3.challenges.len());
         let subclaim_3_chal_leading = &subclaim_3.challenges[0..subclaim_2.challenges.len()];
-        self.tensor_check_proof
+        self.tensorcheck_proof
             .verify(
                 &mut transcript,
                 vk,

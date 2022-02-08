@@ -1,16 +1,18 @@
 use ark_ec::PairingEngine;
 use ark_ff::Field;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
 use merlin::Transcript;
 
 use super::{EntryProduct, ProverMsgs};
+use crate::kzg::CommitterKey;
 use crate::misc::evaluate_le;
-use crate::sumcheck::time_prover::Witness;
-use crate::sumcheck::Prover;
+use crate::subprotocols::sumcheck::time_prover::Witness;
+use crate::subprotocols::sumcheck::{Prover, TimeProver};
 use crate::transcript::GeminiTranscript;
-use crate::{kzg::CommitterKey, sumcheck::TimeProver};
 
 /// Perform the right notation of a vector `v`.
-pub fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
+pub(crate) fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
     match v.split_last() {
         Some((head, tail)) => {
             let mut rrot_v = vec![head.clone()];
@@ -29,7 +31,7 @@ pub fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
 /// \\[
 /// (f_0f_1\cdots f_{n-1} , f_1f_2\cdots f_{n-1}, \dots, \prod_{j \leq i }f_j, \dots, f_{n-2}f_{n-1}, f_{n-1})
 /// \\]
-pub fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
+pub(crate) fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
     let mut acc_v = v
         .iter()
         .rev()
@@ -45,7 +47,7 @@ pub fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
 /// Given as input \\(f(x) \in \FF[x]\\) of degree \\(N\\)
 /// represented as a vector of its coefficient (in little-endian),
 /// return \\(f(x) + x^N\\).
-pub fn monic<F: Field>(v: &[F]) -> Vec<F> {
+pub(crate) fn monic<F: Field>(v: &[F]) -> Vec<F> {
     let mut monic_v = v.to_vec();
     monic_v.push(F::one());
     monic_v
@@ -131,7 +133,7 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             chal * evaluate_le(&acc_v, &chal) + claimed_product - chal.pow(&[acc_v.len() as u64]),
         ];
 
-        let witness = Witness::new(&rrot_v, &acc_v, &chal);
+        let witness = Witness::new(&acc_v, &rrot_v, &chal);
         let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>];
         let msgs = ProverMsgs {
             acc_v_commitments,

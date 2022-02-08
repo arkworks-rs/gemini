@@ -1,13 +1,13 @@
 use ark_bls12_381::Bls12_381;
 use ark_bls12_381::Fr;
-use ark_std::test_rng;
-
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
+use ark_std::test_rng;
+use ark_std::vec::Vec;
 
 use crate::kzg::CommitterKey;
 use crate::misc::{ip, tensor};
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use ark_std::{log2, One, UniformRand, Zero};
 

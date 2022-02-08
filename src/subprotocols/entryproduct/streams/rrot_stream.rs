@@ -60,6 +60,8 @@ where
 
 #[test]
 fn test_rrot() {
+    use ark_std::vec::Vec;
+
     let numbers = (0..100u64).collect::<Vec<_>>();
     let right_rotation = RightRotationStreamer(&numbers.as_slice(), &1)
         .iter()

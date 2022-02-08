@@ -22,9 +22,10 @@
 //! \\]
 //!
 use ark_ec::PairingEngine;
+use ark_std::vec::Vec;
 
 use crate::kzg::Commitment;
-use crate::sumcheck::Prover;
+use crate::subprotocols::sumcheck::Prover;
 
 mod elastic_prover;
 // XXX. this is temporarily available until accumulated_product is no more needed
@@ -33,6 +34,8 @@ pub(crate) mod time_prover;
 
 pub mod streams;
 
+#[cfg(test)]
+mod tests;
 /// The message sent by the prover during the protocol execution.
 ///
 /// # Note
@@ -52,6 +55,6 @@ pub struct EntryProduct<E: PairingEngine, P: Prover<E::Fr>> {
     pub msgs: ProverMsgs<E>,
     /// The challenge sent by the verifier.
     pub chal: E::Fr,
-    /// The sumcheck subclaims, parametrized in a time (or elastic) [`Prover`](crate::sumcheck::Prover).
+    /// The sumcheck subclaims, parametrized in a time (or elastic) [`Prover`](crate::subprotocols::sumcheck::Prover).
     pub provers: Vec<P>,
 }

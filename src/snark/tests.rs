@@ -1,8 +1,8 @@
 use ark_bls12_381::Bls12_381;
 use ark_std::test_rng;
 
-use crate::circuit::matrix_into_col_major_slice;
-use crate::circuit::matrix_into_row_major_slice;
+use crate::circuit::matrix_into_colmaj;
+use crate::circuit::matrix_into_rowmaj;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
 use crate::iterable::Reversed;
 use crate::kzg::CommitterKey;
@@ -27,21 +27,21 @@ fn test_snark_consistency() {
     let rows = r1cs.z.len();
     let time_proof = Proof::new_time(&r1cs, &ck);
 
-    let a_rowm = matrix_into_row_major_slice(&r1cs.a, rows);
-    let b_rowm = matrix_into_row_major_slice(&r1cs.b, rows);
-    let c_rowm = matrix_into_row_major_slice(&r1cs.c, rows);
-    let a_colm = matrix_into_col_major_slice(&r1cs.a);
-    let b_colm = matrix_into_col_major_slice(&r1cs.b);
-    let c_colm = matrix_into_col_major_slice(&r1cs.c);
+    let a_rowm = matrix_into_colmaj(&r1cs.a, rows);
+    let b_rowm = matrix_into_colmaj(&r1cs.b, rows);
+    let c_rowm = matrix_into_colmaj(&r1cs.c, rows);
+    let a_colm = matrix_into_rowmaj(&r1cs.a);
+    let b_colm = matrix_into_rowmaj(&r1cs.b);
+    let c_colm = matrix_into_rowmaj(&r1cs.c);
 
     let r1cs_stream = R1csStream {
         z: Reversed::new(r1cs.z.as_slice()),
-        a_rowm: a_rowm.as_slice(),
-        b_rowm: b_rowm.as_slice(),
-        c_rowm: c_rowm.as_slice(),
-        a_colm: a_colm.as_slice(),
-        b_colm: b_colm.as_slice(),
-        c_colm: c_colm.as_slice(),
+        a_colmaj: a_rowm.as_slice(),
+        b_colmaj: b_rowm.as_slice(),
+        c_colmaj: c_rowm.as_slice(),
+        a_rowmaj: a_colm.as_slice(),
+        b_rowmaj: b_colm.as_slice(),
+        c_rowmaj: c_colm.as_slice(),
         witness: Reversed::new(r1cs.w.as_slice()),
         z_a: Reversed::new(z_a.as_slice()),
         z_b: Reversed::new(z_b.as_slice()),

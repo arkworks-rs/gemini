@@ -5,78 +5,6 @@ use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
 
 #[derive(Clone, Copy)]
-pub struct ValStream<F, S> {
-    matrix: S,
-    nonzero: usize,
-    _field: PhantomData<F>,
-}
-
-pub struct ValStreamIter<F, I> {
-    matrix_iter: I,
-    _field: PhantomData<F>,
-}
-
-impl<F, S> ValStream<F, S>
-where
-    S: Iterable,
-    S::Item: Borrow<MatrixElement<F>>,
-    F: Field,
-{
-    pub fn new(matrix: S, nonzero: usize) -> Self {
-        Self {
-            matrix,
-            nonzero,
-            _field: PhantomData,
-        }
-    }
-}
-impl<F, S> Iterable for ValStream<F, S>
-where
-    S: Iterable,
-    S::Item: Borrow<MatrixElement<F>>,
-    F: Field,
-{
-    type Item = F;
-
-    type Iter = ValStreamIter<F, S::Iter>;
-
-    fn iter(&self) -> Self::Iter {
-        let matrix_iter = self.matrix.iter();
-        let _field = PhantomData;
-        ValStreamIter {
-            matrix_iter,
-            _field,
-        }
-    }
-
-    fn len(&self) -> usize {
-        self.nonzero
-    }
-}
-
-impl<F, I> Iterator for ValStreamIter<F, I>
-where
-    I: Iterator,
-    I::Item: Borrow<MatrixElement<F>>,
-    F: Field,
-{
-    type Item = F;
-    fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-        loop {
-            let e = self.matrix_iter.next();
-            if e.is_none() {
-                return None;
-            } else if let Some(e) = e {
-                match *e.borrow() {
-                    MatrixElement::EOL => continue,
-                    MatrixElement::Element((e, _i)) => return Some(e),
-                }
-            }
-        }
-    }
-}
-
-#[derive(Clone, Copy)]
 pub struct SparseMatrixStream<'a, F, S>
 where
     S: Iterable,
@@ -570,8 +498,7 @@ fn test_joint_val() {
 #[test]
 fn test_matrix() {
     use crate::circuit::{
-        generate_relation, matrix_into_col_major_slice, matrix_into_row_major_slice,
-        random_circuit, Circuit,
+        generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit,
     };
     use ark_std::test_rng;
     // use crate::iterable::Reversed;
@@ -591,17 +518,17 @@ fn test_matrix() {
     // let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
     // let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
 
-    let acolm = matrix_into_col_major_slice(&r1cs.a);
-    let bcolm = matrix_into_col_major_slice(&r1cs.b);
-    let ccolm = matrix_into_col_major_slice(&r1cs.c);
+    let acolm = matrix_into_rowmaj(&r1cs.a);
+    let bcolm = matrix_into_rowmaj(&r1cs.b);
+    let ccolm = matrix_into_rowmaj(&r1cs.c);
 
     let a_colm = Mat(acolm.as_slice(), rows);
     let b_colm = Mat(bcolm.as_slice(), rows);
     let c_colm = Mat(ccolm.as_slice(), rows);
 
-    let arowm = matrix_into_row_major_slice(&r1cs.a, rows);
-    let browm = matrix_into_row_major_slice(&r1cs.b, rows);
-    let crowm = matrix_into_row_major_slice(&r1cs.c, rows);
+    let arowm = matrix_into_colmaj(&r1cs.a, rows);
+    let browm = matrix_into_colmaj(&r1cs.b, rows);
+    let crowm = matrix_into_colmaj(&r1cs.c, rows);
     let a_rowm = Mat(arowm.as_slice(), rows);
     let b_rowm = Mat(browm.as_slice(), rows);
     let c_rowm = Mat(crowm.as_slice(), rows);

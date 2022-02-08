@@ -14,13 +14,14 @@ mod streams;
 mod tests;
 
 use ark_ec::PairingEngine;
+use ark_std::vec::Vec;
 
-use crate::entryproduct;
 use crate::kzg::{Commitment, EvaluationProof};
-use crate::sumcheck::prover::ProverMsgs;
-use crate::tensorcheck::TensorcheckProof;
+use crate::subprotocols::entryproduct;
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
+use crate::subprotocols::tensorcheck::TensorcheckProof;
 
-/// The preprocessing SNARK proof, containing all prover's messages.
+/// The preprocessing SNARK proof, containing all prover messages.
 #[allow(unused)]
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
@@ -43,5 +44,5 @@ pub struct Proof<E: PairingEngine> {
     ralpha_star_acc_mu_proof: EvaluationProof<E>,
     rstars_vals: [E::Fr; 2],
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
-    tensor_check_proof: TensorcheckProof<E>,
+    tensorcheck_proof: TensorcheckProof<E>,
 }

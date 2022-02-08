@@ -1,15 +1,17 @@
 //! Scalar-product proof implementation.
-use std::borrow::Borrow;
-
 use ark_ff::Field;
+use ark_std::borrow::Borrow;
+use ark_std::boxed::Box;
+use ark_std::vec::Vec;
+
 use merlin::Transcript;
 
 use crate::iterable::Iterable;
+use crate::subprotocols::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
+use crate::transcript::GeminiTranscript;
 
 use super::prover::{ProverMsgs, RoundMsg};
 use super::Prover;
-use crate::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
-use crate::transcript::GeminiTranscript;
 
 /// A scalar product proof, containing non-oracle messages, and oracle messages together with their queries and evaluations.
 #[derive(Debug, PartialEq, Eq)]

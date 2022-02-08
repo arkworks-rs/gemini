@@ -7,7 +7,7 @@ use crate::kzg::VerifierKey;
 use crate::misc::{evaluate_le, ip};
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
-use crate::sumcheck::Subclaim;
+use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::{VerificationError, VerificationResult, PROTOCOL_NAME};
 
@@ -47,7 +47,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // Consistency check
         let gamma = transcript.get_challenge::<E::Fr>(b"batch_challenge");
-        self.tensor_check_proof
+        self.tensorcheck_proof
             .folded_polynomials_commitments
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
@@ -80,19 +80,19 @@ impl<E: PairingEngine> Proof<E> {
 
         let beta_power = E::Fr::pow(&beta, &[r1cs.x.len() as u64]);
         let z_pos = evaluate_le(&r1cs.x, &beta)
-            + beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][1];
+            + beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][1];
         let z_neg = if (r1cs.x.len() & 1) == 0 {
             evaluate_le(&r1cs.x, &-beta)
-                + beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][2]
+                + beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][2]
         } else {
             evaluate_le(&r1cs.x, &-beta)
-                - beta_power * self.tensor_check_proof.base_polynomials_evaluations[0][2]
+                - beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][2]
         };
 
         let direct_base_polynomials_evaluations =
             vec![[m_pos + gamma * z_pos, m_neg + gamma * z_neg]];
 
-        self.tensor_check_proof
+        self.tensorcheck_proof
             .verify(
                 &mut transcript,
                 vk,

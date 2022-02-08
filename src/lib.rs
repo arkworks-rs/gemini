@@ -1,6 +1,6 @@
 //! Elastic arguments for R1CS.
 //!
-//! This library provides essentually two arugments:
+//! This library provides essentually two arguments:
 //! - [`snark::Proof`], for non-preprocessing SNARKs.
 //!     It provides a non-interactive succinct argument of knowledge for R1CS
 //!     without indexer, and where the verifier complexity is linear in the circuit size.
@@ -16,15 +16,10 @@
 //!
 //! Additionally, some sub-protocols are exported so that
 //! their space- and time- efficient impelementation might be used also elsewhere.
-//! - [`tensorcheck::TensorcheckProof`],
-//!     an argument for claims of the form \\(\langle f, \otimes_j (1, \rho_j) \rangle = t\\).
-//!     This can be used for proving batches of multivariate evaluations claims using
-//!     univariate polynomial commitments.
-//! - [`sumcheck::proof::Sumcheck`],
-//!    the multivariate sumcheck implementation, implemented in 3 flavours: linear-time, log-space, and elastic.
-//!
+//! These are grouped in [`subprotocols`].
 
 #![feature(iter_advance_by)]
+#![no_std]
 // #![deny(unused_import_braces, unused_qualifications,
 //         trivial_casts)]
 // #![deny(trivial_numeric_casts, private_in_public)]
@@ -46,15 +41,8 @@ pub mod iterable;
 pub mod kzg;
 pub mod psnark;
 pub mod snark;
-pub mod sumcheck;
+pub mod subprotocols;
 
-pub mod entryproduct;
-
-pub mod plookup;
-
-// pub mod memcheck;
-
-pub mod tensorcheck;
 mod transcript;
 
 const SPACE_TIME_THRESHOLD: usize = 22;

@@ -1,7 +1,6 @@
-use std::marker::PhantomData;
-
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_std::marker::PhantomData;
 
 use crate::iterable::Iterable;
 

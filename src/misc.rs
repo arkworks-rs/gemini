@@ -2,6 +2,7 @@ use ark_ff::Field;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
 use ark_std::borrow::Borrow;
+use ark_std::vec::Vec;
 
 use crate::circuit::Matrix;
 use ark_std::collections::{BTreeMap, BTreeSet};
@@ -10,7 +11,7 @@ pub(crate) const TENSOR_EXPANSION_LOG: usize = 16;
 pub(crate) const TENSOR_EXPANSION: usize = (1 << TENSOR_EXPANSION_LOG) - 1;
 
 /// Return a string will all the feature tags enabled so far.
-pub(crate) fn _features_enabled() -> String {
+pub(crate) fn _features_enabled() -> ark_std::string::String {
     let parallel_enabled = if cfg!(feature = "parallel") {
         "parallel"
     } else {

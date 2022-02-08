@@ -88,6 +88,7 @@ mod space;
 mod time;
 
 use ark_ec::ProjectiveCurve;
+use ark_std::vec::Vec;
 pub use space::CommitterKeyStream;
 pub use time::CommitterKey;
 

@@ -1,9 +1,12 @@
 use ark_ff::Field;
+use ark_std::vec::Vec;
+
 use merlin::Transcript;
 
 use crate::misc::ip;
+use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::transcript::GeminiTranscript;
-use crate::{sumcheck::prover::ProverMsgs, VerificationError};
+use crate::VerificationError;
 
 use super::prover::RoundMsg;
 

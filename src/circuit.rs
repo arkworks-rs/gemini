@@ -9,6 +9,7 @@ use ark_relations::{
     },
 };
 use ark_std::rand::RngCore;
+use ark_std::vec::Vec;
 
 use crate::iterable::dummy::{RepeatMatrixStreamer, RepeatStreamer};
 use crate::iterable::Iterable;
@@ -23,12 +24,12 @@ pub struct Circuit<F: Field> {
 }
 
 pub struct R1csStream<SM, SZ, SW> {
-    pub a_rowm: SM,
-    pub b_rowm: SM,
-    pub c_rowm: SM,
-    pub a_colm: SM,
-    pub b_colm: SM,
-    pub c_colm: SM,
+    pub a_colmaj: SM,
+    pub b_colmaj: SM,
+    pub c_colmaj: SM,
+    pub a_rowmaj: SM,
+    pub b_rowmaj: SM,
+    pub c_rowmaj: SM,
     pub z: SZ,
     pub witness: SW,
     pub z_a: SZ,
@@ -173,9 +174,9 @@ pub fn generate_relation<F: PrimeField, C: ConstraintSynthesizer<F>>(circuit: C)
     }
 }
 
-/// Return a matrix stream, row major.
+/// Return a matrix stream, col major.
 /// XXX. can this be done without the hint for the number of columns?
-pub(crate) fn matrix_into_row_major_slice<F: Field>(
+pub(crate) fn matrix_into_colmaj<F: Field>(
     a: &[Vec<(F, usize)>],
     col_number: usize,
 ) -> Vec<MatrixElement<F>> {
@@ -203,8 +204,8 @@ pub(crate) fn matrix_into_row_major_slice<F: Field>(
     a_row_flat
 }
 
-// Return a matrix stream, column major.
-pub fn matrix_into_col_major_slice<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
+// Return a matrix stream, row major.
+pub fn matrix_into_rowmaj<F: Field>(a: &[Vec<(F, usize)>]) -> Vec<MatrixElement<F>> {
     let mut a_row_flat = Vec::new();
 
     for (_row, elements) in a.iter().enumerate().rev() {
@@ -230,29 +231,17 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
     let block_size = 0;
     let joint_len = 0;
 
-    let a_colm =
-        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.a), repeat, block_size);
-    let b_colm =
-        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.b), repeat, block_size);
-    let c_colm =
-        RepeatMatrixStreamer::new(matrix_into_col_major_slice(&r1cs.c), repeat, block_size);
+    let a_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.a), repeat, block_size);
+    let b_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.b), repeat, block_size);
+    let c_colm = RepeatMatrixStreamer::new(matrix_into_rowmaj(&r1cs.c), repeat, block_size);
 
     let col_number = a_colm.len();
-    let a_rowm = RepeatMatrixStreamer::new(
-        matrix_into_row_major_slice(&r1cs.a, col_number),
-        repeat,
-        block_size,
-    );
-    let b_rowm = RepeatMatrixStreamer::new(
-        matrix_into_row_major_slice(&r1cs.b, col_number),
-        repeat,
-        block_size,
-    );
-    let c_rowm = RepeatMatrixStreamer::new(
-        matrix_into_row_major_slice(&r1cs.c, col_number),
-        repeat,
-        block_size,
-    );
+    let a_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.a, col_number), repeat, block_size);
+    let b_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.b, col_number), repeat, block_size);
+    let c_rowm =
+        RepeatMatrixStreamer::new(matrix_into_colmaj(&r1cs.c, col_number), repeat, block_size);
 
     let z = RepeatStreamer::new(&r1cs.z, repeat);
     let witness = RepeatStreamer::new(&r1cs.w, repeat);
@@ -261,12 +250,12 @@ pub fn repeat_r1cs<'a, F: PrimeField>(
     let z_c = RepeatStreamer::new(z_c, repeat);
 
     R1csStream {
-        a_colm,
-        b_colm,
-        a_rowm,
-        b_rowm,
-        c_rowm,
-        c_colm,
+        a_rowmaj: a_colm,
+        b_rowmaj: b_colm,
+        a_colmaj: a_rowm,
+        b_colmaj: b_rowm,
+        c_colmaj: c_rowm,
+        c_rowmaj: c_colm,
         z,
         witness,
         z_a,
@@ -347,7 +336,7 @@ fn test_repeated_r1cs() {
     // test that [Az](1) = z_a(1)
     let expected = za.iter().sum::<Fr>() * Fr::from(repeat as u64);
     let mut got = Fr::zero();
-    for matrix_element in repeated_r1cs.a_colm.iter() {
+    for matrix_element in repeated_r1cs.a_rowmaj.iter() {
         match matrix_element {
             MatrixElement::EOL => { /* do nothing here, all is being added up */ }
             MatrixElement::Element((e, i)) => got += r1cs.z[i] * e,

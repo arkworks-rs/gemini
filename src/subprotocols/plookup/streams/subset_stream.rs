@@ -57,6 +57,7 @@ where
 #[test]
 fn test_subset_stream() {
     use ark_bls12_381::Fr;
+    use ark_std::vec::Vec;
     use ark_std::UniformRand;
 
     let rng = &mut ark_std::test_rng();
