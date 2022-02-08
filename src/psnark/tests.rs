@@ -7,7 +7,7 @@ use crate::iterable::dummy::Mat;
 use crate::iterable::Reversed;
 
 use crate::kzg::{CommitterKey, CommitterKeyStream};
-use crate::misc::product_matrix_vector;
+use crate::misc::{joint_matrices, product_matrix_vector, sum_matrices};
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_std::test_rng;
 
@@ -97,7 +97,41 @@ fn test_consistency() {
     );
 
     assert_eq!(
-        elastic_proof.tensor_check_proof.base_polynomials_evaluations,
+        elastic_proof
+            .tensor_check_proof
+            .base_polynomials_evaluations,
         time_proof.tensor_check_proof.base_polynomials_evaluations
     );
+}
+
+#[test]
+fn test_psnark_correctness() {
+    let rng = &mut test_rng();
+    let num_constraints = 55;
+    let num_variables = 45;
+
+    let circuit = random_circuit(rng, num_constraints, num_variables);
+    let r1cs = generate_relation(circuit);
+
+    let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c, num_variables);
+    let (row, col, _row_index, _col_index, val_a, val_b, val_c) = joint_matrices(
+        &joint_matrix,
+        num_constraints,
+        num_variables,
+        &r1cs.a,
+        &r1cs.b,
+        &r1cs.c,
+    );
+
+    let num_non_zero = row.len();
+
+    let ck = CommitterKey::<Bls12_381>::new(num_non_zero + num_variables + num_constraints, 5, rng);
+    let vk = (&ck).into();
+
+    let index_comms = ck.batch_commit(&vec![row, col, val_a, val_b, val_c]);
+
+    let time_proof = Proof::new_time(&r1cs, &ck);
+    assert!(time_proof
+        .verify(&r1cs, &vk, &index_comms, num_non_zero)
+        .is_ok())
 }

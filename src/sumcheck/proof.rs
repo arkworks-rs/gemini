@@ -76,11 +76,18 @@ impl<F: Field> Sumcheck<F> {
 
         for _ in 0..rounds {
             // obtain next messages from each of the provers
-            let round_messages = provers.iter_mut().map(|p| p.next_message());
+            let round_messages = provers.iter_mut().map(|p| {
+                p.next_message().unwrap_or_else(|| {
+                    let final_foldings = p.final_foldings().expect(
+                        "If next_message is None, we expect final foldings to be available",
+                    );
+                    RoundMsg(final_foldings[0] * final_foldings[1], F::zero())
+                })
+            });
             // compute the non-oracle messagein the sumcheck:
             let message = round_messages
                 .zip(coefficients.iter()) // take the combination of messages and coefficients
-                .filter_map(|(m, c)| m.map(|m| m.mul(&c))) // multiply them if there's an actual message
+                .map(|(m, c)| m.mul(&c)) // multiply them if there's an actual message
                 .sum(); // finally, add them up.
             messages.push(message); // add the message sent to the transcript
             transcript.append_prover_message(b"evaluations", &message);

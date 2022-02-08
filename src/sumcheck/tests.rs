@@ -223,3 +223,48 @@ fn test_sumcheck_correctness() {
     let subclaim = Subclaim::new(&mut verifier_transcript, &prover_messages, asserted_sum);
     assert!(subclaim.is_ok())
 }
+
+#[test]
+fn test_batch_sumcheck_correctness() {
+    let rng = &mut ark_std::test_rng();
+    let d = 1 << (5);
+
+    let f = DensePolynomial::<F>::rand(d, rng).coeffs().to_vec();
+    let g = DensePolynomial::<F>::rand(d, rng).coeffs().to_vec();
+    let twist = F::rand(rng);
+    let twist_powers = powers(twist, d + 1);
+
+    // compute the inner product of f, g naively.
+    let twisted_f = hadamard(&twist_powers, &f);
+    let asserted_sum = ip(&twisted_f, &g);
+
+    let d2 = 1 << (10);
+
+    let f2 = DensePolynomial::<F>::rand(d2, rng).coeffs().to_vec();
+    let g2 = DensePolynomial::<F>::rand(d2, rng).coeffs().to_vec();
+    let twist2 = F::rand(rng);
+    let twist_powers2 = powers(twist2, d2 + 1);
+
+    // compute the inner product of f, g naively.
+    let twisted_f2 = hadamard(&twist_powers2, &f2);
+    let asserted_sum2 = ip(&twisted_f2, &g2);
+
+    // Batched sumcheck
+    let witness = Witness::new(&f, &g, &twist);
+    let witness2 = Witness::new(&f2, &g2, &twist2);
+    let provers = vec![
+        Box::new(TimeProver::new(witness)) as Box<dyn Prover<F>>,
+        Box::new(TimeProver::new(witness2)) as Box<dyn Prover<F>>,
+    ];
+
+    let mut prover_transcript = Transcript::new(crate::PROTOCOL_NAME);
+    let mut verifier_transcript = Transcript::new(crate::PROTOCOL_NAME);
+    let sumcheck = Sumcheck::prove_batch(&mut prover_transcript, provers);
+    let prover_messages = sumcheck.prover_messages();
+    let subclaim = Subclaim::new_batch(
+        &mut verifier_transcript,
+        &prover_messages,
+        &vec![asserted_sum, asserted_sum2],
+    );
+    assert!(subclaim.is_ok());
+}

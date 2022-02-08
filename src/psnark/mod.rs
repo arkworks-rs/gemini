@@ -6,6 +6,7 @@
 //!
 mod elastic_prover;
 mod time_prover;
+mod verifier;
 
 mod streams;
 

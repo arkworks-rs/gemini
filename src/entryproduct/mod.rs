@@ -42,8 +42,8 @@ pub mod streams;
 /// It is expected that the developer takes care of it in the upper protocol layer.
 #[derive(Debug, PartialEq, Eq)]
 pub struct ProverMsgs<E: PairingEngine> {
-    acc_v_commitments: Vec<Commitment<E>>,
-    claimed_sumchecks: Vec<E::Fr>,
+    pub acc_v_commitments: Vec<Commitment<E>>,
+    pub claimed_sumchecks: Vec<E::Fr>,
 }
 
 /// The entryproduct transcript and subclaims.

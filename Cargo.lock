@@ -111,6 +111,7 @@ dependencies = [
  "log",
  "memmap",
  "merlin",
+ "num-bigint",
  "procinfo",
  "rand 0.7.3",
  "rand_chacha 0.3.1",
