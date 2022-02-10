@@ -206,7 +206,7 @@ where
 #[inline]
 pub fn hadamard<F: Field>(lhs: &[F], rhs: &[F]) -> Vec<F> {
     assert_eq!(lhs.len(), rhs.len());
-    lhs.iter().zip(rhs).map(|(&x, y)| x * y).collect()
+    hadamard_unsafe(lhs, rhs)
 }
 
 /// Return the inner product of `lhs` with `rhs`.
@@ -219,16 +219,32 @@ pub fn ip<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     ip_unsafe(lhs.iter(), rhs.iter())
 }
 
+pub(crate) fn hadamard_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> Vec<F>
+where
+    I: IntoIterator,
+    J: IntoIterator,
+    I::Item: Borrow<F>,
+    J::Item: Borrow<F>,
+{
+    lhs.into_iter()
+        .zip(rhs)
+        .map(|(x, y)| *x.borrow() * y.borrow())
+        .collect()
+}
+
 /// Return the inner product of two iterators `lhs` and `rhs`,
 /// assuming that the elements have the same length.
 pub(crate) fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
 where
-    I: Iterator,
-    J: Iterator,
+    I: IntoIterator,
+    J: IntoIterator,
     I::Item: Borrow<F>,
     J::Item: Borrow<F>,
 {
-    lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
+    lhs.into_iter()
+        .zip(rhs)
+        .map(|(x, y)| *x.borrow() * y.borrow())
+        .sum()
 }
 
 #[inline]
@@ -396,7 +412,7 @@ fn test_evaluate_index_poly() {
     let rng = &mut ark_std::test_rng();
     let x = F::rand(rng);
     let n = 147;
-    let index_polynomial = (0 .. n as u64).map(|i| F::from(i)).collect::<Vec<_>>();
+    let index_polynomial = (0..n as u64).map(|i| F::from(i)).collect::<Vec<_>>();
 
     let got = evaluate_index_poly(x, n);
     let expected = evaluate_le(&index_polynomial, &x);
