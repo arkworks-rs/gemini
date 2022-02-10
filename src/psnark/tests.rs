@@ -95,8 +95,8 @@ fn test_consistency() {
         time_proof.third_sumcheck_msgs
     );
 
-//     assert_eq!(
-//         elastic_proof.tensorcheck_proof.base_polynomials_evaluations,
-//         time_proof.tensorcheck_proof.base_polynomials_evaluations
-//     );
+    //     assert_eq!(
+    //         elastic_proof.tensorcheck_proof.base_polynomials_evaluations,
+    //         time_proof.tensorcheck_proof.base_polynomials_evaluations
+    //     );
 }

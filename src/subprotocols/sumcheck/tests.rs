@@ -1,9 +1,9 @@
-use ark_std::boxed::Box;
 use ark_bls12_381::Fr as F;
 use ark_ff::One;
 use ark_ff::UniformRand;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::UVPolynomial;
+use ark_std::boxed::Box;
 use ark_std::vec::Vec;
 
 use merlin::Transcript;
@@ -225,7 +225,6 @@ fn test_sumcheck_correctness() {
     let subclaim = Subclaim::new(&mut verifier_transcript, &prover_messages, asserted_sum);
     assert!(subclaim.is_ok())
 }
-
 
 #[test]
 fn test_batch_sumcheck_correctness() {

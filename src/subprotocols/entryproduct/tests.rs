@@ -1,17 +1,16 @@
+use ark_bls12_381::{Bls12_381, Fr as F};
 use ark_ff::{Field, One};
 use ark_std::vec::Vec;
-use ark_bls12_381::{Bls12_381, Fr as F};
 use ark_std::UniformRand;
 
 use merlin::Transcript;
 
-use super::time_prover::{accumulated_product, right_rotation, monic};
+use super::time_prover::{accumulated_product, monic, right_rotation};
 use super::EntryProduct;
 use crate::kzg::{CommitterKey, CommitterKeyStream};
-use crate::misc::{evaluate_le, hadamard, powers, ip};
+use crate::misc::{evaluate_le, hadamard, ip, powers};
 
 use crate::iterable::dummy::DummyStreamer;
-
 
 #[test]
 fn test_entry_product_relation() {
@@ -29,7 +28,9 @@ fn test_entry_product_relation() {
     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
     assert_eq!(
         lhs,
-        chal * evaluate_le(&nm_acc_v, &chal) + entry_product + chal.pow(&[nm_acc_v.len() as u64]) * (chal - F::one())
+        chal * evaluate_le(&nm_acc_v, &chal)
+            + entry_product
+            + chal.pow(&[nm_acc_v.len() as u64]) * (chal - F::one())
     );
 }
 
@@ -50,4 +51,3 @@ fn test_entry_product_consistency() {
     let ep_space = EntryProduct::new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
     assert_eq!(ep_time.msgs, ep_space.msgs)
 }
-

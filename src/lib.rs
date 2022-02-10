@@ -31,34 +31,27 @@
 #[macro_use]
 extern crate ark_std;
 
+/// The domain separator, used when proving statements on gemini.
 pub(crate) const PROTOCOL_NAME: &[u8] = b"GEMINI-v0";
+/// The threshold for switching from space to time prover within the sumcheck.
+const SPACE_TIME_THRESHOLD: usize = 22;
+// const SUMCHECK_BUF_SIZE: usize = 1 << 20;
 
-#[doc(hidden)]
-pub mod circuit;
-mod misc;
 
+// public modules
+
+pub mod errors;
 pub mod iterable;
 pub mod kzg;
 pub mod psnark;
 pub mod snark;
 pub mod subprotocols;
 
+// private modules
+
+#[doc(hidden)]
+pub mod circuit;
+mod misc;
 mod transcript;
 
-const SPACE_TIME_THRESHOLD: usize = 22;
-// const SUMCHECK_BUF_SIZE: usize = 1 << 20;
 
-/// Error identifying a failure in the proof verification.
-#[derive(Debug, Clone)]
-pub struct VerificationError;
-
-use ark_std::fmt;
-
-impl fmt::Display for VerificationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error in stream.")
-    }
-}
-
-/// Verification result.
-pub type VerificationResult = ark_std::result::Result<(), VerificationError>;

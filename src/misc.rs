@@ -48,26 +48,6 @@ where
         .into()
 }
 
-#[test]
-fn test_linear_combination() {
-    use ark_bls12_381::Fr;
-
-    let polynomials = [
-        vec![Fr::from(100), Fr::from(101), Fr::from(102), Fr::from(103)],
-        vec![Fr::from(100), Fr::from(100), Fr::from(100), Fr::from(100)],
-    ];
-    let challenges = [Fr::from(1), Fr::from(10)];
-    let got = linear_combination(&polynomials, &challenges);
-    let expected = vec![
-        Fr::from(1100),
-        Fr::from(1101),
-        Fr::from(1102),
-        Fr::from(1103),
-    ];
-    assert!(got.is_some());
-    assert_eq!(got.unwrap(), expected);
-}
-
 /// Helper function for folding single polynomial.
 #[inline]
 pub(crate) fn fold_polynomial<F: Field>(f: &[F], r: F) -> Vec<F> {
@@ -97,13 +77,18 @@ pub(crate) fn powers2<F: Field>(element: F, len: usize) -> Vec<F> {
     powers
 }
 
+/// The elements of a matrix stream.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
 pub enum MatrixElement<T> {
-    EOL,
+    /// A matrix element.
     Element((T, usize)),
+    /// A new line in the matrix stream.
+    EOL,
 }
 
 impl<T> MatrixElement<T> {
+    /// Return `true` is the current element is indicating a new line,
+    /// `false` otherwise.
     pub fn is_eol(&self) -> bool {
         match self {
             Self::EOL => true,
@@ -112,6 +97,7 @@ impl<T> MatrixElement<T> {
     }
 }
 
+/// Given a sparse matrix `matrix` and a vector `z`, compute `matrix * z`.
 pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> Vec<F> {
     let inner_prod_fn = |row: &[(F, usize)]| {
         let mut acc = F::zero();
@@ -124,6 +110,7 @@ pub fn product_matrix_vector<F: Field>(matrix: &[Vec<(F, usize)>], z: &[F]) -> V
     matrix.iter().map(|row| inner_prod_fn(row)).collect()
 }
 
+/// Given a vector `z` and a sparse matrix `matrix`, compute `z * matrix`.
 #[allow(unused)]
 pub fn product_vector_matrix<F: Field>(z: &[F], matrix: &[Vec<(F, usize)>]) -> Vec<F> {
     let mut res = vec![F::zero(); z.len()];
@@ -232,6 +219,8 @@ pub fn ip<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     ip_unsafe(lhs.iter(), rhs.iter())
 }
 
+/// Return the inner product of two iterators `lhs` and `rhs`,
+/// assuming that the elements have the same length.
 pub(crate) fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
 where
     I: Iterator,
@@ -240,36 +229,6 @@ where
     J::Item: Borrow<F>,
 {
     lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
-}
-
-
-
-/// Start a watcher thread that will print the memory (stack+heap) currently allocated at regular intervals.
-/// Informations are going to be printed only with feature "print-trace" enabled, and within a linux system.
-pub fn memory_traces() {
-    #[cfg(all(feature = "print-trace", target_os = "linux"))]
-    {
-        // virtual memory page size can be obtained also with:
-        // $ getconf PAGE_SIZE    # alternatively, PAGESIZE
-        let pagesize = libc::sysconf(libc::_SC_PAGESIZE) as usize;
-        let previous_memory = 0usize;
-
-        ark_std::thread::spawn(move || loop {
-            // obtain the total virtual memory size, in pages
-            // and convert it to bytes
-            let pages_used = procinfo::pid::statm_self().unwrap().data;
-            let memory_used = page_size * pages_used;
-
-            // if the memory changed of more than 10kibibytes from last clock tick,
-            // then log it.
-            if (memory_used - previous_memory) > 10 << 10 {
-                log::debug!("memory (statm.data): {}B", memory_used);
-                previous_memory = memory_used;
-            }
-            // sleep for 10 seconds
-            ark_std::thread::sleep(std::time::Duration::from_secs(10))
-        });
-    }
 }
 
 #[inline]
@@ -375,23 +334,22 @@ pub fn joint_matrices<F: Field>(
     )
 }
 
-// #[cfg(test)]
-// pub fn matrix_slice_naive<F: Field>(a: &[Vec<(F, usize)>], n: usize) -> Vec<MatrixElement<F>> {
-//     let mut aa = vec![vec![F::zero(); n]; n];
-//     for (row, elements) in a.iter().enumerate() {
-//         for &(val, col) in elements {
-//             aa[row][col] = val;
-//         }
-//     }
+#[test]
+fn test_linear_combination() {
+    use ark_bls12_381::Fr;
 
-//     let mut a_row_flat = Vec::new();
-//     for j in (0..n).rev() {
-//         for i in (0..n).rev() {
-//             if aa[i][j] != F::zero() {
-//                 a_row_flat.push(MatrixElement::Element((aa[i][j], i)))
-//             }
-//         }
-//         a_row_flat.push(MatrixElement::EOL);
-//     }
-//     a_row_flat
-// }
+    let polynomials = [
+        vec![Fr::from(100), Fr::from(101), Fr::from(102), Fr::from(103)],
+        vec![Fr::from(100), Fr::from(100), Fr::from(100), Fr::from(100)],
+    ];
+    let challenges = [Fr::from(1), Fr::from(10)];
+    let got = linear_combination(&polynomials, &challenges);
+    let expected = vec![
+        Fr::from(1100),
+        Fr::from(1101),
+        Fr::from(1102),
+        Fr::from(1103),
+    ];
+    assert!(got.is_some());
+    assert_eq!(got.unwrap(), expected);
+}

@@ -90,7 +90,7 @@ where
                 let current = *current.borrow();
                 self.previous = Some(current);
                 Some(self.y1z + current.borrow())
-            },
+            }
         }
     }
 }

@@ -24,23 +24,22 @@ pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, &z: &F) -> Vec<F> {
     let y1z = (F::one() + z) * y;
     let len = v.len();
     if len == 0 {
-        return Vec::new()
+        return Vec::new();
     } else {
-        let head  = Some(y1z + z * v[0]).into_iter();
-        let trunk = (0..len-1).map(|i| y1z + v[i] + z * v[i+1]);
-        let last = Some(y1z + v[len-1]);
+        let head = Some(y1z + z * v[0]).into_iter();
+        let trunk = (0..len - 1).map(|i| y1z + v[i] + z * v[i + 1]);
+        let last = Some(y1z + v[len - 1]);
         head.chain(trunk).chain(last).collect()
     }
 }
 
-
 #[test]
 fn test_plookup_set_correct() {
-    use ark_std::test_rng;
+    use crate::misc::evaluate_le;
     use ark_bls12_381::Fr as F;
     use ark_ff::One;
+    use ark_std::test_rng;
     use ark_std::UniformRand;
-    use crate::misc::evaluate_le;
 
     let rng = &mut test_rng();
     let set = (0..3).map(|_| F::rand(rng)).collect::<Vec<_>>();
@@ -52,12 +51,11 @@ fn test_plookup_set_correct() {
     let chal = F::rand(rng);
     let expected = evaluate_le(&pl_set, &chal);
     let y1z = (F::one() + z) * y;
-    let chal_n = chal.pow(&[(set.len()+1) as u64]);
-    let first = y1z * (chal_n - F::one())/(chal - F::one());
+    let chal_n = chal.pow(&[(set.len() + 1) as u64]);
+    let first = y1z * (chal_n - F::one()) / (chal - F::one());
     let set_chal = evaluate_le(&set, &chal);
     let got = first + set_chal * (chal + z);
     assert_eq!(got, expected);
-
 }
 
 fn plookup_subset<F: Field>(v: &[F], y: &F) -> Vec<F> {

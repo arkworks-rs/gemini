@@ -78,10 +78,14 @@ impl<F: Field> Sumcheck<F> {
 
         for _ in 0..rounds {
             // obtain next messages from each of the provers
-            let round_messages = provers.iter_mut().map(|p| p.next_message().unwrap_or_else(|| {
-                let final_foldings = p.final_foldings().expect("If next_message is None, we expect final foldings to be available");
-                RoundMsg(final_foldings[0] * final_foldings[1], F::zero())
-            }));
+            let round_messages = provers.iter_mut().map(|p| {
+                p.next_message().unwrap_or_else(|| {
+                    let final_foldings = p.final_foldings().expect(
+                        "If next_message is None, we expect final foldings to be available",
+                    );
+                    RoundMsg(final_foldings[0] * final_foldings[1], F::zero())
+                })
+            });
             // compute the non-oracle messagein the sumcheck:
             let message = round_messages
                 .zip(coefficients.iter()) // take the combination of messages and coefficients

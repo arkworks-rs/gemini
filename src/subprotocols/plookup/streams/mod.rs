@@ -49,15 +49,15 @@ where
 #[test]
 fn test_consistency() {
     use ark_bls12_381::Fr as F;
-    use ark_std::vec::Vec;
     use ark_std::test_rng;
+    use ark_std::vec::Vec;
     use ark_std::UniformRand;
 
     use super::time_prover::plookup_set;
     use crate::iterable::Reversed;
 
     let rng = &mut test_rng();
-    let v = (0.. 5).map(|_| F::rand(rng)).collect::<Vec<_>>();
+    let v = (0..5).map(|_| F::rand(rng)).collect::<Vec<_>>();
     let y = F::rand(rng);
     let z = F::rand(rng);
     let time_set = plookup_set(&v, &y, &z);
