@@ -18,7 +18,7 @@ pub(crate) fn _features_enabled() -> ark_std::string::String {
         ""
     };
     let asm_enabled = if cfg!(feature = "asm") { "asm" } else { "" };
-    return [parallel_enabled, asm_enabled].join(", ");
+    [parallel_enabled, asm_enabled].join(", ")
 }
 
 /// Given the slice `v` as input,
@@ -407,7 +407,6 @@ fn test_linear_combination() {
 fn test_evaluate_index_poly() {
     use ark_bls12_381::Fr as F;
     use ark_ff::UniformRand;
-    use ark_std::{One, Zero};
 
     let rng = &mut ark_std::test_rng();
     let x = F::rand(rng);

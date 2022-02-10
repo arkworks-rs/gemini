@@ -2,7 +2,6 @@ use ark_bls12_381::{Bls12_381, Fr as F};
 use ark_ff::{Field, One};
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
-
 use merlin::Transcript;
 
 use super::time_prover::{accumulated_product, monic, right_rotation};
@@ -12,25 +11,23 @@ use crate::misc::{evaluate_le, hadamard, ip, powers};
 
 use crate::iterable::dummy::DummyStreamer;
 
-// #[test]
-// fn test_entry_product_relation() {
-//     let rng = &mut ark_std::test_rng();
-//     let n = 1000usize;
-//     let v = (0..n).map(|_| F::rand(rng)).collect::<Vec<_>>();
-//     let monic_v = monic(&v);
-//     let rrot_v = right_rotation(&monic_v);
-//     let acc_v = accumulated_product(&monic_v);
-//     let entry_product = monic_v.iter().product::<F>();
-//     let chal = F::one();
-//     let twist = powers(chal, rrot_v.len());
-//     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
-//     assert_eq!(
-//         lhs,
-//         chal * evaluate_le(acc_v, &chal)
-//             + entry_product
-//             + chal.pow(&[cc_v.len() as u64]) * (chal - F::one())
-//     );
-// }
+#[test]
+fn test_entry_product_relation() {
+    let rng = &mut ark_std::test_rng();
+    let n = 1000usize;
+    let v = (0..n).map(|_| F::rand(rng)).collect::<Vec<_>>();
+    let monic_v = monic(&v);
+    let rrot_v = right_rotation(&monic_v);
+    let acc_v = accumulated_product(&monic_v);
+    let entry_product = monic_v.iter().product::<F>();
+    let chal = F::one();
+    let twist = powers(chal, rrot_v.len());
+    let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
+    assert_eq!(
+        lhs,
+        chal * evaluate_le(&acc_v, &chal) + entry_product - chal.pow(&[n as u64])
+    );
+}
 
 #[test]
 fn test_entry_product_consistency() {

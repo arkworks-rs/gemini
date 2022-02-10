@@ -1,7 +1,9 @@
-use crate::{iterable::Iterable, misc::ceil_div};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
+
+use crate::iterable::Iterable;
+use crate::misc::ceil_div;
 
 /// A `Streamer` folding a vector of coefficients
 /// with the given challenges, and producing a stream of items
@@ -126,12 +128,12 @@ where
             self.stack.push(item)
         }
 
-        // Skip the base polynomial, and continue to the next level
+        // Skip the base polynomial, recursively calling itself to access the next level
         if item.0 == 0 {
-            return self.next();
+            self.next()
+        } else {
+            Some(item)
         }
-
-        Some(item)
     }
 }
 

@@ -15,8 +15,7 @@ use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 fn compute_entry_prod_eval<F: Field>(ori_eval: F, eval_point: F) -> F {
-    // return ori_eval;
-    return eval_point * ori_eval + F::one();
+    eval_point * ori_eval + F::one()
 }
 
 fn compute_plookup_subset_eval<F: Field>(
@@ -28,9 +27,8 @@ fn compute_plookup_subset_eval<F: Field>(
     zeta: F,
     n: usize,
 ) -> F {
-    // x.pow(&[n as u64]) will be removed in the shifted monic version.
     let ori_eval = subset_eval + zeta * index_eval + y * evaluate_geometric_poly(eval_point, n);
-    return compute_entry_prod_eval(ori_eval, eval_point);
+    compute_entry_prod_eval(ori_eval, eval_point)
 }
 
 fn compute_plookup_set_eval<F: Field>(
@@ -44,7 +42,7 @@ fn compute_plookup_set_eval<F: Field>(
     let ori_eval = (F::one() + z) * y * evaluate_geometric_poly(eval_point, n + 1)
         + eval_point * set_eval
         + z * set_eval;
-    return compute_entry_prod_eval(ori_eval, eval_point);
+    compute_entry_prod_eval(ori_eval, eval_point)
 }
 
 impl<E: PairingEngine> Proof<E> {
