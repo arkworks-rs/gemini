@@ -12,27 +12,25 @@ use crate::misc::{evaluate_le, hadamard, ip, powers};
 
 use crate::iterable::dummy::DummyStreamer;
 
-#[test]
-fn test_entry_product_relation() {
-    let rng = &mut ark_std::test_rng();
-    let n = 1000usize;
-    let v = (0..n).map(|_| F::rand(rng)).collect::<Vec<_>>();
-    let monic_v = monic(&v);
-    let rrot_v = right_rotation(&monic_v);
-    let acc_v = accumulated_product(&monic_v);
-    let nm_rrot_v = right_rotation(&v);
-    let nm_acc_v = accumulated_product(&v);
-    let entry_product = monic_v.iter().product::<F>();
-    let chal = F::one();
-    let twist = powers(chal, rrot_v.len());
-    let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
-    assert_eq!(
-        lhs,
-        chal * evaluate_le(&nm_acc_v, &chal)
-            + entry_product
-            + chal.pow(&[nm_acc_v.len() as u64]) * (chal - F::one())
-    );
-}
+// #[test]
+// fn test_entry_product_relation() {
+//     let rng = &mut ark_std::test_rng();
+//     let n = 1000usize;
+//     let v = (0..n).map(|_| F::rand(rng)).collect::<Vec<_>>();
+//     let monic_v = monic(&v);
+//     let rrot_v = right_rotation(&monic_v);
+//     let acc_v = accumulated_product(&monic_v);
+//     let entry_product = monic_v.iter().product::<F>();
+//     let chal = F::one();
+//     let twist = powers(chal, rrot_v.len());
+//     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
+//     assert_eq!(
+//         lhs,
+//         chal * evaluate_le(acc_v, &chal)
+//             + entry_product
+//             + chal.pow(&[cc_v.len() as u64]) * (chal - F::one())
+//     );
+// }
 
 #[test]
 fn test_entry_product_consistency() {

@@ -72,7 +72,6 @@ version = "1.5"
 [dev-dependencies]
 curve25519-dalek = "*"
 clap = "3.0.0-beta.5"
-num-bigint = "0.4"
 
 [dev-dependencies.ark-bls12-381]
 default-features = false

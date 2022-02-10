@@ -334,10 +334,14 @@ pub fn joint_matrices<F: Field>(
     )
 }
 
+/// Efficient evluation for polynomials of the form:
+/// \\[
+/// f(x) = \sum_{i = (b_0, \dots, b_n)} x^i \prod_j \text{elements}_j^{b_j}
+/// \\]
 #[inline]
-pub fn evaluate_tensor_poly<F: Field>(elements: &[F], eval_point: F) -> F {
+pub fn evaluate_tensor_poly<F: Field>(elements: &[F], x: F) -> F {
     let mut res = F::one();
-    let mut s = eval_point;
+    let mut s = x;
     for i in 0..elements.len() {
         let tmp = F::one() + elements[i] * s;
         res *= tmp;
@@ -346,20 +350,22 @@ pub fn evaluate_tensor_poly<F: Field>(elements: &[F], eval_point: F) -> F {
     return res;
 }
 
+/// Efficient evaluation for polynomials of the form:
+/// 1 + rx x + rx^2 x^2 + rx^3 x^3 + rx^4 x^4 + ... + n rx^n.
 #[inline]
 pub fn evaluate_geometric_poly<F: Field>(rx: F, n: usize) -> F {
-    return (rx.pow(&[n as u64]) - F::one()) * ((rx - F::one()).inverse().unwrap());
+    (rx.pow(&[n as u64]) - F::one()) / (rx - F::one())
 }
 
+/// Efficient evaluation for polynomials of the form:
+/// 0 + x + 2 x^2 + 3 x^3 + 4 x^4 + 5 x^5 + .. + n x^n.
 #[inline]
 pub fn evaluate_index_poly<F: Field>(x: F, n: usize) -> F {
-    let inv = (F::one() - x).inverse().unwrap();
-    let inv_square = (F::one() - x).square().inverse().unwrap();
+    assert_ne!(F::one(), x);
+    let x1 = F::one() - x;
     let x_n = x.pow(&[(n - 1) as u64]);
-    return x * (F::one() - x_n) * inv_square - F::from((n - 1) as u64) * x_n * x * inv;
+    x * (F::one() - x_n) / x1.square() - F::from((n - 1) as u64) * x_n * x / x1
 }
-
-
 
 #[test]
 fn test_linear_combination() {
@@ -386,20 +392,13 @@ fn test_evaluate_index_poly() {
     use ark_bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::{One, Zero};
-    use num_bigint::BigUint;
 
     let rng = &mut ark_std::test_rng();
     let x = F::rand(rng);
     let n = 147;
-    let res = evaluate_index_poly(x, n);
+    let index_polynomial = (0 .. n as u64).map(|i| F::from(i)).collect::<Vec<_>>();
 
-    let mut expect = F::zero();
-    let mut tmp = F::one();
-    for i in 0..n {
-        expect += F::from(i as u64) * tmp;
-        tmp *= x;
-    }
-    let res_b: BigUint = res.into();
-    let expect_b: BigUint = expect.into();
-    assert!(res == expect);
+    let got = evaluate_index_poly(x, n);
+    let expected = evaluate_le(&index_polynomial, &x);
+    assert_eq!(got, expected);
 }

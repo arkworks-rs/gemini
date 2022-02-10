@@ -3,13 +3,13 @@ use ark_ec::PairingEngine;
 use ark_ff::Field;
 
 use crate::circuit::R1cs;
+use crate::errors::{VerificationError, VerificationResult};
 use crate::kzg::VerifierKey;
 use crate::misc::{evaluate_le, ip};
 use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
 use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
-use crate::errors::{VerificationError, VerificationResult};
 use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
