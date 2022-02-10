@@ -242,7 +242,8 @@ impl<E: PairingEngine> Proof<E> {
         // lookup r*
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_set_eval(
-                evaluate_tensor_poly(&subclaim_1.challenges, beta),
+                evaluate_tensor_poly(&subclaim_1.challenges, beta)
+                    + zeta * evaluate_index_poly(beta, set_len),
                 beta,
                 y,
                 z,
@@ -251,7 +252,8 @@ impl<E: PairingEngine> Proof<E> {
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_set_eval(
-                evaluate_tensor_poly(&subclaim_1.challenges, -beta),
+                evaluate_tensor_poly(&subclaim_1.challenges, -beta)
+                    + zeta * evaluate_index_poly(-beta, set_len),
                 -beta,
                 y,
                 z,
@@ -263,7 +265,7 @@ impl<E: PairingEngine> Proof<E> {
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_subset_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[2][1],
-                E::Fr::zero(),
+                self.tensorcheck_proof.base_polynomials_evaluations[5][1],
                 beta,
                 y,
                 z,
@@ -273,7 +275,7 @@ impl<E: PairingEngine> Proof<E> {
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_subset_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[2][2],
-                E::Fr::zero(),
+                self.tensorcheck_proof.base_polynomials_evaluations[5][2],
                 -beta,
                 y,
                 z,
@@ -313,7 +315,8 @@ impl<E: PairingEngine> Proof<E> {
         // lookup alpha*
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_set_eval(
-                evaluate_geometric_poly(alpha * beta, set_len),
+                evaluate_geometric_poly(alpha * beta, set_len)
+                    + zeta * evaluate_index_poly(beta, set_len),
                 beta,
                 y,
                 z,
@@ -322,7 +325,8 @@ impl<E: PairingEngine> Proof<E> {
             );
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_set_eval(
-                evaluate_geometric_poly(alpha * -beta, set_len),
+                evaluate_geometric_poly(alpha * -beta, set_len)
+                    + zeta * evaluate_index_poly(-beta, set_len),
                 -beta,
                 y,
                 z,
@@ -334,7 +338,7 @@ impl<E: PairingEngine> Proof<E> {
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_subset_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[3][1],
-                E::Fr::zero(),
+                self.tensorcheck_proof.base_polynomials_evaluations[5][1],
                 beta,
                 y,
                 z,
@@ -344,7 +348,7 @@ impl<E: PairingEngine> Proof<E> {
         direct_base_polynomials_evaluations_2[1] += tmp
             * compute_plookup_subset_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[3][2],
-                E::Fr::zero(),
+                self.tensorcheck_proof.base_polynomials_evaluations[5][2],
                 -beta,
                 y,
                 z,

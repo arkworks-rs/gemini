@@ -125,25 +125,11 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge(b"zeta");
 
-        let r_lookup_vec = plookup(
-            &r_star,
-            &b_challenges,
-            &row_index,
-            &gamma,
-            &chi,
-            &zeta,
-        );
+        let r_lookup_vec = plookup(&r_star, &b_challenges, &row_index, &gamma, &chi, &zeta);
         let r_prod_vec = product3(&r_lookup_vec);
         let r_accumulated_vec = accproduct3(&r_lookup_vec);
 
-        let alpha_lookup_vec = plookup(
-            &alpha_star,
-            &c_challenges,
-            &row_index,
-            &gamma,
-            &chi,
-            &zeta,
-        );
+        let alpha_lookup_vec = plookup(&alpha_star, &c_challenges, &row_index, &gamma, &chi, &zeta);
         let alpha_prod_vec = product3(&alpha_lookup_vec);
         let alpha_accumulated_vec = accproduct3(&alpha_lookup_vec);
 
