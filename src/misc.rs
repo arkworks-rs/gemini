@@ -232,7 +232,7 @@ pub fn ip<F: Field>(lhs: &[F], rhs: &[F]) -> F {
     ip_unsafe(lhs.iter(), rhs.iter())
 }
 
-pub fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
+pub(crate) fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
 where
     I: Iterator,
     J: Iterator,
@@ -240,6 +240,36 @@ where
     J::Item: Borrow<F>,
 {
     lhs.zip(rhs).map(|(x, y)| *x.borrow() * y.borrow()).sum()
+}
+
+
+
+/// Start a watcher thread that will print the memory (stack+heap) currently allocated at regular intervals.
+/// Informations are going to be printed only with feature "print-trace" enabled, and within a linux system.
+pub fn memory_traces() {
+    #[cfg(all(feature = "print-trace", target_os = "linux"))]
+    {
+        // virtual memory page size can be obtained also with:
+        // $ getconf PAGE_SIZE    # alternatively, PAGESIZE
+        let pagesize = libc::sysconf(libc::_SC_PAGESIZE) as usize;
+        let previous_memory = 0usize;
+
+        ark_std::thread::spawn(move || loop {
+            // obtain the total virtual memory size, in pages
+            // and convert it to bytes
+            let pages_used = procinfo::pid::statm_self().unwrap().data;
+            let memory_used = page_size * pages_used;
+
+            // if the memory changed of more than 10kibibytes from last clock tick,
+            // then log it.
+            if (memory_used - previous_memory) > 10 << 10 {
+                log::debug!("memory (statm.data): {}B", memory_used);
+                previous_memory = memory_used;
+            }
+            // sleep for 10 seconds
+            ark_std::thread::sleep(std::time::Duration::from_secs(10))
+        });
+    }
 }
 
 #[inline]

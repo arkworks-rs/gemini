@@ -52,8 +52,9 @@ derivative = { version = "2", features = ["use_core"] }
 env_logger = "0.8.3"
 hashbrown = "0.11.2"
 
-[target.x86_64-unknown-linux-gnu.dependencies]
+[target.'cfg(taget_os="linux")'.dependencies]
 procinfo = "0.4.2"
+libc = "0.2.117"
 
 
 # de-comment if willing to work on Field::mul_add.

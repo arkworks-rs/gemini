@@ -11,24 +11,6 @@ type PE = Bls12<ark_bls12_381::Parameters>;
 type G1 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G1Affine;
 type G2 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G2Affine;
 
-/// Start a watcher thread that will print the memory (stack+heap) currently allocated at regular intervals.
-/// Informations are going to be printed only with feature "print-trace" enabled, and within a linux system.
-pub fn memory_traces() {
-    // XXX. In Cargo.toml we install profinfo only for x86_64-unknown-linux-gnu.
-    // This means, for instance, that i686-unknown-linux-gnu will not compile.
-    #[cfg(all(feature = "print-trace", target_os = "linux"))]
-    {
-        ark_std::thread::spawn(|| loop {
-            let pages_used = procinfo::pid::statm_self().unwrap().data;
-            // this can be obtained with getconf PAGESIZE
-            // XXX. retrieve this at runtime.
-            let page_size = 4096usize;
-            let memory_used = page_size * pages_used;
-            log::debug!("memory (statm.data): {}B", memory_used);
-            ark_std::thread::sleep(std::time::Duration::from_secs(10))
-        });
-    }
-}
 
 /// Simple option handling for instance size and prover mode.
 #[derive(Parser, Debug)]
