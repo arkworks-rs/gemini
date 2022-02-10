@@ -9,6 +9,7 @@ use merlin::Transcript;
 
 use crate::circuit::R1csStream;
 use crate::iterable::Iterable;
+use crate::iterable::slice::IterableRange;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::{
@@ -21,7 +22,6 @@ use crate::subprotocols::entryproduct::EntryProduct;
 use crate::subprotocols::plookup::streams::plookup_streams;
 use crate::subprotocols::sumcheck::proof::Sumcheck;
 use crate::subprotocols::sumcheck::ElasticProver;
-
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
 use crate::subprotocols::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
@@ -185,13 +185,18 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
-        let idx_z = crate::iterable::slice::IterableRange(r1cs.z.len());
+        let idx_z = IterableRange(r1cs.z.len());
         let hashed_z = AlgebraicHash::new(&r1cs.z, &idx_z, zeta);
         let hashed_zstar = AlgebraicHash::new(&z_star, &col, zeta);
+        let hashed_r = AlgebraicHash::new(&rs, &idx_z, zeta);
+        let hashed_rstar = AlgebraicHash::new(&r_star, &col, zeta);
+        let hashed_alpha = AlgebraicHash::new(&alphas, &idx_z, zeta);
+        let hashed_alphastar = AlgebraicHash::new(&alpha_star, &col, zeta);
+
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
-            plookup_streams(&alpha_star, &alphas, &row_sorted, gamma, chi);
+            plookup_streams(&hashed_alphastar, &hashed_alpha, &row_sorted, gamma, chi);
         let (pl_set_r, pl_subset_r, pl_sorted_r) =
-            plookup_streams(&r_star, &rs, &row_sorted, gamma, chi);
+            plookup_streams(&hashed_rstar, &hashed_r, &row_sorted, gamma, chi);
         let (pl_set_z, pl_subset_z, pl_sorted_z) =
             plookup_streams(&hashed_zstar, &hashed_z, &col, gamma, chi);
         // compute the products to send to the verifier.

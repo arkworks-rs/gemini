@@ -4,7 +4,7 @@ use ark_ec::PairingEngine;
 use ark_ff::Field;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
-use ark_std::{One, Zero};
+use ark_std::One;
 
 use crate::circuit::R1cs;
 use crate::kzg::CommitterKey;
@@ -131,7 +131,7 @@ impl<E: PairingEngine> Proof<E> {
             &row_index,
             &gamma,
             &chi,
-            &E::Fr::zero(),
+            &zeta,
         );
         let r_prod_vec = product3(&r_lookup_vec);
         let r_accumulated_vec = accproduct3(&r_lookup_vec);
@@ -142,7 +142,7 @@ impl<E: PairingEngine> Proof<E> {
             &row_index,
             &gamma,
             &chi,
-            &E::Fr::zero(),
+            &zeta,
         );
         let alpha_prod_vec = product3(&alpha_lookup_vec);
         let alpha_accumulated_vec = accproduct3(&alpha_lookup_vec);
