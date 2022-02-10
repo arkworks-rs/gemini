@@ -37,7 +37,6 @@ pub(crate) const PROTOCOL_NAME: &[u8] = b"GEMINI-v0";
 const SPACE_TIME_THRESHOLD: usize = 22;
 // const SUMCHECK_BUF_SIZE: usize = 1 << 20;
 
-
 // public modules
 
 pub mod errors;
@@ -53,5 +52,3 @@ pub mod subprotocols;
 pub mod circuit;
 mod misc;
 mod transcript;
-
-

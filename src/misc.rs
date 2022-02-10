@@ -334,6 +334,33 @@ pub fn joint_matrices<F: Field>(
     )
 }
 
+#[inline]
+pub fn evaluate_tensor_poly<F: Field>(elements: &[F], eval_point: F) -> F {
+    let mut res = F::one();
+    let mut s = eval_point;
+    for i in 0..elements.len() {
+        let tmp = F::one() + elements[i] * s;
+        res *= tmp;
+        s = s.square();
+    }
+    return res;
+}
+
+#[inline]
+pub fn evaluate_geometric_poly<F: Field>(rx: F, n: usize) -> F {
+    return (rx.pow(&[n as u64]) - F::one()) * ((rx - F::one()).inverse().unwrap());
+}
+
+#[inline]
+pub fn evaluate_index_poly<F: Field>(x: F, n: usize) -> F {
+    let inv = (F::one() - x).inverse().unwrap();
+    let inv_square = (F::one() - x).square().inverse().unwrap();
+    let x_n = x.pow(&[(n - 1) as u64]);
+    return x * (F::one() - x_n) * inv_square - F::from((n - 1) as u64) * x_n * x * inv;
+}
+
+
+
 #[test]
 fn test_linear_combination() {
     use ark_bls12_381::Fr;
@@ -352,4 +379,27 @@ fn test_linear_combination() {
     ];
     assert!(got.is_some());
     assert_eq!(got.unwrap(), expected);
+}
+
+#[test]
+fn test_evaluate_index_poly() {
+    use ark_bls12_381::Fr as F;
+    use ark_ff::UniformRand;
+    use ark_std::{One, Zero};
+    use num_bigint::BigUint;
+
+    let rng = &mut ark_std::test_rng();
+    let x = F::rand(rng);
+    let n = 147;
+    let res = evaluate_index_poly(x, n);
+
+    let mut expect = F::zero();
+    let mut tmp = F::one();
+    for i in 0..n {
+        expect += F::from(i as u64) * tmp;
+        tmp *= x;
+    }
+    let res_b: BigUint = res.into();
+    let expect_b: BigUint = expect.into();
+    assert!(res == expect);
 }

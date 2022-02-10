@@ -9,7 +9,8 @@ use crate::misc::{hadamard, powers, product_matrix_vector, tensor};
 use crate::snark::Proof;
 use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
-use crate::{VerificationError, VerificationResult, PROTOCOL_NAME};
+use crate::errors::{VerificationError, VerificationResult};
+use crate::PROTOCOL_NAME;
 
 impl<E: PairingEngine> Proof<E> {
     /// Verification function for SNARK proof.

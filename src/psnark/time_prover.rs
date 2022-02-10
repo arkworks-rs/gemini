@@ -12,7 +12,8 @@ use crate::misc::{
     evaluate_le, hadamard, ip, joint_matrices, linear_combination, powers, powers2,
     product_matrix_vector, sum_matrices, tensor,
 };
-use crate::subprotocols::entryproduct::time_prover::accumulated_product;
+
+use crate::subprotocols::entryproduct::time_prover::{accumulated_product, monic, right_rotation};
 use crate::subprotocols::entryproduct::EntryProduct;
 use crate::subprotocols::plookup::time_prover::{lookup, plookup};
 use crate::subprotocols::sumcheck::{
@@ -36,9 +37,9 @@ fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
 
 fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
     vec![
-        accumulated_product(&v[0]),
-        accumulated_product(&v[1]),
-        accumulated_product(&v[2]),
+        accumulated_product(&monic(&v[0])),
+        accumulated_product(&monic(&v[1])),
+        accumulated_product(&monic(&v[2])),
     ]
 }
 
@@ -161,6 +162,7 @@ impl<E: PairingEngine> Proof<E> {
         accumulated_vec.extend_from_slice(&z_accumulated_vec);
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
+        // TODO: Not sure if this sorted polynomial is sound.
         let polynomials = [&r_lookup_vec[2], &alpha_lookup_vec[2], &z_lookup_vec[2]];
         let sorted_commitments = ck.batch_commit(polynomials);
         end_timer!(sorted_commitments_time);
@@ -175,7 +177,7 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
         transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
 
-        let mut entry_products = EntryProduct::new_time_batch(
+        let entry_products = EntryProduct::new_time_batch(
             &mut transcript,
             ck,
             &lookup_vec,
@@ -196,17 +198,17 @@ impl<E: PairingEngine> Proof<E> {
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
         let mut polynomials = vec![&ralpha_star];
-        polynomials.extend(accumulated_vec.iter());
+        polynomials.extend(&accumulated_vec);
         let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(&polynomials, &[psi], &open_chal);
 
         let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&ralpha_star, &psi)];
-        accumulated_vec
-            .iter()
-            .for_each(|v| ralpha_star_acc_mu_evals.push(evaluate_le(&v, &psi)));
+        accumulated_vec.iter().for_each(|v| {
+            ralpha_star_acc_mu_evals.push(evaluate_le(&v, &psi));
+        });
 
         let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), &second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_star, &val_b), &second_challenges_head);
-        // let s_2_prime = scalar_prod(&hadamard(&alpha_star, &val_c), &second_challenges);
+        // let s_2_prime = ip(&hadamard(&alpha_star, &val_c), &second_challenges_head);
         // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
         ralpha_star_acc_mu_evals
@@ -215,26 +217,23 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
         let mut provers = Vec::new();
-        provers.append(&mut entry_products.provers);
+        provers.extend(entry_products.provers);
 
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&ralpha_star, &second_challenges_head),
             &val_a,
             &E::Fr::one(),
         ))));
-
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&r_star, &second_challenges_head),
             &val_b,
             &E::Fr::one(),
         ))));
-
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&alpha_star, &second_challenges_head),
             &val_c,
             &E::Fr::one(),
         ))));
-
         provers.push(Box::new(TimeProver::new(Witness::new(
             &r_star,
             &alpha_star,
@@ -259,12 +258,26 @@ impl<E: PairingEngine> Proof<E> {
             &r_lookup_vec[2],
             &alpha_lookup_vec[2],
             &z_lookup_vec[2],
+            &accumulated_vec[0],
+            &accumulated_vec[1],
+            &accumulated_vec[2],
+            &accumulated_vec[3],
+            &accumulated_vec[4],
+            &accumulated_vec[5],
+            &accumulated_vec[6],
+            &accumulated_vec[7],
+            &accumulated_vec[8],
         ];
 
         let twist_powers2 = powers2(entry_products.chal, third_proof.challenges.len());
 
+        let shift_monic_lookup_vec = lookup_vec
+            .iter()
+            .map(|v| right_rotation(&(monic(&v))))
+            .collect::<Vec<_>>();
         let mut third_proof_vec = Vec::new();
-        third_proof_vec.extend(&lookup_vec);
+
+        third_proof_vec.extend(&shift_monic_lookup_vec);
         third_proof_vec.extend(&[&val_a, &val_b, &val_c, &alpha_star]);
 
         // third_proof.challenges might be longer than second_proof.challenges because of
@@ -287,7 +300,7 @@ impl<E: PairingEngine> Proof<E> {
                 &body_polynomials_0[..],
                 &hadamard(&third_proof.challenges, &twist_powers2)[..],
             ),
-            (&third_proof_vec, &third_proof.challenges[..]),
+            (&third_proof_vec[..], &third_proof.challenges[..]),
             (&[&z_star], &second_proof.challenges[..]),
             (
                 &[&ralpha_star, &r_star, &alpha_star],

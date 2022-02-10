@@ -31,7 +31,7 @@ pub(crate) fn right_rotation<T: Clone>(v: &[T]) -> Vec<T> {
 /// \\[
 /// (f_0f_1\cdots f_{n-1} , f_1f_2\cdots f_{n-1}, \dots, \prod_{j \leq i }f_j, \dots, f_{n-2}f_{n-1}, f_{n-1})
 /// \\]
-pub fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
+pub(crate) fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
     let mut acc_v = v
         .iter()
         .rev()
@@ -87,7 +87,7 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             .iter()
             .zip(acc_vs.iter())
             .map(|(rrot_v, acc_v)| {
-                let witness = Witness::new(rrot_v, acc_v, &chal);
+                let witness = Witness::new(acc_v, rrot_v, &chal);
                 Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>
             })
             .collect::<Vec<_>>();
@@ -133,7 +133,7 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             chal * evaluate_le(&acc_v, &chal) + claimed_product - chal.pow(&[acc_v.len() as u64]),
         ];
 
-        let witness = Witness::new(&rrot_v, &acc_v, &chal);
+        let witness = Witness::new(&acc_v, &rrot_v, &chal);
         let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>];
         let msgs = ProverMsgs {
             acc_v_commitments,
