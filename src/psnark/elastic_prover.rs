@@ -370,12 +370,12 @@ impl<E: PairingEngine> Proof<E> {
         );
         let body_polynomials_1 = &lincomb!(
             (
-                pl_set_sh_alpha,
-                pl_subset_sh_alpha,
-                pl_sorted_sh_alpha,
                 pl_set_sh_r,
                 pl_subset_sh_r,
                 pl_sorted_sh_r,
+                pl_set_sh_alpha,
+                pl_subset_sh_alpha,
+                pl_sorted_sh_alpha,
                 pl_set_sh_z,
                 pl_subset_sh_z,
                 pl_sorted_sh_z,
@@ -387,7 +387,7 @@ impl<E: PairingEngine> Proof<E> {
             &tc_challenges
         );
         let body_polynomials_2 = &z_star;
-        let body_polynomials_3 = &lincomb!((r_star, alpha_star, ralpha_star), &tc_challenges);
+        let body_polynomials_3 = &lincomb!((ralpha_star, r_star, alpha_star), &tc_challenges);
 
         let psi_squares = powers2(psi, sumcheck3.challenges.len());
         // 1st challenges:
@@ -425,6 +425,7 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|c| transcript.append_commitment(b"commitment", c));
 
         let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
         let mut folded_polynomials_evaluations = vec![];
@@ -455,22 +456,16 @@ impl<E: PairingEngine> Proof<E> {
                 .map(|(x, y)| [x, y]),
         );
 
+        let field_row = IntoField::<_, E::Fr>::new(&row);
+        let field_col = IntoField::<_, E::Fr>::new(&col);
         let base_polynomials_evaluations = vec![
             evaluate_base_polynomial(&mut transcript, &r1cs.witness, &eval_points),
             evaluate_base_polynomial(&mut transcript, &ralpha_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &r_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &alpha_star, &eval_points),
             evaluate_base_polynomial(&mut transcript, &z_star, &eval_points),
-            evaluate_base_polynomial(
-                &mut transcript,
-                &IntoField::<_, E::Fr>::new(&row),
-                &eval_points,
-            ),
-            evaluate_base_polynomial(
-                &mut transcript,
-                &IntoField::<_, E::Fr>::new(&col),
-                &eval_points,
-            ),
+            evaluate_base_polynomial(&mut transcript, &field_row, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &field_col, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_a, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
@@ -478,58 +473,71 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &pl_sorted_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_alpha, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_z, &eval_points),
-            // accumulated polynomials alpha*
-            evaluate_base_polynomial(&mut transcript, &pl_set_acc_alpha, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_alpha, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_alpha, &eval_points),
             // accumulated polynomials r*
             evaluate_base_polynomial(&mut transcript, &pl_set_acc_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_subset_acc_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_r, &eval_points),
+            // accumulated polynomials alpha*
+            evaluate_base_polynomial(&mut transcript, &pl_set_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_subset_acc_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_alpha, &eval_points),
             // accumulated polynomials z*
             evaluate_base_polynomial(&mut transcript, &pl_set_acc_z, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_subset_acc_z, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_z, &eval_points),
         ];
 
-        base_polynomials_evaluations
-            .iter()
-            .flatten()
-            .for_each(|e| transcript.append_scalar(b"eval", e));
         folded_polynomials_evaluations
             .iter()
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
-        // XXXX are the base polynomials added in the snark??
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.len()
-            + 3 * base_polynomials_evaluations.len(); // adjuct with the numebr of base polynomials
+        let open_chal = E::Fr::one();
+
+        let open_chal_len = 1000;//folded_polynomials_evaluations.len() * tensorcheck_foldings_2.depth()
+          //  + 3 * base_polynomials_evaluations.len();
         let open_chals = powers(open_chal, open_chal_len);
 
+        let open_chals_0 = &open_chals[12..];
+        let open_chals_1 = &open_chals_0[tensorcheck_foldings_0.depth()..];
+        let open_chals_2 = &open_chals_1[tensorcheck_foldings_1.depth()..];
+        let open_chals_3 = &open_chals_2[tensorcheck_foldings_2.depth()..];
+
         // do this for each element.
-        let evaluation_proof: crate::kzg::EvaluationProof<E> = [
-            ck.open_multi_points(&r1cs.witness, &eval_points).1,
-            ck.open_multi_points(&ralpha_star, &eval_points).1,
-            ck.open_multi_points(&r_star, &eval_points).1,
-            ck.open_multi_points(&alpha_star, &eval_points).1,
-            ck.open_multi_points(&z_star, &eval_points).1,
-            ck.open_multi_points(&val_a, &eval_points).1,
-            ck.open_multi_points(&val_b, &eval_points).1,
-            ck.open_multi_points(&val_c, &eval_points).1,
-            ck.open_multi_points(&pl_sorted_r, &eval_points).1,
-            ck.open_multi_points(&pl_sorted_z, &eval_points).1,
-            ck.open_folding(tensorcheck_foldings_0, &eval_points, &open_chals[3..])
-                .1,
-            ck.open_folding(tensorcheck_foldings_1, &eval_points, &open_chals[3..])
-                .1,
-            ck.open_folding(tensorcheck_foldings_2, &eval_points, &open_chals[3..])
-                .1,
-            ck.open_folding(tensorcheck_foldings_3, &eval_points, &open_chals[3..])
-                .1,
-        ]
-        .into_iter()
-        .sum();
+        use ark_ec::{AffineCurve, ProjectiveCurve};
+        let evaluation_proof = crate::psnark::EvaluationProof(
+            ck.open_multi_points(&r1cs.witness, &eval_points).1.0.mul(open_chals[0]).into_affine() +
+            ck.open_multi_points(&ralpha_star, &eval_points).1.0.mul(open_chals[1]).into_affine() +
+            ck.open_multi_points(&r_star, &eval_points).1.0.mul(open_chals[2]).into_affine() +
+            ck.open_multi_points(&alpha_star, &eval_points).1.0.mul(open_chals[3]).into_affine() +
+            ck.open_multi_points(&z_star, &eval_points).1.0.mul(open_chals[4]).into_affine() +
+            ck.open_multi_points(&field_row, &eval_points).1.0.mul(open_chals[5]).into_affine() +
+            ck.open_multi_points(&field_col, &eval_points).1.0.mul(open_chals[6]).into_affine() +
+            ck.open_multi_points(&val_a, &eval_points).1.0.mul(open_chals[7]).into_affine() +
+            ck.open_multi_points(&val_b, &eval_points).1.0.mul(open_chals[8]).into_affine() +
+            ck.open_multi_points(&val_c, &eval_points).1.0.mul(open_chals[9]).into_affine() +
+            ck.open_multi_points(&pl_sorted_r, &eval_points).1.0.mul(open_chals[10]).into_affine() +
+            ck.open_multi_points(&pl_sorted_alpha, &eval_points).1.0.mul(open_chals[10]).into_affine() +
+            ck.open_multi_points(&pl_sorted_z, &eval_points).1.0.mul(open_chals[11]).into_affine() +
+            ck.open_multi_points(&pl_set_acc_r, &eval_points).1.0 +
+            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1.0 +
+            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1.0 +
+            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1.0 +
+            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points).1.0 +
+            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points).1.0 +
+            ck.open_multi_points(&pl_set_acc_z, &eval_points).1.0 +
+            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1.0 +
+            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1.0 +
+            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
+                 .1.0 +
+            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
+                .1.0 +
+            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
+                .1.0 +
+            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
+                .1.0
+        );
 
         let tensorcheck_proof = TensorcheckProof {
             folded_polynomials_commitments,

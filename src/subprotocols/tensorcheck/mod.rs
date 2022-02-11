@@ -256,6 +256,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = E::Fr::one();
 
         let evaluation_proof = ck.batch_open_multi_points(
             &all_polynomials[..],

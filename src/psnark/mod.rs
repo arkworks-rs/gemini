@@ -23,6 +23,7 @@ use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The preprocessing SNARK proof, containing all prover messages.
 #[allow(unused)]
+#[derive(PartialEq, Eq)]
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,
