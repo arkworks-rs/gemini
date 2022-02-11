@@ -58,6 +58,7 @@ where
         self.coefficients.len()
     }
 }
+
 /// Iterator of the polynomial tree.
 pub struct FoldedPolynomialTreeIter<'a, F, I> {
     challenges: &'a [F],

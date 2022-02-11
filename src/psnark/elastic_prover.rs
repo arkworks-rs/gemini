@@ -8,8 +8,8 @@ use ark_std::One;
 use merlin::Transcript;
 
 use crate::circuit::R1csStream;
-use crate::iterable::Iterable;
 use crate::iterable::slice::IterableRange;
+use crate::iterable::Iterable;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::{
@@ -17,12 +17,12 @@ use crate::psnark::streams::{
     LookupStreamer, LookupTensorStreamer, TensorStreamer,
 };
 use crate::psnark::Proof;
-use crate::subprotocols::entryproduct::streams::{entry_product_streams, NMonic};
+use crate::subprotocols::entryproduct::streams::entry_product_streams;
 use crate::subprotocols::entryproduct::EntryProduct;
 use crate::subprotocols::plookup::streams::plookup_streams;
 use crate::subprotocols::sumcheck::proof::Sumcheck;
-use crate::subprotocols::sumcheck::ElasticProver;
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
+use crate::subprotocols::sumcheck::ElasticProver;
 use crate::subprotocols::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
@@ -185,13 +185,16 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
         let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
+        let idx_r = IterableRange(rs.len());
+        let idx_alpha = IterableRange(alphas.len());
         let idx_z = IterableRange(r1cs.z.len());
+
+        let hashed_alpha = AlgebraicHash::new(&alphas, &idx_alpha, zeta);
+        let hashed_alphastar = AlgebraicHash::new(&alpha_star, &row, zeta);
+        let hashed_r = AlgebraicHash::new(&rs, &idx_r, zeta);
+        let hashed_rstar = AlgebraicHash::new(&r_star, &row, zeta);
         let hashed_z = AlgebraicHash::new(&r1cs.z, &idx_z, zeta);
         let hashed_zstar = AlgebraicHash::new(&z_star, &col, zeta);
-        let hashed_r = AlgebraicHash::new(&rs, &idx_z, zeta);
-        let hashed_rstar = AlgebraicHash::new(&r_star, &col, zeta);
-        let hashed_alpha = AlgebraicHash::new(&alphas, &idx_z, zeta);
-        let hashed_alphastar = AlgebraicHash::new(&alpha_star, &col, zeta);
 
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
             plookup_streams(&hashed_alphastar, &hashed_alpha, &row_sorted, gamma, chi);
@@ -203,13 +206,13 @@ impl<E: PairingEngine> Proof<E> {
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();
         let subset_alpha_ep = pl_subset_alpha.iter().product();
-        let sorted_alpha_ep = pl_sorted_alpha.iter().product();
+        let sorted_alpha_ep = pl_sorted_alpha.iter().product::<E::Fr>();
         let set_r_ep = pl_set_r.iter().product();
         let subset_r_ep = pl_subset_r.iter().product();
-        let sorted_r_ep = pl_sorted_r.iter().product();
+        let sorted_r_ep = pl_sorted_r.iter().product::<E::Fr>();
         let set_z_ep = pl_set_z.iter().product();
         let subset_z_ep = pl_subset_z.iter().product();
-        let sorted_z_ep = pl_sorted_z.iter().product();
+        let sorted_z_ep = pl_sorted_z.iter().product::<E::Fr>();
         // compute the commitments to the sorted polynomials
         let sorted_alpha_commitment = ck.commit(&pl_sorted_alpha);
         let sorted_r_commitment = ck.commit(&pl_sorted_r);
@@ -277,16 +280,6 @@ impl<E: PairingEngine> Proof<E> {
         let (pl_set_sh_z, pl_set_acc_z) = entry_product_streams(&pl_set_z);
         let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
         let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
-
-        let pl_set_acc_r = NMonic(&pl_set_acc_r);
-        let pl_subset_acc_r = NMonic(&pl_subset_acc_r);
-        let pl_sorted_acc_r = NMonic(&pl_sorted_acc_r);
-        let pl_set_acc_alpha = NMonic(&pl_set_acc_alpha);
-        let pl_subset_acc_alpha = NMonic(&pl_subset_acc_alpha);
-        let pl_sorted_acc_alpha = NMonic(&pl_sorted_acc_alpha);
-        let pl_set_acc_z = NMonic(&pl_set_acc_z);
-        let pl_subset_acc_z = NMonic(&pl_subset_acc_z);
-        let pl_sorted_acc_z = NMonic(&pl_sorted_acc_z);
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
         let open_chals = powers(open_chal, 10);

@@ -95,13 +95,11 @@ impl<E: PairingEngine> Proof<E> {
         let z_r_commitments = ck.batch_commit(vec![&ralpha_star, &r_star, &alpha_star, &z_star]);
         end_timer!(z_r_commitments_time);
 
-        // MXXX: changed this to a more descriptive transcript, and to be consistent with the elastic prover.
         transcript.append_commitment(b"ra*", &z_r_commitments[0]);
         transcript.append_commitment(b"rb*", &z_r_commitments[1]);
         transcript.append_commitment(b"rc*", &z_r_commitments[2]);
         transcript.append_commitment(b"z*", &z_r_commitments[3]);
 
-        // MXXX: changed "eta" to "chal"
         let eta = transcript.get_challenge::<E::Fr>(b"chal");
         let challenges = powers(eta, 3);
 

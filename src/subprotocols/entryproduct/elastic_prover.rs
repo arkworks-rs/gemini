@@ -20,7 +20,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
     EntryProduct<
         E,
         ElasticProver<
-            SpaceProver<E::Fr, RightRotationStreamer<'a, E::Fr, S>, ProductStream<'a, E::Fr, S>>,
+            SpaceProver<E::Fr, ProductStream<'a, E::Fr, S>, RightRotationStreamer<'a, E::Fr, S>>,
             TimeProver<E::Fr>,
         >,
     >
@@ -48,7 +48,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
             chal * evaluate_be(acc_v.iter(), &chal) + claimed_product
                 - chal.pow(&[acc_v.len() as u64]),
         ];
-        let provers = vec![ElasticProver::new(rrot_v, acc_v, chal)];
+        let provers = vec![ElasticProver::new(acc_v, rrot_v, chal)];
         let msgs = ProverMsgs {
             acc_v_commitments,
             claimed_sumchecks,
@@ -105,7 +105,7 @@ macro_rules! impl_elastic_batch {
                 let claimed_sumcheck =  acc_v_chal * chal + claimed_product - chal_n;
 
                 claimed_sumchecks.push(claimed_sumcheck);
-                let sumcheck_prover = ElasticProver::new(rrot_v, acc_v, chal);
+                let sumcheck_prover = ElasticProver::new(acc_v, rrot_v, chal);
                 provers.push(Box::new(sumcheck_prover));
             )*
 
@@ -121,11 +121,11 @@ macro_rules! impl_elastic_batch {
 
 impl<'a, E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
     // lets gooooo
-    // impl_elastic_batch!(A0, A1, A2);
-    // impl_elastic_batch!(A0, A1, A2, A3);
-    // impl_elastic_batch!(A0, A1, A2, A3, A4);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4);
     // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5);
-    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6);
-    // impl_elastic_batch!(A0, A1, A2, A3, A4, A5, A6, A7);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6);
+    // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6, A7);
     impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3, A4, A5, A6, A7, A8);
 }

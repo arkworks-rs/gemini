@@ -24,7 +24,7 @@ where
     F: Field,
 {
     pub fn new(elt_stream: &'a EltS, idx_stream: &'a IdxS, chal: F) -> Self {
-        assert_eq!(elt_stream.len(), idx_stream.len());
+        // assert_eq!(elt_stream.len(), idx_stream.len());
         Self {
             elt_stream,
             idx_stream,

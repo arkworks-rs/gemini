@@ -46,3 +46,40 @@ fn test_entry_product_consistency() {
     let ep_space = EntryProduct::new_elastic(elastic_transcript, &stream_ck, &v_stream, product);
     assert_eq!(ep_time.msgs, ep_space.msgs)
 }
+
+#[test]
+fn test_sumcheck_inputs_consistency() {
+    use super::streams::{ProductStream, RightRotationStreamer};
+    use crate::iterable::Iterable;
+    use crate::iterable::Reversed;
+    use ark_bls12_381::Fr as F;
+    use ark_ff::UniformRand;
+    use ark_std::test_rng;
+    use ark_std::vec::Vec;
+    use ark_std::One;
+
+    let rng = &mut test_rng();
+    let e = F::rand(rng);
+
+    let vector = ark_std::iter::repeat(e).take(5).collect::<Vec<_>>();
+
+    // time-efficient
+    let monic_v = monic(&vector);
+    let rrot_v = right_rotation(&monic_v);
+    let acc_v = accumulated_product(&monic_v);
+
+    // space-efficient
+    let vector_stream = Reversed::new(&vector[..]);
+    let mut rrot_v_stream = RightRotationStreamer::new(&vector_stream, &F::one())
+        .iter()
+        .cloned()
+        .collect::<Vec<_>>();
+    let mut acc_v_stream = ProductStream::<F, _>::new(&vector_stream)
+        .iter()
+        .collect::<Vec<_>>();
+    acc_v_stream.reverse();
+    rrot_v_stream.reverse();
+
+    assert_eq!(&acc_v_stream, &acc_v);
+    assert_eq!(&rrot_v_stream, &rrot_v);
+}
