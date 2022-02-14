@@ -90,9 +90,26 @@ impl<E: PairingEngine> Proof<E> {
         let subclaim_2 =
             Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
 
+        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
+
+        vec![
+            self.sorted_alpha_commitment,
+            self.sorted_r_commitment,
+            self.sorted_z_commitment,
+        ]
+        .iter()
+        .zip(
+            vec![
+                "sorted_alpha_commitment",
+                "sorted_r_commitment",
+                "sorted_z_commitment",
+            ]
+            .iter(),
+        )
+        .for_each(|(c, s)| transcript.append_commitment(s.as_bytes(), c));
+
         let y = transcript.get_challenge::<E::Fr>(b"gamma");
         let z = transcript.get_challenge::<E::Fr>(b"chi");
-        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
 
         vec![
             self.set_alpha_ep,
@@ -115,22 +132,6 @@ impl<E: PairingEngine> Proof<E> {
             .iter(),
         )
         .for_each(|(c, s)| transcript.append_scalar(s.as_bytes(), c));
-
-        vec![
-            self.sorted_alpha_commitment,
-            self.sorted_r_commitment,
-            self.sorted_z_commitment,
-        ]
-        .iter()
-        .zip(
-            vec![
-                "sorted_alpha_commitment",
-                "sorted_r_commitment",
-                "sorted_z_commitment",
-            ]
-            .iter(),
-        )
-        .for_each(|(c, s)| transcript.append_commitment(s.as_bytes(), c));
 
         self.ep_msgs
             .acc_v_commitments
@@ -285,31 +286,24 @@ impl<E: PairingEngine> Proof<E> {
         tmp *= batch_consistency;
 
         direct_base_polynomials_evaluations_2[0] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[10][1],
                 beta,
+                y,
+                z,
+                zeta,
+                set_len + num_non_zero,
             );
-        // * compute_plookup_set_eval(
-        //     self.tensorcheck_proof.base_polynomials_evaluations[10][1],
-        //     beta,
-        //     y,
-        //     z,
-        //     zeta,
-        //     (1 << subclaim_1.challenges.len()) + num_non_zero,
-        // );
         direct_base_polynomials_evaluations_2[1] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[10][2],
                 -beta,
+                y,
+                z,
+                zeta,
+                set_len + num_non_zero,
             );
-        // * compute_plookup_set_eval(
-        //     self.tensorcheck_proof.base_polynomials_evaluations[10][2],
-        //     -beta,
-        //     y,
-        //     z,
-        //     zeta,
-        //     (1 << subclaim_1.challenges.len()) + num_non_zero,
-        // );
+        // assert!(false);
         tmp *= batch_consistency;
         //
         // lookup alpha*
@@ -358,14 +352,22 @@ impl<E: PairingEngine> Proof<E> {
         tmp *= batch_consistency;
         //
         direct_base_polynomials_evaluations_2[0] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[11][1],
                 beta,
+                y,
+                z,
+                zeta,
+                set_len + num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[11][2],
                 -beta,
+                y,
+                z,
+                zeta,
+                set_len + num_non_zero,
             );
         tmp *= batch_consistency;
         //
@@ -423,14 +425,22 @@ impl<E: PairingEngine> Proof<E> {
         tmp *= batch_consistency;
         //
         direct_base_polynomials_evaluations_2[0] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[12][1],
                 beta,
+                y,
+                z,
+                zeta,
+                num_variables + num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
-            * compute_entry_prod_eval(
+            * compute_plookup_set_eval(
                 self.tensorcheck_proof.base_polynomials_evaluations[12][2],
                 -beta,
+                y,
+                z,
+                zeta,
+                num_variables + num_non_zero,
             );
         tmp *= batch_consistency;
         //

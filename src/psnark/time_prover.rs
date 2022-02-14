@@ -15,7 +15,7 @@ use crate::misc::{
 
 use crate::subprotocols::entryproduct::time_prover::{accumulated_product, monic, right_rotation};
 use crate::subprotocols::entryproduct::EntryProduct;
-use crate::subprotocols::plookup::time_prover::{lookup, plookup};
+use crate::subprotocols::plookup::time_prover::{alg_hash, lookup, plookup, sorted};
 use crate::subprotocols::sumcheck::{
     proof::Sumcheck, time_prover::TimeProver, time_prover::Witness,
 };
@@ -119,9 +119,31 @@ impl<E: PairingEngine> Proof<E> {
         let second_challenges_head = &second_challenges[..num_non_zero];
         end_timer!(second_sumcheck_time);
 
+        let zeta = transcript.get_challenge(b"zeta");
+
+        let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
+        let sorted_polynomials = [
+            &sorted(
+                &alg_hash(&b_challenges, 0..b_challenges.len(), &zeta),
+                &row_index,
+            ),
+            &sorted(
+                &alg_hash(&c_challenges, 0..c_challenges.len(), &zeta),
+                &row_index,
+            ),
+            &sorted(&alg_hash(&r1cs.z, 0..r1cs.z.len(), &zeta), &col_index),
+        ];
+        let sorted_commitments = ck.batch_commit(sorted_polynomials);
+        end_timer!(sorted_commitments_time);
+
+        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);
+        transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
+        transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
+
         let gamma = transcript.get_challenge(b"gamma");
         let chi = transcript.get_challenge(b"chi");
-        let zeta = transcript.get_challenge(b"zeta");
+
+        // TODO: Make sorted vectors as input to the plookup function.
 
         let r_lookup_vec = plookup(&r_star, &b_challenges, &row_index, &gamma, &chi, &zeta);
         let r_prod_vec = product3(&r_lookup_vec);
@@ -145,21 +167,12 @@ impl<E: PairingEngine> Proof<E> {
         accumulated_vec.extend_from_slice(&alpha_accumulated_vec);
         accumulated_vec.extend_from_slice(&z_accumulated_vec);
 
-        let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
-        // TODO: Not sure if this sorted polynomial is sound.
-        let polynomials = [&r_lookup_vec[2], &alpha_lookup_vec[2], &z_lookup_vec[2]];
-        let sorted_commitments = ck.batch_commit(polynomials);
-        end_timer!(sorted_commitments_time);
-
         transcript.append_scalar(b"set_r_ep", &alpha_prod_vec[0]);
         transcript.append_scalar(b"subset_r_ep", &alpha_prod_vec[1]);
         transcript.append_scalar(b"set_r_ep", &r_prod_vec[0]);
         transcript.append_scalar(b"subset_r_ep", &r_prod_vec[1]);
         transcript.append_scalar(b"set_z_ep", &z_prod_vec[0]);
         transcript.append_scalar(b"subset_z_ep", &z_prod_vec[1]);
-        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);
-        transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
-        transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
 
         let entry_products = EntryProduct::new_time_batch(
             &mut transcript,
@@ -239,9 +252,9 @@ impl<E: PairingEngine> Proof<E> {
             &val_a,
             &val_b,
             &val_c,
-            &r_lookup_vec[2],
-            &alpha_lookup_vec[2],
-            &z_lookup_vec[2],
+            &sorted_polynomials[0],
+            &sorted_polynomials[1],
+            &sorted_polynomials[2],
             &accumulated_vec[0],
             &accumulated_vec[1],
             &accumulated_vec[2],

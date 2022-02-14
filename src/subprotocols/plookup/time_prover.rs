@@ -8,7 +8,7 @@ pub fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
 }
 
 #[inline]
-fn alg_hash<F, J>(v: &[F], index: J, chal: &F) -> Vec<F>
+pub(crate) fn alg_hash<F, J>(v: &[F], index: J, chal: &F) -> Vec<F>
 where
     J: IntoIterator,
     J::Item: Borrow<usize>,
