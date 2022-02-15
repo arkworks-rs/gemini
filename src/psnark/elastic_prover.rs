@@ -1,6 +1,6 @@
 //! Space-efficient preprocessing SNARK for R1CS.
-use ark_ec::PairingEngine;
-use ark_ff::Field;
+use ark_ec::{PairingEngine, ProjectiveCurve};
+use ark_ff::{Field, PrimeField};
 use ark_std::borrow::Borrow;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
@@ -10,7 +10,7 @@ use merlin::Transcript;
 use crate::circuit::R1csStream;
 use crate::iterable::slice::IterableRange;
 use crate::iterable::Iterable;
-use crate::kzg::CommitterKeyStream;
+use crate::kzg::{CommitterKeyStream, EvaluationProof};
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::{
     AlgebraicHash, HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream,
@@ -19,7 +19,7 @@ use crate::psnark::streams::{
 use crate::psnark::Proof;
 use crate::subprotocols::entryproduct::streams::entry_product_streams;
 use crate::subprotocols::entryproduct::EntryProduct;
-use crate::subprotocols::plookup::streams::plookup_streams;
+use crate::subprotocols::plookup::streams::{plookup_streams, SortedStreamer};
 use crate::subprotocols::sumcheck::proof::Sumcheck;
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
 use crate::subprotocols::sumcheck::ElasticProver;
@@ -181,9 +181,9 @@ impl<E: PairingEngine> Proof<E> {
 
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
-        let gamma = transcript.get_challenge(b"gamma");
-        let chi = transcript.get_challenge(b"chi");
-        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
+        let zeta = transcript.get_challenge(b"zeta");
+        println!("{}", zeta);
+
 
         let idx_r = IterableRange(rs.len());
         let idx_alpha = IterableRange(alphas.len());
@@ -195,6 +195,21 @@ impl<E: PairingEngine> Proof<E> {
         let hashed_rstar = AlgebraicHash::new(&r_star, &row, zeta);
         let hashed_z = AlgebraicHash::new(&r1cs.z, &idx_z, zeta);
         let hashed_zstar = AlgebraicHash::new(&z_star, &col, zeta);
+
+        let sorted_r = SortedStreamer::new(&hashed_r, &row_sorted);
+        let sorted_alpha = SortedStreamer::new(&hashed_alpha, &row_sorted);
+        let sorted_z = SortedStreamer::new(&hashed_z, &col);
+        // compute the commitments to the sorted polynomials
+        let sorted_r_commitment = ck.commit(&sorted_r);
+        let sorted_alpha_commitment = ck.commit(&sorted_alpha);
+        let sorted_z_commitment = ck.commit(&sorted_z);
+
+        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_alpha_commitment);
+        transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
+        transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
+
+        let gamma = transcript.get_challenge(b"gamma");
+        let chi = transcript.get_challenge(b"chi");
 
         let (pl_set_alpha, pl_subset_alpha, pl_sorted_alpha) =
             plookup_streams(&hashed_alphastar, &hashed_alpha, &row_sorted, gamma, chi);
@@ -213,10 +228,6 @@ impl<E: PairingEngine> Proof<E> {
         let set_z_ep = pl_set_z.iter().product();
         let subset_z_ep = pl_subset_z.iter().product();
         let sorted_z_ep = pl_sorted_z.iter().product::<E::Fr>();
-        // compute the commitments to the sorted polynomials
-        let sorted_alpha_commitment = ck.commit(&pl_sorted_alpha);
-        let sorted_r_commitment = ck.commit(&pl_sorted_r);
-        let sorted_z_commitment = ck.commit(&pl_sorted_z);
 
         transcript.append_scalar(b"set_r_ep", &set_alpha_ep);
         transcript.append_scalar(b"subset_r_ep", &subset_alpha_ep);
@@ -224,9 +235,6 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_scalar(b"subset_r_ep", &subset_r_ep);
         transcript.append_scalar(b"set_z_ep", &set_z_ep);
         transcript.append_scalar(b"subset_z_ep", &subset_z_ep);
-        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_alpha_commitment);
-        transcript.append_commitment(b"sorted_r_commitment", &sorted_r_commitment);
-        transcript.append_commitment(b"sorted_z_commitment", &sorted_z_commitment);
 
         // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated,
         // so that its lifetime will not conflict with the lifetime of the `provers`.
@@ -470,9 +478,9 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &val_b, &eval_points),
             evaluate_base_polynomial(&mut transcript, &val_c, &eval_points),
             // sorted polynomials r*, alpha*, z*
-            evaluate_base_polynomial(&mut transcript, &pl_sorted_r, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &pl_sorted_alpha, &eval_points),
-            evaluate_base_polynomial(&mut transcript, &pl_sorted_z, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &sorted_r, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &sorted_alpha, &eval_points),
+            evaluate_base_polynomial(&mut transcript, &sorted_z, &eval_points),
             // accumulated polynomials r*
             evaluate_base_polynomial(&mut transcript, &pl_set_acc_r, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_subset_acc_r, &eval_points),
@@ -493,50 +501,48 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|e| transcript.append_scalar(b"eval", e));
 
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chal = E::Fr::one();
 
-        let open_chal_len = 1000;//folded_polynomials_evaluations.len() * tensorcheck_foldings_2.depth()
-          //  + 3 * base_polynomials_evaluations.len();
+        let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.depth()
+                          + 3 * base_polynomials_evaluations.len();
         let open_chals = powers(open_chal, open_chal_len);
 
-        let open_chals_0 = &open_chals[12..];
+        let open_chals_bas = open_chals[..22].iter().chain(&[E::Fr::one(); 4]).map(|x| x.into_repr()).collect::<Vec<_>>();
+        let open_chals_0 = &open_chals[22..];
         let open_chals_1 = &open_chals_0[tensorcheck_foldings_0.depth()..];
         let open_chals_2 = &open_chals_1[tensorcheck_foldings_1.depth()..];
         let open_chals_3 = &open_chals_2[tensorcheck_foldings_2.depth()..];
 
         // do this for each element.
-        use ark_ec::{AffineCurve, ProjectiveCurve};
-        let evaluation_proof = crate::psnark::EvaluationProof(
-            ck.open_multi_points(&r1cs.witness, &eval_points).1.0.mul(open_chals[0]).into_affine() +
-            ck.open_multi_points(&ralpha_star, &eval_points).1.0.mul(open_chals[1]).into_affine() +
-            ck.open_multi_points(&r_star, &eval_points).1.0.mul(open_chals[2]).into_affine() +
-            ck.open_multi_points(&alpha_star, &eval_points).1.0.mul(open_chals[3]).into_affine() +
-            ck.open_multi_points(&z_star, &eval_points).1.0.mul(open_chals[4]).into_affine() +
-            ck.open_multi_points(&field_row, &eval_points).1.0.mul(open_chals[5]).into_affine() +
-            ck.open_multi_points(&field_col, &eval_points).1.0.mul(open_chals[6]).into_affine() +
-            ck.open_multi_points(&val_a, &eval_points).1.0.mul(open_chals[7]).into_affine() +
-            ck.open_multi_points(&val_b, &eval_points).1.0.mul(open_chals[8]).into_affine() +
-            ck.open_multi_points(&val_c, &eval_points).1.0.mul(open_chals[9]).into_affine() +
-            ck.open_multi_points(&pl_sorted_r, &eval_points).1.0.mul(open_chals[10]).into_affine() +
-            ck.open_multi_points(&pl_sorted_alpha, &eval_points).1.0.mul(open_chals[10]).into_affine() +
-            ck.open_multi_points(&pl_sorted_z, &eval_points).1.0.mul(open_chals[11]).into_affine() +
-            ck.open_multi_points(&pl_set_acc_r, &eval_points).1.0 +
-            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1.0 +
-            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1.0 +
-            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1.0 +
-            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points).1.0 +
-            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points).1.0 +
-            ck.open_multi_points(&pl_set_acc_z, &eval_points).1.0 +
-            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1.0 +
-            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1.0 +
-            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
-                 .1.0 +
-            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
-                .1.0 +
-            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
-                .1.0 +
-            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
-                .1.0
+        let evaluation_proof = [
+            ck.open_multi_points(&r1cs.witness, &eval_points).1.0,
+            ck.open_multi_points(&ralpha_star, &eval_points).1.0,
+            ck.open_multi_points(&r_star, &eval_points).1.0,
+            ck.open_multi_points(&alpha_star, &eval_points).1.0,
+            ck.open_multi_points(&z_star, &eval_points).1.0,
+            ck.open_multi_points(&field_row, &eval_points).1.0,
+            ck.open_multi_points(&field_col, &eval_points).1.0,
+            ck.open_multi_points(&val_a, &eval_points).1.0,
+            ck.open_multi_points(&val_b, &eval_points).1.0,
+            ck.open_multi_points(&val_c, &eval_points).1.0,
+            ck.open_multi_points(&sorted_r, &eval_points).1.0,
+            ck.open_multi_points(&sorted_alpha, &eval_points).1.0,
+            ck.open_multi_points(&sorted_z, &eval_points).1.0,
+            ck.open_multi_points(&pl_set_acc_r, &eval_points).1.0,
+            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1.0,
+            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1.0,
+            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1.0,
+            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points).1.0,
+            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points).1.0,
+            ck.open_multi_points(&pl_set_acc_z, &eval_points).1.0,
+            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1.0,
+            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1.0,
+            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0).1.0,
+            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1).1.0,
+            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2).1.0,
+            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3).1.0
+        ];
+        let evaluation_proof = EvaluationProof(
+            ark_ec::msm::VariableBaseMSM::multi_scalar_mul(&evaluation_proof, &open_chals_bas).into_affine()
         );
 
         let tensorcheck_proof = TensorcheckProof {

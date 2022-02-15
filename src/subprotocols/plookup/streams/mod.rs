@@ -3,7 +3,7 @@ mod sorted_stream;
 mod subset_stream;
 
 pub use set_stream::LookupSetStreamer;
-pub use sorted_stream::LookupSortedStreamer;
+pub use sorted_stream::{LookupSortedStreamer, SortedStreamer};
 pub use subset_stream::LookupSubsetStreamer;
 
 use ark_ff::Field;

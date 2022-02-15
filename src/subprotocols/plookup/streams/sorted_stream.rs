@@ -1,3 +1,5 @@
+use core::marker::PhantomData;
+
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 
@@ -48,6 +50,46 @@ where
 
     fn len(&self) -> usize {
         self.base_streamer.len() + self.addr_streamer.len() + 1
+    }
+}
+
+
+#[derive(Clone, Copy)]
+pub struct SortedStreamer<'a, F, S, SA> {
+    base_streamer: &'a S,
+    addr_streamer: &'a SA,
+    _field: PhantomData<F>,
+}
+
+impl<'a, F, S, SA> SortedStreamer<'a, F, S, SA> {
+    pub fn new(base_streamer: &'a S, addr_streamer: &'a SA) -> Self {
+        Self {
+            base_streamer,
+            addr_streamer,
+            _field: PhantomData,
+        }
+    }
+}
+
+impl<'a, F, S, SA> Iterable for SortedStreamer<'a, F, S, SA>
+where
+    F: Field,
+    S: Iterable<Item=F>,
+    SA: Iterable,
+    SA::Item: Borrow<usize>,
+{
+    type Item = F;
+
+    type Iter = SortedIterator<F, S::Iter, SA::Iter>;
+
+    fn iter(&self) -> Self::Iter {
+        let base_iter = self.base_streamer.iter();
+        let addr_iter = self.addr_streamer.iter();
+        SortedIterator::new(base_iter, addr_iter, self.base_streamer.len())
+    }
+
+    fn len(&self) -> usize {
+        self.base_streamer.len() + self.addr_streamer.len()
     }
 }
 
