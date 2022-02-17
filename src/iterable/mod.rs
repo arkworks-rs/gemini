@@ -43,7 +43,7 @@ pub use slice::Reversed;
 ///
 /// # Efficency
 ///
-/// For efficiency, functions using iterables are often times relying on [`Borrow`](std::borrow::Borrow)
+/// For efficiency, functions using iterables are often times relying on [`Borrow`](ark_std::borrow::Borrow)
 /// in order to avoid copying the entire items.
 ///
 /// The `Iter` trait itself has a lifetime that is independent from the [`Iterable`] object.

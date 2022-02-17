@@ -14,7 +14,11 @@ renderMathInElement(document.body, {
     "\\defeq": ":=",
     "\\FF": "\\mathbb{F}",
     "\\GG": "\\mathbb{G}",
-    }
+    },
+    delimiters: [
+        {left: "$$", right: "$$", display: true},
+        {left: "$", right: "$", display: false},
+    ],
 });
 });
 </script>

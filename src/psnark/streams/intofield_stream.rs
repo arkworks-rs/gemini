@@ -35,7 +35,7 @@ where
     F: Field,
     S::Item: Borrow<usize>,
 {
-    pub fn new(iterable: &'a S) -> Self {
+    pub(crate) fn new(iterable: &'a S) -> Self {
         Self {
             iterable,
             _field: PhantomData,

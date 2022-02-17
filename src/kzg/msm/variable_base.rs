@@ -50,11 +50,11 @@ fn digits(a: &impl BigInteger, w: usize, num_bits: usize) -> Vec<i64> {
         let coef = carry + (bit_buf & window_mask); // coef = [0, 2^r)
 
         // Recenter coefficients from [0,2^w) to [-2^w/2, 2^w/2)
-        carry = (coef + (radix / 2) as u64) >> w;
-        *digit = ((coef as i64) - (carry << w) as i64) as i64;
+        carry = (coef + radix / 2) >> w;
+        *digit = (coef as i64) - (carry << w) as i64;
     }
 
-    digits[digits_count - 1] += ((carry << w) as i64) as i64;
+    digits[digits_count - 1] += (carry << w) as i64;
 
     digits
 }
@@ -108,7 +108,7 @@ impl VariableBaseMSM {
         };
 
         let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
-        let digits_count = (num_bits as usize + c - 1) / c;
+        let digits_count = (num_bits + c - 1) / c;
 
         let scalar_digits = scalars
             .iter()
