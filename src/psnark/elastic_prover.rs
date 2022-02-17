@@ -186,7 +186,6 @@ impl<E: PairingEngine> Proof<E> {
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let zeta = transcript.get_challenge(b"zeta");
 
-
         let idx_r = IterableRange(rs.len());
         let idx_alpha = IterableRange(alphas.len());
         let idx_z = IterableRange(r1cs.z.len());
@@ -509,10 +508,14 @@ impl<E: PairingEngine> Proof<E> {
         let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
 
         let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.depth()
-                          + 3 * base_polynomials_evaluations.len();
+            + 3 * base_polynomials_evaluations.len();
         let open_chals = powers(open_chal, open_chal_len);
 
-        let open_chals_bas = open_chals[..22].iter().chain(&[E::Fr::one(); 4]).map(|x| x.into_repr()).collect::<Vec<_>>();
+        let open_chals_bas = open_chals[..22]
+            .iter()
+            .chain(&[E::Fr::one(); 4])
+            .map(|x| x.into_repr())
+            .collect::<Vec<_>>();
         let open_chals_0 = &open_chals[22..];
         let open_chals_1 = &open_chals_0[tensorcheck_foldings_0.depth()..];
         let open_chals_2 = &open_chals_1[tensorcheck_foldings_1.depth()..];
@@ -520,35 +523,48 @@ impl<E: PairingEngine> Proof<E> {
 
         // do this for each element.
         let evaluation_proof = [
-            ck.open_multi_points(&r1cs.witness, &eval_points).1.0,
-            ck.open_multi_points(&ralpha_star, &eval_points).1.0,
-            ck.open_multi_points(&r_star, &eval_points).1.0,
-            ck.open_multi_points(&alpha_star, &eval_points).1.0,
-            ck.open_multi_points(&z_star, &eval_points).1.0,
-            ck.open_multi_points(&field_row, &eval_points).1.0,
-            ck.open_multi_points(&field_col, &eval_points).1.0,
-            ck.open_multi_points(&val_a, &eval_points).1.0,
-            ck.open_multi_points(&val_b, &eval_points).1.0,
-            ck.open_multi_points(&val_c, &eval_points).1.0,
-            ck.open_multi_points(&sorted_r, &eval_points).1.0,
-            ck.open_multi_points(&sorted_alpha, &eval_points).1.0,
-            ck.open_multi_points(&sorted_z, &eval_points).1.0,
-            ck.open_multi_points(&pl_set_acc_r, &eval_points).1.0,
-            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1.0,
-            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1.0,
-            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1.0,
-            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points).1.0,
-            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points).1.0,
-            ck.open_multi_points(&pl_set_acc_z, &eval_points).1.0,
-            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1.0,
-            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1.0,
-            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0).1.0,
-            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1).1.0,
-            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2).1.0,
-            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3).1.0
+            ck.open_multi_points(&r1cs.witness, &eval_points).1 .0,
+            ck.open_multi_points(&ralpha_star, &eval_points).1 .0,
+            ck.open_multi_points(&r_star, &eval_points).1 .0,
+            ck.open_multi_points(&alpha_star, &eval_points).1 .0,
+            ck.open_multi_points(&z_star, &eval_points).1 .0,
+            ck.open_multi_points(&field_row, &eval_points).1 .0,
+            ck.open_multi_points(&field_col, &eval_points).1 .0,
+            ck.open_multi_points(&val_a, &eval_points).1 .0,
+            ck.open_multi_points(&val_b, &eval_points).1 .0,
+            ck.open_multi_points(&val_c, &eval_points).1 .0,
+            ck.open_multi_points(&sorted_r, &eval_points).1 .0,
+            ck.open_multi_points(&sorted_alpha, &eval_points).1 .0,
+            ck.open_multi_points(&sorted_z, &eval_points).1 .0,
+            ck.open_multi_points(&pl_set_acc_r, &eval_points).1 .0,
+            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1 .0,
+            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1 .0,
+            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1 .0,
+            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points)
+                .1
+                 .0,
+            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points)
+                .1
+                 .0,
+            ck.open_multi_points(&pl_set_acc_z, &eval_points).1 .0,
+            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1 .0,
+            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1 .0,
+            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
+                .1
+                 .0,
+            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
+                .1
+                 .0,
+            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
+                .1
+                 .0,
+            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
+                .1
+                 .0,
         ];
         let evaluation_proof = EvaluationProof(
-            ark_ec::msm::VariableBaseMSM::multi_scalar_mul(&evaluation_proof, &open_chals_bas).into_affine()
+            ark_ec::msm::VariableBaseMSM::multi_scalar_mul(&evaluation_proof, &open_chals_bas)
+                .into_affine(),
         );
 
         let tensorcheck_proof = TensorcheckProof {

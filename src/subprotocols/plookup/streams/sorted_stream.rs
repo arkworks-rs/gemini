@@ -53,7 +53,6 @@ where
     }
 }
 
-
 #[derive(Clone, Copy)]
 pub struct SortedStreamer<'a, F, S, SA> {
     base_streamer: &'a S,
@@ -74,7 +73,7 @@ impl<'a, F, S, SA> SortedStreamer<'a, F, S, SA> {
 impl<'a, F, S, SA> Iterable for SortedStreamer<'a, F, S, SA>
 where
     F: Field,
-    S: Iterable<Item=F>,
+    S: Iterable<Item = F>,
     SA: Iterable,
     SA::Item: Borrow<usize>,
 {

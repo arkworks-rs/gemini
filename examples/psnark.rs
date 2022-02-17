@@ -58,7 +58,7 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let g2 = G2::prime_subgroup_generator();
     let r1cs_stream = dummy_r1cs_stream(rng, instance_size);
     let ck = CommitterKeyStream::<PE, _> {
-        powers_of_g: DummyStreamer::new(g1, instance_size*3 + 1),
+        powers_of_g: DummyStreamer::new(g1, instance_size * 3 + 1),
         powers_of_g2: vec![g2; 4],
     };
     println!("Proving an instance of log size  {}", instance_logsize);

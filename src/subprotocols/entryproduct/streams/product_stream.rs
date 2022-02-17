@@ -55,7 +55,7 @@ where
 {
     type Item = F;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
         let previous = self.current;
         if let Some(e) = self.stream.next() {

@@ -70,7 +70,7 @@ where
 {
     type Item = I::Item;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         let &index = self.index_stream.next()?.borrow();
         if self.current_height == index {
