@@ -1,5 +1,60 @@
 //! Elastic *non-preprocessing* SNARK for R1CS.
 //!
+//!
+//! # Protoocol overview
+//! Consider a prover $\prover$ as input a R1CS instance $(A, B, C, \vec x, \vec w)$ of size $N$ and
+//! a verifier taking as input a R1CS instance $(A, B, C, \vec x)$.
+//! We want to prove that $\vec z \defeq (\vec x, \vec w)$ is such that the R1CS relation is satisfied, i.e.:
+//!
+//! $$
+//! A \vec z \circ B \vec z = C \vec z
+//! $$
+//!
+//! The prover starts the protocol sending $\vec w$, and receiving
+//!  $\alpha \in \FF^\times$ from the verifier $\verifier$.
+//! $\prover$ constructs the vector $\vec r_C \defeq (1, \alpha, \dots, \alpha^N)$ and sends
+//!  $u_2 \defeq Cz \cdot \vec r_C$ to $\verifier$.
+//! The prover engages an inner product protocol to prove that;
+//!
+//! $$
+//! \langle Az \circ \vec r_C, Bz \rangle = u_2,
+//! $$
+//!
+//! This is done through the sumcheck protocol.
+//! Denote the randomnes with $\rho_0, \dots, \rho_{n-1} \in \FF^\times$, and with
+//! $\vec r_B \defeq \otimes_0^{n-1} (1, \rho_j)$.
+//! Denote $\vec r_A \defeq \vec r_B \circ \vec r_C$.
+//! This produces the following subclaims:
+//!
+//! $$
+//! \begin{aligned}
+//! \langle \vec r_A A, \vec z \rangle &= u_0 \\\\
+//! \langle \vec r_B B, \vec z \rangle &= u_1 \\\\
+//! \langle \vec r_C C, \vec z \rangle &= u_2
+//! \end{aligned}
+//! $$
+//!
+//! Which are proven with a second sumcheck: $\verifier$ sends $\eta \in \FF^\times$ and $\prover$
+//! engages a second sumcheck for:
+//!
+//! $$
+//! \langle \vec r_A A + \eta  \vec r_B B + \eta^2  \vec r_C C, \vec z \rangle =
+//! u_0 + \eta u_1 + \eta^2 u_2.
+//! $$
+//!
+//! producing two subclaims (let $\rho_0', \dots, \rho_{n-1}'$ denote the randomness of this new sumcheck):
+//!
+//! $$
+//! \begin{align}
+//! \langle \vec r_A A + \eta  \vec r_B B + \eta^2  \vec r_C C, \otimes_i (1, \rho'_i ) \rangle = s_0 \\\\
+//! \langle z, \otimes_i (1, \rho'_i ) \rangle = s_1
+//! \end{align}
+//! $$
+//!
+//! The first one can be checked internally by the verifier, while the second can be done via
+//! the tensorcheck protocol.
+
+
 mod elastic_prover;
 mod time_prover;
 mod verifier;
