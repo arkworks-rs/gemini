@@ -58,7 +58,7 @@ pub use slice::Reversed;
 /// We expect that, in the future, this trait will accomodate for additional streaming function, e.g.
 /// `Iterable::hadamard(&self, other: &Iterable)` to perform the hadamard product of two streams,
 /// or `Iterable::add(&self, other: &Iterable)` to perform the addition of two streams.
-pub trait Iterable {
+pub trait Iterable: Send + Sync {
     /// The type of the element being streamed.
     type Item;
     /// The type of the iterator being generated.
@@ -91,8 +91,9 @@ pub trait Iterable {
 
 impl<I> Iterable for I
 where
-    I: IntoIterator + Copy,
+    I: IntoIterator + Copy + Send + Sync,
     I::IntoIter: ExactSizeIterator,
+    I::Item: Sync + Send,
 {
     type Item = <I as IntoIterator>::Item;
     type Iter = <I as IntoIterator>::IntoIter;

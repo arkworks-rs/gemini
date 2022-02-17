@@ -2,7 +2,7 @@ use crate::iterable::Iterable;
 
 /// Given a stream for F(X),
 /// produce a stream for XF(X) + 1
-pub struct RightRotationStreamer<'a, F, S>(&'a S, F);
+pub struct RightRotationStreamer<'a, S: Iterable>(&'a S, S::Item);
 
 pub struct RightRotationIter<I>
 where
@@ -12,7 +12,7 @@ where
     base_iter: I,
 }
 
-impl<'a, S> RightRotationStreamer<'a, S::Item, S>
+impl<'a, S> RightRotationStreamer<'a, S>
 where
     S: Iterable,
     S::Item: Copy,
@@ -22,10 +22,10 @@ where
     }
 }
 
-impl<'a, S> Iterable for RightRotationStreamer<'a, S::Item, S>
+impl<'a, S> Iterable for RightRotationStreamer<'a, S>
 where
     S: Iterable,
-    S::Item: Copy,
+    S::Item: Copy + Send + Sync,
 {
     type Item = S::Item;
 

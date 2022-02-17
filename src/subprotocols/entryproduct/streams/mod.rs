@@ -11,7 +11,7 @@ use crate::iterable::Iterable;
 
 pub fn entry_product_streams<'a, S, F>(
     streamer: &'a S,
-) -> (RightRotationStreamer<'a, F, S>, ProductStream<'a, F, S>)
+) -> (RightRotationStreamer<'a, S>, ProductStream<'a, F, S>)
 where
     S: crate::iterable::Iterable<Item = F>,
     F: Field,
