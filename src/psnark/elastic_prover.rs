@@ -83,7 +83,7 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_scalar(b"zc(alpha)", &zc_alpha);
 
         // run the sumcheck for z_a and z_b with twist alpha
-        let sumcheck_time = start_timer!(|| "First sumcheck");
+        let sumcheck_time = start_timer!(|| "sumcheck1");
         let sumcheck1 = Sumcheck::new_space(&mut transcript, r1cs.z_a, r1cs.z_b, alpha);
         end_timer!(sumcheck_time);
 
@@ -179,10 +179,12 @@ impl<E: PairingEngine> Proof<E> {
             &challenges
         );
 
+        let sumcheck_time = start_timer!(|| "sumcheck2");
         let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
+        end_timer!(sumcheck_time);
+
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
         let zeta = transcript.get_challenge(b"zeta");
-        println!("{}", zeta);
 
 
         let idx_r = IterableRange(rs.len());
@@ -355,9 +357,13 @@ impl<E: PairingEngine> Proof<E> {
             psi,
         )));
 
+        let sumcheck_time = start_timer!(|| "sumcheck3");
         let sumcheck3 = Sumcheck::prove_batch(&mut transcript, provers);
+        end_timer!(sumcheck_time);
 
         // tensorcheck protocol
+        let tc_time = start_timer!(|| "tensorcheck");
+
         let tc_chal = transcript.get_challenge::<E::Fr>(b"batch_challenge");
         let tc_challenges = powers(tc_chal, 13);
 
@@ -551,6 +557,7 @@ impl<E: PairingEngine> Proof<E> {
             evaluation_proof,
             base_polynomials_evaluations,
         };
+        end_timer!(tc_time);
 
         end_timer!(psnark_time);
         Proof {

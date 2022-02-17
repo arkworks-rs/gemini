@@ -45,9 +45,7 @@ where
         match self {
             Self::Space(p) => {
                 if p.rounds() - p.round() < SPACE_TIME_THRESHOLD {
-                    let conversion_time = start_timer!(|| "Switching prover");
                     let mut time_prover = TimeProver::from(&*p);
-                    end_timer!(conversion_time);
                     time_prover.fold(challenge);
                     *self = Self::Time(time_prover);
                 } else {
