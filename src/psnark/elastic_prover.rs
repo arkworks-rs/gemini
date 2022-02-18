@@ -27,6 +27,11 @@ use crate::subprotocols::tensorcheck::{evaluate_folding, TensorcheckProof};
 use crate::transcript::GeminiTranscript;
 use crate::{lincomb, PROTOCOL_NAME};
 
+#[cfg(feature = "parallel")]
+use rayon::iter::{
+    IndexedParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator, ParallelIterator,
+};
+
 fn evaluate_base_polynomial<I, F>(
     transcript: &mut Transcript,
     base_polynomial: &I,
@@ -37,11 +42,11 @@ where
     I: Iterable,
     I::Item: Borrow<F>,
 {
-    let evaluations_w = [
-        evaluate_be(base_polynomial.iter(), &eval_points[0]),
-        evaluate_be(base_polynomial.iter(), &eval_points[1]),
-        evaluate_be(base_polynomial.iter(), &eval_points[2]),
-    ];
+    let mut evaluations_w = [F::zero(); 3];
+    cfg_iter!(eval_points)
+        .zip(cfg_iter_mut!(evaluations_w))
+        .for_each(|(eval_point, dst)| *dst = evaluate_be(base_polynomial.iter(), eval_point));
+
     evaluations_w
         .iter()
         .for_each(|e| transcript.append_scalar(b"eval", &e));
@@ -441,6 +446,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
+        let evaluations_time = start_timer!(|| "evaluations");
         let mut folded_polynomials_evaluations = vec![];
 
         folded_polynomials_evaluations.extend(
@@ -499,6 +505,7 @@ impl<E: PairingEngine> Proof<E> {
             evaluate_base_polynomial(&mut transcript, &pl_subset_acc_z, &eval_points),
             evaluate_base_polynomial(&mut transcript, &pl_sorted_acc_z, &eval_points),
         ];
+        end_timer!(evaluations_time);
 
         folded_polynomials_evaluations
             .iter()
@@ -544,6 +551,7 @@ impl<E: PairingEngine> Proof<E> {
             &open_chals[..22]
         );
         // do this for each element.
+        let open_time = start_timer!(|| "opening time");
         let evaluation_proof = EvaluationProof(
             ck.open_multi_points(&partial_eval_stream, &eval_points)
                 .1
@@ -561,6 +569,7 @@ impl<E: PairingEngine> Proof<E> {
                     .1
                      .0,
         );
+        end_timer!(open_time);
 
         let tensorcheck_proof = TensorcheckProof {
             folded_polynomials_commitments,
