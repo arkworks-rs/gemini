@@ -1,6 +1,6 @@
 //! Space-efficient preprocessing SNARK for R1CS.
-use ark_ec::{PairingEngine, ProjectiveCurve};
-use ark_ff::{Field, PrimeField};
+use ark_ec::PairingEngine;
+use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
@@ -511,60 +511,55 @@ impl<E: PairingEngine> Proof<E> {
             + 3 * base_polynomials_evaluations.len();
         let open_chals = powers(open_chal, open_chal_len);
 
-        let open_chals_bas = open_chals[..22]
-            .iter()
-            .chain(&[E::Fr::one(); 4])
-            .map(|x| x.into_repr())
-            .collect::<Vec<_>>();
         let open_chals_0 = &open_chals[22..];
         let open_chals_1 = &open_chals_0[tensorcheck_foldings_0.depth()..];
         let open_chals_2 = &open_chals_1[tensorcheck_foldings_1.depth()..];
         let open_chals_3 = &open_chals_2[tensorcheck_foldings_2.depth()..];
 
+        let partial_eval_stream = lincomb!(
+            (
+                r1cs.witness,
+                ralpha_star,
+                r_star,
+                alpha_star,
+                z_star,
+                field_row,
+                field_col,
+                val_a,
+                val_b,
+                val_c,
+                sorted_r,
+                sorted_alpha,
+                sorted_z,
+                pl_set_acc_r,
+                pl_subset_acc_r,
+                pl_sorted_acc_r,
+                pl_set_acc_alpha,
+                pl_subset_acc_alpha,
+                pl_sorted_acc_alpha,
+                pl_set_acc_z,
+                pl_subset_acc_z,
+                pl_sorted_acc_z
+            ),
+            &open_chals[..22]
+        );
         // do this for each element.
-        let evaluation_proof = [
-            ck.open_multi_points(&r1cs.witness, &eval_points).1 .0,
-            ck.open_multi_points(&ralpha_star, &eval_points).1 .0,
-            ck.open_multi_points(&r_star, &eval_points).1 .0,
-            ck.open_multi_points(&alpha_star, &eval_points).1 .0,
-            ck.open_multi_points(&z_star, &eval_points).1 .0,
-            ck.open_multi_points(&field_row, &eval_points).1 .0,
-            ck.open_multi_points(&field_col, &eval_points).1 .0,
-            ck.open_multi_points(&val_a, &eval_points).1 .0,
-            ck.open_multi_points(&val_b, &eval_points).1 .0,
-            ck.open_multi_points(&val_c, &eval_points).1 .0,
-            ck.open_multi_points(&sorted_r, &eval_points).1 .0,
-            ck.open_multi_points(&sorted_alpha, &eval_points).1 .0,
-            ck.open_multi_points(&sorted_z, &eval_points).1 .0,
-            ck.open_multi_points(&pl_set_acc_r, &eval_points).1 .0,
-            ck.open_multi_points(&pl_subset_acc_r, &eval_points).1 .0,
-            ck.open_multi_points(&pl_sorted_acc_r, &eval_points).1 .0,
-            ck.open_multi_points(&pl_set_acc_alpha, &eval_points).1 .0,
-            ck.open_multi_points(&pl_subset_acc_alpha, &eval_points)
-                .1
-                 .0,
-            ck.open_multi_points(&pl_sorted_acc_alpha, &eval_points)
-                .1
-                 .0,
-            ck.open_multi_points(&pl_set_acc_z, &eval_points).1 .0,
-            ck.open_multi_points(&pl_subset_acc_z, &eval_points).1 .0,
-            ck.open_multi_points(&pl_sorted_acc_z, &eval_points).1 .0,
-            ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
-                .1
-                 .0,
-            ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
-                .1
-                 .0,
-            ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
-                .1
-                 .0,
-            ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
-                .1
-                 .0,
-        ];
         let evaluation_proof = EvaluationProof(
-            ark_ec::msm::VariableBaseMSM::multi_scalar_mul(&evaluation_proof, &open_chals_bas)
-                .into_affine(),
+            ck.open_multi_points(&partial_eval_stream, &eval_points)
+                .1
+                 .0
+                + ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
+                    .1
+                     .0
+                + ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
+                    .1
+                     .0
+                + ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
+                    .1
+                     .0
+                + ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
+                    .1
+                     .0,
         );
 
         let tensorcheck_proof = TensorcheckProof {

@@ -27,7 +27,7 @@ impl<F: Field> RoundMsg<F> {
 }
 
 /// Prover trait interface for both time-efficient and space-efficient prover.
-pub trait Prover<F> : Send + Sync
+pub trait Prover<F>: Send + Sync
 where
     F: Field,
 {

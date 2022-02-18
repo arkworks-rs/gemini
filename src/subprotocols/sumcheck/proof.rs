@@ -5,8 +5,8 @@ use ark_std::boxed::Box;
 use ark_std::vec::Vec;
 
 use merlin::Transcript;
-#[cfg(feature= "parallel")]
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator};
+#[cfg(feature = "parallel")]
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::iterable::Iterable;
 use crate::subprotocols::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
