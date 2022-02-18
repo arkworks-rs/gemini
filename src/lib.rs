@@ -56,7 +56,6 @@
 #![deny(private_in_public)]
 #![deny(unused_allocation)]
 
-
 // Lints disable from other arkworks packages:
 // - trivial_casts: this causes errors for "trivial casts" when converting an Iterable `It` to
 // `dyn Iterable`.

@@ -22,10 +22,14 @@ where
 {
     type Item = F;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         // self.it.next().map(|x| F::from(2u64).pow(&[*x.borrow() as u64]))
         self.it.next().map(|x| F::from(*x.borrow() as u64))
+    }
+
+    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+        self.it.advance_by(n)
     }
 }
 

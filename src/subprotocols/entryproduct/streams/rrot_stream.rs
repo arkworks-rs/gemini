@@ -49,7 +49,7 @@ where
 {
     type Item = I::Item;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         match self.base_iter.next() {
             Some(e) => Some(e),

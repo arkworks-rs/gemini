@@ -31,7 +31,7 @@ where
 {
     type Item = F;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         let first = self.0.next()?;
         let second = self.1.next()?;

@@ -54,7 +54,6 @@
 //! The first one can be checked internally by the verifier, while the second can be done via
 //! the tensorcheck protocol.
 
-
 mod elastic_prover;
 mod time_prover;
 mod verifier;

@@ -141,7 +141,7 @@ where
 {
     type Item = F;
 
-    #[inline]
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         let index = *self.index.next()?.borrow();
         let mut value = F::one();

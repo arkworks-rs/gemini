@@ -80,10 +80,7 @@ where
                 self.row -= 1;
                 self.next()
             }
-            MatrixElement::Element((e, i)) => {
-                // Some((i, self.row, e))
-                Some((self.row, i, e))
-            }
+            MatrixElement::Element((e, i)) => Some((self.row, i, e)),
         }
     }
 }
@@ -108,6 +105,7 @@ where
 {
     type Item = (usize, usize, F);
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         match (self.current_a, self.current_b) {
             // If all streams are empty, return None
@@ -259,6 +257,7 @@ where
 {
     type Item = F;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         Some(self.0.next()?.2)
     }
@@ -276,6 +275,7 @@ where
 {
     type Item = usize;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.0.next()?;
         Some(item.0)
@@ -292,6 +292,7 @@ where
 {
     type Item = usize;
 
+    #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.0.next()?;
         Some(item.1)
@@ -457,7 +458,6 @@ where
         self.joint_len
     }
 }
-/////////////////////////////////////////////////////////
 
 #[test]
 fn test_joint_val() {
@@ -497,14 +497,13 @@ fn test_joint_val() {
 
 #[test]
 fn test_matrix() {
+    use ark_bls12_381::Fr;
+    use ark_std::test_rng;
+
     use crate::circuit::{
         generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit,
     };
-    use ark_std::test_rng;
-    // use crate::iterable::Reversed;
     use crate::iterable::dummy::Mat;
-
-    use ark_bls12_381::Fr;
 
     let rng = &mut test_rng();
     let num_constraints = 16;
@@ -513,10 +512,6 @@ fn test_matrix() {
 
     let circuit: Circuit<Fr> = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
-
-    // let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
-    // let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
-    // let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
 
     let acolm = matrix_into_rowmaj(&r1cs.a);
     let bcolm = matrix_into_rowmaj(&r1cs.b);
