@@ -20,7 +20,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
     EntryProduct<
         E,
         ElasticProver<
-            SpaceProver<E::Fr, ProductStream<'a, E::Fr, S>, RightRotationStreamer<'a, E::Fr, S>>,
+            SpaceProver<E::Fr, ProductStream<'a, E::Fr, S>, RightRotationStreamer<'a, S>>,
             TimeProver<E::Fr>,
         >,
     >

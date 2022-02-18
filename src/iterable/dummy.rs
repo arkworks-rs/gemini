@@ -27,12 +27,18 @@ pub struct DiagonalMatrixStreamer<T> {
     len: usize,
 }
 
-pub struct RepeatStreamer<'a, T> {
+pub struct RepeatStreamer<'a, T>
+where
+    T: Send + Sync,
+{
     m: &'a [T],
     repeat: usize,
 }
 
-impl<'a, T> Iterable for RepeatStreamer<'a, T> {
+impl<'a, T> Iterable for RepeatStreamer<'a, T>
+where
+    T: Send + Sync,
+{
     type Item = &'a T;
 
     type Iter = iter::Take<iter::Cycle<ark_std::slice::Iter<'a, T>>>;
@@ -46,7 +52,10 @@ impl<'a, T> Iterable for RepeatStreamer<'a, T> {
     }
 }
 
-impl<'a, T> RepeatStreamer<'a, T> {
+impl<'a, T> RepeatStreamer<'a, T>
+where
+    T: Send + Sync,
+{
     pub fn new(m: &'a [T], repeat: usize) -> Self {
         Self { m, repeat }
     }
@@ -58,7 +67,10 @@ pub struct RepeatMatrixStreamer<T> {
     block_size: usize,
 }
 
-impl<T: Copy> Iterable for RepeatMatrixStreamer<MatrixElement<T>> {
+impl<T> Iterable for RepeatMatrixStreamer<MatrixElement<T>>
+where
+    T: Send + Sync + Copy,
+{
     type Item = MatrixElement<T>;
 
     type Iter = RepeatMatrixIterator<T>;
@@ -129,7 +141,10 @@ pub struct SingleEntryStream<T> {
     len: usize,
 }
 
-impl<T: Copy + Zero> Iterable for SingleEntryStream<T> {
+impl<T> Iterable for SingleEntryStream<T>
+where
+    T: Copy + Zero + Send + Sync,
+{
     type Item = T;
     type Iter = iter::Chain<iter::Take<iter::Repeat<T>>, iter::Take<iter::Repeat<T>>>;
 
@@ -184,7 +199,10 @@ impl<T: PrimeField> Iterator for DiagonalMatrixIter<T> {
     }
 }
 
-impl<T: Copy> Iterable for DummyStreamer<T> {
+impl<T> Iterable for DummyStreamer<T>
+where
+    T: Send + Sync + Copy,
+{
     type Item = T;
     type Iter = iter::Take<iter::Repeat<T>>;
 

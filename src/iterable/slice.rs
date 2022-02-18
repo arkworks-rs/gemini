@@ -15,7 +15,7 @@ impl<'a, T> Reversed<'a, T> {
 
 impl<'a, T> Iterable for Reversed<'a, T>
 where
-    T: Copy,
+    T: Copy + Send + Sync,
 {
     type Item = &'a T;
 

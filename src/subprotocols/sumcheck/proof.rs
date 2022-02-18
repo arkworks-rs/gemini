@@ -5,6 +5,8 @@ use ark_std::boxed::Box;
 use ark_std::vec::Vec;
 
 use merlin::Transcript;
+#[cfg(feature= "parallel")]
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator, IndexedParallelIterator};
 
 use crate::iterable::Iterable;
 use crate::subprotocols::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
@@ -77,8 +79,8 @@ impl<F: Field> Sumcheck<F> {
             .collect::<Vec<_>>();
 
         for _ in 0..rounds {
-            // obtain next messages from each of the provers
-            let round_messages = provers.iter_mut().map(|p| {
+            // obtain the next message from each prover, if possible in parallel.
+            let round_messages = cfg_iter_mut!(provers).map(|p| {
                 p.next_message().unwrap_or_else(|| {
                     let final_foldings = p.final_foldings().expect(
                         "If next_message is None, we expect final foldings to be available",
@@ -88,8 +90,8 @@ impl<F: Field> Sumcheck<F> {
             });
             // compute the non-oracle messagein the sumcheck:
             let message = round_messages
-                .zip(coefficients.iter()) // take the combination of messages and coefficients
-                .map(|(m, c)| m.mul(&c)) // multiply them if there's an actual message
+                .zip(&coefficients) // take the combination of messages and coefficients
+                .map(|(m, c)| m.mul(c)) // multiply them if there's an actual message
                 .sum(); // finally, add them up.
             messages.push(message); // add the message sent to the transcript
             transcript.append_prover_message(b"evaluations", &message);
