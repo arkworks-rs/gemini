@@ -84,6 +84,18 @@ impl<E: PairingEngine> CommitterKey<E> {
         Commitment(msm::<E>(&self.powers_of_g, polynomial))
     }
 
+    /// Obtain a new preprocessed committer key defined by the indices `indices`.
+    pub fn index_by(&self, indices: &[usize]) -> Self {
+        let mut indexed_powers_of_g = vec![E::G1Affine::zero(); self.powers_of_g.len()];
+        indices.iter().zip(self.powers_of_g).for_each(|(&i, g)|
+            indexed_powers_of_g[i] = indexed_powers_of_g[i] + g
+        );
+        Self {
+            powers_of_g2: self.powers_of_g2,
+            powers_of_g: indexed_powers_of_g,
+        }
+    }
+
     /// Given an iterator over `polynomials`, expressed as vectors of coefficients, return a vector of commitmetns to all of them.
     pub fn batch_commit<J>(&self, polynomials: J) -> Vec<Commitment<E>>
     where
