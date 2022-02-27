@@ -116,6 +116,12 @@ pub const MAX_MSM_BUFFER_LOG: usize = 20;
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Commitment<E: PairingEngine>(pub(crate) E::G1Affine);
 
+impl<E: PairingEngine> Commitment<E> {
+    pub(crate) fn size_in_bytes(&self) -> usize {
+        ark_ff::to_bytes![E::G1Affine::zero()].unwrap().len() / 2
+    }
+}
+
 #[inline]
 fn msm<E: PairingEngine>(bases: &[E::G1Affine], scalars: &[E::Fr]) -> E::G1Affine {
     let scalars = scalars.iter().map(|x| x.into_repr()).collect::<Vec<_>>();

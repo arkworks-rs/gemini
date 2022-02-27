@@ -40,9 +40,10 @@
 //!
 use ark_ec::PairingEngine;
 use ark_ff::Field;
+use ark_ff::PrimeField;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
-use ark_std::One;
+use ark_std::{One, Zero};
 
 use merlin::Transcript;
 
@@ -118,6 +119,17 @@ pub struct TensorcheckProof<E: PairingEngine> {
     pub evaluation_proof: EvaluationProof<E>,
     /// The evaluations of base polynomials, which are used to construct evaluations in the initial round of tensor check.
     pub base_polynomials_evaluations: Vec<[E::Fr; 3]>,
+}
+
+impl<E: PairingEngine> TensorcheckProof<E> {
+    pub(crate) fn size_in_bytes(&self) -> usize {
+        let size_of_fe_in_bytes = E::Fr::zero().into_repr().as_ref().len() * 8;
+        let size_of_gp_in_bytes = self.folded_polynomials_commitments[0].size_in_bytes();
+        return self.folded_polynomials_commitments.len() * size_of_gp_in_bytes
+            + self.folded_polynomials_evaluations.len() * 2 * size_of_fe_in_bytes
+            + size_of_gp_in_bytes
+            + self.base_polynomials_evaluations.len() * 3 * size_of_fe_in_bytes;
+    }
 }
 
 /// The function for folding polynomials using given challenges for each round.

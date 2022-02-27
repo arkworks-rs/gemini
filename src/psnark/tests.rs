@@ -125,8 +125,8 @@ fn test_consistency() {
 #[test]
 fn test_psnark_correctness() {
     let rng = &mut test_rng();
-    let num_constraints = 55;
-    let num_variables = 45;
+    let num_constraints = 10024;
+    let num_variables = 10024;
 
     let circuit = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
@@ -149,6 +149,9 @@ fn test_psnark_correctness() {
     let index_comms = ck.batch_commit(&vec![row, col, val_a, val_b, val_c]);
 
     let time_proof = Proof::new_time(&r1cs, &ck);
+
+    time_proof.size_in_bytes();
+
     assert!(time_proof
         .verify(&r1cs, &vk, &index_comms, num_non_zero)
         .is_ok())
