@@ -5,7 +5,6 @@ use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Read, Serializatio
 use ark_std::boxed::Box;
 use ark_std::iter::Sum;
 use ark_std::vec::Vec;
-use ark_std::Zero;
 
 /// Each message from the prover in a sumcheck protocol is a pair of FF-elements.
 #[derive(CanonicalSerialize, CanonicalDeserialize, Copy, Clone, Debug, PartialEq, Eq)]
