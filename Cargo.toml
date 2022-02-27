@@ -31,6 +31,10 @@ name = "commit_bench"
 harness = false
 name = "msm_bench"
 
+[[bench]]
+harness = false
+name = "verifier_bench"
+
 [dependencies]
 ark-bls12-381 = "0.3.0"
 ark-ec = "0.3.0"

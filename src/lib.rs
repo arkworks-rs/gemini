@@ -83,5 +83,5 @@ pub mod subprotocols;
 
 #[doc(hidden)]
 pub mod circuit;
-mod misc;
+pub mod misc;
 mod transcript;
