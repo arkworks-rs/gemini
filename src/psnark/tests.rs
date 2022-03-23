@@ -15,6 +15,7 @@ fn test_consistency() {
     let rng = &mut test_rng();
     let num_constraints = 128;
     let num_variables = 128;
+    let max_msm_buffer = 1 << 20;
     let circuit: Circuit<Fr> = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
 
@@ -50,7 +51,7 @@ fn test_consistency() {
     let ck_stream = CommitterKeyStream::from(&ck);
 
     let time_proof = Proof::new_time(&r1cs, &ck);
-    let elastic_proof = Proof::new_elastic(&r1cs_stream, &ck_stream);
+    let elastic_proof = Proof::new_elastic(&r1cs_stream, &ck_stream, max_msm_buffer);
 
     assert_eq!(
         elastic_proof.witness_commitment,

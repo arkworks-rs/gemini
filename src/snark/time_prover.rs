@@ -23,11 +23,10 @@ impl<E: PairingEngine> Proof<E> {
         let snark_time = start_timer!(|| module_path!());
 
         debug!(
-            "features:{};space-time-threshold:{};tensor-expansion:{};msm-buffer:{}",
+            "features:{};space-time-threshold:{};tensor-expansion:{}",
             crate::misc::_features_enabled(),
             crate::SPACE_TIME_THRESHOLD,
             crate::misc::TENSOR_EXPANSION_LOG,
-            crate::kzg::MAX_MSM_BUFFER_LOG,
         );
 
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);

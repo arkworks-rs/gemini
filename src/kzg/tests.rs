@@ -42,6 +42,7 @@ fn test_srs() {
 fn test_open_consistency() {
     let rng = &mut ark_std::test_rng();
     let d = 15;
+    let max_msm_buffer = 1 << 20;
     let polynomials = DensePolynomial::<Fr>::rand(d, rng);
     let polynomial_stream = Reversed::new(polynomials.coeffs());
     let time_ck = CommitterKey::<Bls12_381>::new(d + 1, 3, rng);
@@ -50,7 +51,7 @@ fn test_open_consistency() {
 
     // compute the time commitment
     let (time_evaluation, time_open) = time_ck.open(&polynomials, &alpha);
-    let (space_evaluation, space_open) = space_ck.open(&polynomial_stream, &alpha);
+    let (space_evaluation, space_open) = space_ck.open(&polynomial_stream, &alpha, max_msm_buffer);
     // compute the space commitment
     assert_eq!(time_evaluation, space_evaluation);
     assert_eq!(time_open, space_open);

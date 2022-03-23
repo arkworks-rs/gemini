@@ -60,6 +60,7 @@ impl<E: PairingEngine> Proof<E> {
     pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: &R1csStream<SM, SZ, SW>,
         ck: &CommitterKeyStream<E, SG>,
+        max_msm_buffer: usize,
     ) -> Proof<E>
     where
         SM: Iterable + Copy,
@@ -312,7 +313,7 @@ impl<E: PairingEngine> Proof<E> {
             ),
             &open_chals
         );
-        let ralpha_star_acc_mu_proof = ck.open(&polynomial, &psi).1;
+        let ralpha_star_acc_mu_proof = ck.open(&polynomial, &psi, max_msm_buffer).1;
 
         let ralpha_star_acc_mu_evals = vec![
             evaluate_be(ralpha_star.iter(), &psi),
@@ -432,10 +433,14 @@ impl<E: PairingEngine> Proof<E> {
             FoldedPolynomialTree::new(body_polynomials_3, tensorcheck_challenges_3);
 
         let mut folded_polynomials_commitments = Vec::new();
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_0));
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_1));
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_2));
-        folded_polynomials_commitments.extend(ck.commit_folding(&tensorcheck_foldings_3));
+        folded_polynomials_commitments
+            .extend(ck.commit_folding(&tensorcheck_foldings_0, max_msm_buffer));
+        folded_polynomials_commitments
+            .extend(ck.commit_folding(&tensorcheck_foldings_1, max_msm_buffer));
+        folded_polynomials_commitments
+            .extend(ck.commit_folding(&tensorcheck_foldings_2, max_msm_buffer));
+        folded_polynomials_commitments
+            .extend(ck.commit_folding(&tensorcheck_foldings_3, max_msm_buffer));
 
         // add commitments to transcript
         folded_polynomials_commitments
@@ -553,21 +558,41 @@ impl<E: PairingEngine> Proof<E> {
         // do this for each element.
         let open_time = start_timer!(|| "opening time");
         let evaluation_proof = EvaluationProof(
-            ck.open_multi_points(&partial_eval_stream, &eval_points)
+            ck.open_multi_points(&partial_eval_stream, &eval_points, max_msm_buffer)
                 .1
                  .0
-                + ck.open_folding(tensorcheck_foldings_0, &eval_points, open_chals_0)
-                    .1
-                     .0
-                + ck.open_folding(tensorcheck_foldings_1, &eval_points, open_chals_1)
-                    .1
-                     .0
-                + ck.open_folding(tensorcheck_foldings_2, &eval_points, open_chals_2)
-                    .1
-                     .0
-                + ck.open_folding(tensorcheck_foldings_3, &eval_points, open_chals_3)
-                    .1
-                     .0,
+                + ck.open_folding(
+                    tensorcheck_foldings_0,
+                    &eval_points,
+                    open_chals_0,
+                    max_msm_buffer,
+                )
+                .1
+                 .0
+                + ck.open_folding(
+                    tensorcheck_foldings_1,
+                    &eval_points,
+                    open_chals_1,
+                    max_msm_buffer,
+                )
+                .1
+                 .0
+                + ck.open_folding(
+                    tensorcheck_foldings_2,
+                    &eval_points,
+                    open_chals_2,
+                    max_msm_buffer,
+                )
+                .1
+                 .0
+                + ck.open_folding(
+                    tensorcheck_foldings_3,
+                    &eval_points,
+                    open_chals_3,
+                    max_msm_buffer,
+                )
+                .1
+                 .0,
         );
         end_timer!(open_time);
 

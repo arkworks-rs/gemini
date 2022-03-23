@@ -53,6 +53,7 @@ struct SnarkConfig {
 
 fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
     let instance_size = 1 << instance_logsize;
+    let max_msm_buffer = 1 << 20;
 
     let g1 = G1::prime_subgroup_generator();
     let g2 = G2::prime_subgroup_generator();
@@ -62,7 +63,7 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
         powers_of_g2: vec![g2; 4],
     };
     println!("Proving an instance of log size  {}", instance_logsize);
-    Proof::new_elastic(r1cs_stream, ck);
+    Proof::new_elastic(r1cs_stream, ck, max_msm_buffer);
 }
 
 fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
