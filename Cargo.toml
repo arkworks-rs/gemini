@@ -58,12 +58,15 @@ libc = "0.2.117"
 
 
 # de-comment if willing to work on Field::mul_add.
-# [patch.crates-io]
-# ark-ec = {path="../algebra/ec"}
-# ark-ff = {path="../algebra/ff"}
-# ark-serialize = {path="../algebra/serialize"}
-# ark-serialize-derive = {path="../algebra/serialize-derive"}
-# ark-poly = {path ="../algebra/poly"}
+[patch.crates-io]
+ark-std = {git = "https://github.com/arkworks-rs/utils"}
+ark-ec = {git = "https://github.com/arkworks-rs/algebra"}
+ark-ff = {git = "https://github.com/arkworks-rs/algebra"}
+ark-serialize = {git = "https://github.com/arkworks-rs/algebra"}
+ark-serialize-derive = {git = "https://github.com/arkworks-rs/algebra"}
+ark-poly = {git = "https://github.com/arkworks-rs/algebra"}
+ark-bls12-381 = {git = "https://github.com/arkworks-rs/curves"}
+ark-relations = {git = "https://github.com/arkworks-rs/snark"}
 
 [dependencies.rayon]
 optional = true

@@ -1,7 +1,7 @@
 //! Implementation of Peppinger's algorithm.
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{BigInteger, PrimeField};
-use ark_ff::{FpParameters, Zero};
+use ark_ff::Zero;
 use ark_std::cmp::Ordering;
 use ark_std::vec::Vec;
 
@@ -107,7 +107,7 @@ impl VariableBaseMSM {
             ln_without_floats(size) + 2
         };
 
-        let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
+        let num_bits = <G::ScalarField as PrimeField>::MODULUS_BIT_SIZE as usize;
         let digits_count = (num_bits + c - 1) / c;
 
         let scalar_digits = scalars

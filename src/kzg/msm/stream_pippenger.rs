@@ -1,10 +1,11 @@
 //! A space-efficient implementation of Pippenger's algorithm.
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{BigInteger, PrimeField};
-use ark_ff::{FpParameters, Zero};
+use ark_ff::Zero;
 use ark_std::borrow::Borrow;
 use ark_std::ops::AddAssign;
 use ark_std::vec::Vec;
+
 
 use super::bounded_ln_without_floats;
 use crate::iterable::Iterable;
@@ -65,9 +66,9 @@ where
             .collect::<Vec<_>>();
         let scalars_step = (&mut scalars)
             .take(step)
-            .map(|s| s.borrow().into_repr())
+            .map(|s| s.borrow().into_bigint())
             .collect::<Vec<_>>();
-        result.add_assign(ark_ec::msm::VariableBaseMSM::multi_scalar_mul(
+        result.add_assign(ark_ec::msm::VariableBase::msm(
             bases_step.as_slice(),
             scalars_step.as_slice(),
         ));
@@ -92,7 +93,7 @@ where
     J::Item: Borrow<G>,
 {
     let c = bounded_ln_without_floats(n, max_msm_buffer_log);
-    let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
+    let num_bits = <G::ScalarField as PrimeField>::MODULUS_BIT_SIZE as usize;
     // split `num_bits` into steps of `c`, but skip window 0.
     let windows = (0..num_bits).step_by(c);
     let buckets_num = 1 << c;
@@ -104,7 +105,7 @@ where
 
     for (scalar, base) in scalars.into_iter().zip(bases) {
         for (w, bucket) in window_buckets.iter_mut() {
-            let mut scalar = scalar.borrow().into_repr();
+            let mut scalar = scalar.borrow().into_bigint();
             // We right-shift by `w`, thus getting rid of the lower bits.
             scalar.divn(*w as u32);
             // We mod the remaining bits by 2^{window size}, thus taking `c` bits.
@@ -175,10 +176,10 @@ impl<G: AffineCurve> HashMapPippenger<G> {
             let scalars = self
                 .buffer
                 .values()
-                .map(|s| s.into_repr())
+                .map(|s| s.into_bigint())
                 .collect::<Vec<_>>();
             self.result
-                .add_assign(ark_ec::msm::VariableBaseMSM::multi_scalar_mul(
+                .add_assign(ark_ec::msm::VariableBase::msm(
                     &bases, &scalars,
                 ));
             self.buffer.clear();
@@ -193,11 +194,11 @@ impl<G: AffineCurve> HashMapPippenger<G> {
             let scalars = self
                 .buffer
                 .values()
-                .map(|s| s.into_repr())
+                .map(|s| s.into_bigint())
                 .collect::<Vec<_>>();
 
             self.result
-                .add_assign(ark_ec::msm::VariableBaseMSM::multi_scalar_mul(
+                .add_assign(ark_ec::msm::VariableBase::msm(
                     &bases, &scalars,
                 ));
         }
@@ -244,7 +245,7 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
         self.bases_buffer.push(*base.borrow());
         if self.scalars_buffer.len() == self.buf_size {
             self.result
-                .add_assign(ark_ec::msm::VariableBaseMSM::multi_scalar_mul(
+                .add_assign(ark_ec::msm::VariableBase::msm(
                     self.bases_buffer.as_slice(),
                     self.scalars_buffer.as_slice(),
                 ));
@@ -258,7 +259,7 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
     pub fn finalize(mut self) -> G::Projective {
         if !self.scalars_buffer.is_empty() {
             self.result
-                .add_assign(ark_ec::msm::VariableBaseMSM::multi_scalar_mul(
+                .add_assign(ark_ec::msm::VariableBase::msm(
                     self.bases_buffer.as_slice(),
                     self.scalars_buffer.as_slice(),
                 ));
@@ -276,7 +277,7 @@ pub struct StreamPippenger<G: AffineCurve> {
 impl<G: AffineCurve> StreamPippenger<G> {
     /// Prepare a multi-scalar multiplication.
     pub fn new(size: usize, max_msm_buffer_log: usize) -> Self {
-        let num_bits = <G::ScalarField as PrimeField>::Params::MODULUS_BITS as usize;
+        let num_bits = <G::ScalarField as PrimeField>::MODULUS_BIT_SIZE as usize;
         let c = bounded_ln_without_floats(size, max_msm_buffer_log);
         // split `num_bits` into steps of `c`, but skip window 0.
         let windows = (0..num_bits).step_by(c);
@@ -360,7 +361,7 @@ mod test {
     use ark_std::vec::Vec;
 
     fn test_var_base_msm<G: AffineCurve>() {
-        use ark_ec::msm::VariableBaseMSM;
+        use ark_ec::msm::VariableBase;
         use ark_ff::UniformRand;
 
         const SAMPLES: usize = 1 << 2;
@@ -368,14 +369,14 @@ mod test {
         let mut rng = ark_std::test_rng();
 
         let v = (0..SAMPLES)
-            .map(|_| G::ScalarField::rand(&mut rng).into_repr())
+            .map(|_| G::ScalarField::rand(&mut rng).into_bigint())
             .collect::<Vec<_>>();
         let g = (0..SAMPLES)
             .map(|_| G::Projective::rand(&mut rng))
             .collect::<Vec<_>>();
         let g = <G::Projective as ProjectiveCurve>::batch_normalization_into_affine(&g);
 
-        let arkworks = VariableBaseMSM::multi_scalar_mul(g.as_slice(), v.as_slice());
+        let arkworks = VariableBase::msm(g.as_slice(), v.as_slice());
 
         let mut p = StreamPippenger::<G>::new(3, 20);
         p.add_chunk(&g, v.into_iter());
@@ -384,7 +385,7 @@ mod test {
     }
 
     fn test_chunked_pippenger<G: AffineCurve>() {
-        use ark_ec::msm::VariableBaseMSM;
+        use ark_ec::msm::VariableBase;
         use ark_ff::UniformRand;
 
         const SAMPLES: usize = 1 << 10;
@@ -392,14 +393,14 @@ mod test {
         let mut rng = ark_std::test_rng();
 
         let v = (0..SAMPLES)
-            .map(|_| G::ScalarField::rand(&mut rng).into_repr())
+            .map(|_| G::ScalarField::rand(&mut rng).into_bigint())
             .collect::<Vec<_>>();
         let g = (0..SAMPLES)
             .map(|_| G::Projective::rand(&mut rng))
             .collect::<Vec<_>>();
         let g = <G::Projective as ProjectiveCurve>::batch_normalization_into_affine(&g);
 
-        let arkworks = VariableBaseMSM::multi_scalar_mul(g.as_slice(), v.as_slice());
+        let arkworks = VariableBase::msm(g.as_slice(), v.as_slice());
 
         let mut p = ChunkedPippenger::<G>::new(1 << 20);
         for (s, g) in v.iter().zip(g) {

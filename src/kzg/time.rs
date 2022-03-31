@@ -1,6 +1,6 @@
 //! An impementation of a time-efficient version of Kate et al's polynomial commitment,
 //! with optimization from [\[BDFG20\]](https://eprint.iacr.org/2020/081.pdf).
-use ark_ec::msm::FixedBaseMSM;
+use ark_ec::msm::FixedBase;
 use ark_ec::PairingEngine;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::{PrimeField, Zero};
@@ -53,18 +53,18 @@ impl<E: PairingEngine> CommitterKey<E> {
         let powers_of_tau = powers(tau, max_degree + 1);
 
         let g = E::G1Projective::rand(rng);
-        let window_size = FixedBaseMSM::get_mul_window_size(max_degree + 1);
-        let scalar_bits = E::Fr::size_in_bits();
-        let g_table = FixedBaseMSM::get_window_table(scalar_bits, window_size, g);
+        let window_size = FixedBase::get_mul_window_size(max_degree + 1);
+        let scalar_bits = E::Fr::MODULUS_BIT_SIZE as usize;
+        let g_table = FixedBase::get_window_table(scalar_bits, window_size, g);
         let powers_of_g_proj =
-            FixedBaseMSM::multi_scalar_mul(scalar_bits, window_size, &g_table, &powers_of_tau);
+            FixedBase::msm(scalar_bits, window_size, &g_table, &powers_of_tau);
         let powers_of_g = E::G1Projective::batch_normalization_into_affine(&powers_of_g_proj);
 
         let g2 = E::G2Projective::rand(rng).into_affine();
         let powers_of_g2 = powers_of_tau
             .iter()
             .take(max_eval_points + 1)
-            .map(|t| g2.mul(t.into_repr()).into_affine())
+            .map(|t| g2.mul(t.into_bigint()).into_affine())
             .collect::<Vec<_>>();
 
         CommitterKey {
@@ -91,7 +91,7 @@ impl<E: PairingEngine> CommitterKey<E> {
             indexed_powers_of_g[i] = indexed_powers_of_g[i] + g
         );
         Self {
-            powers_of_g2: self.powers_of_g2,
+            powers_of_g2: self.powers_of_g2.clone(),
             powers_of_g: indexed_powers_of_g,
         }
     }

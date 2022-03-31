@@ -140,16 +140,15 @@ where
             None => self.it.next(),
             Some(current_address) => {
                 let current_address = *current_address.borrow();
-                if self.counter > current_address {
+                if self.counter != current_address {
+                    assert!(self.counter > current_address);
                     self.counter -= 1;
                     self.cache = self.it.next();
                     self.cache.clone()
-                } else if self.counter == current_address {
+                } else {
+                    //  self.counter == current_address
                     self.current_address = self.addresses.next();
                     self.cache.clone()
-                } else {
-                    // self.current_it < self.current_address
-                    panic!("address index is not decreasing. Perhaps wrong sorting?")
                 }
             }
         }

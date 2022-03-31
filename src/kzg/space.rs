@@ -73,7 +73,7 @@ where
 
         let mut previous = E::Fr::zero();
         for (scalar, base) in scalars.zip(bases) {
-            quotient.add(base, previous.into_repr());
+            quotient.add(base, previous.into_bigint());
             let coefficient = previous * alpha + scalar.borrow();
             previous = coefficient;
         }
@@ -116,7 +116,7 @@ where
                 state[i] -= zeros.coeffs[zeros.degree() - i - 1] * quotient_coefficient;
             });
             let base = bases.next().unwrap();
-            quotient.add(base, quotient_coefficient.into_repr());
+            quotient.add(base, quotient_coefficient.into_bigint());
         }
         let remainder = state.make_contiguous().to_vec();
         let commitment = EvaluationProof(quotient.finalize().into_affine());
@@ -173,7 +173,7 @@ where
 
         for (i, coefficient) in polynomials.iter() {
             let base = folded_bases[i - 1].next().unwrap();
-            pippengers[i - 1].add(base.borrow(), coefficient.into_repr());
+            pippengers[i - 1].add(base.borrow(), coefficient.into_bigint());
         }
 
         pippengers
