@@ -5,7 +5,7 @@ extern crate curve25519_dalek;
 use criterion::{BenchmarkId, Criterion};
 use rand_core::OsRng;
 
-use ark_ec::msm::VariableBaseMSM as ArkworksMSM;
+use ark_ec::msm::VariableBase as ArkworksMSM;
 use ark_ec::ProjectiveCurve;
 use ark_ff::fields::PrimeField;
 use ark_std::test_rng;
@@ -39,8 +39,8 @@ fn bench_msm(c: &mut Criterion) {
             .sample_size(10)
             .bench_with_input(BenchmarkId::new("arkworks", d), &d, |b, _| {
                 b.iter(|| {
-                    let scalars = scalars.iter().map(|s| s.into_repr()).collect::<Vec<_>>();
-                    ArkworksMSM::multi_scalar_mul(&bases, &scalars)
+                    let scalars = scalars.iter().map(|s| s.into_bigint()).collect::<Vec<_>>();
+                    ArkworksMSM::msm(&bases, &scalars)
                 })
             });
 
@@ -48,7 +48,7 @@ fn bench_msm(c: &mut Criterion) {
             .sample_size(10)
             .bench_with_input(BenchmarkId::new("michele", d), &d, |b, _| {
                 b.iter(|| {
-                    let scalars = scalars.iter().map(|s| s.into_repr()).collect::<Vec<_>>();
+                    let scalars = scalars.iter().map(|s| s.into_bigint()).collect::<Vec<_>>();
                     MicheleMSM::multi_scalar_mul(&bases, &scalars)
                 })
             });

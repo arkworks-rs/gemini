@@ -63,7 +63,7 @@ fn bench_exp(c: &mut Criterion) {
         let scalar = Fr::rand(&mut test_rng());
         let point = G1Projective::rand(&mut test_rng()).into_affine();
 
-        b.iter(|| point.mul(scalar.into_repr()))
+        b.iter(|| point.mul(scalar.into_bigint()))
     });
 
     group.bench_function(BenchmarkId::new("curve25519::RistrettoPoint", 1), |b| {
