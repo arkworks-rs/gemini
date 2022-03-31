@@ -70,9 +70,9 @@ fn test_radix() {
 
     let rng = &mut test_rng();
     let scalar = Fr::rand(rng);
-    let digits = digits(&scalar.into_repr(), w, 0);
+    let digits = digits(&scalar.into_bigint(), w, 0);
 
-    let radix = Fr::from((1 << w) as u64);
+    let radix = Fr::from(1 << w);
     let mut term = Fr::one();
     let mut recovered_scalar = Fr::zero();
     for digit in &digits {
@@ -197,9 +197,9 @@ fn test_var_base_msm() {
     let mut rng = ark_std::test_rng();
 
     let mut v = (0..SAMPLES)
-        .map(|_| Fr::rand(&mut rng).into_repr())
+        .map(|_| Fr::rand(&mut rng).into_bigint())
         .collect::<Vec<_>>();
-    v.push(Fr::one().into_repr());
+    v.push(Fr::one().into_bigint());
     let g = (0..SAMPLES + 1)
         .map(|_| G1Projective::rand(&mut rng))
         .collect::<Vec<_>>();

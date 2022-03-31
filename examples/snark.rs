@@ -5,6 +5,7 @@ use ark_gemini::kzg::CommitterKeyStream;
 use ark_gemini::snark::Proof;
 use ark_std::rand::Rng;
 use ark_std::test_rng;
+
 use clap::Parser;
 
 type PE = Bls12<ark_bls12_381::Parameters>;

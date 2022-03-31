@@ -87,8 +87,8 @@ impl<E: PairingEngine> CommitterKey<E> {
     /// Obtain a new preprocessed committer key defined by the indices `indices`.
     pub fn index_by(&self, indices: &[usize]) -> Self {
         let mut indexed_powers_of_g = vec![E::G1Affine::zero(); self.powers_of_g.len()];
-        indices.iter().zip(self.powers_of_g).for_each(|(&i, g)|
-            indexed_powers_of_g[i] = indexed_powers_of_g[i] + g
+        indices.iter().zip(&self.powers_of_g).for_each(|(&i, g)|
+            indexed_powers_of_g[i] = indexed_powers_of_g[i] + *g
         );
         Self {
             powers_of_g2: self.powers_of_g2.clone(),
