@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate criterion;
-extern crate curve25519_dalek;
+// extern crate curve25519_dalek;
 extern crate rand;
 
 use ark_std::test_rng;
@@ -13,9 +13,8 @@ use ark_bls12_381::G1Projective;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::fields::PrimeField;
 
-use curve25519_dalek::ristretto::RistrettoPoint;
-use curve25519_dalek::scalar::Scalar;
-use rand_core::OsRng;
+// use curve25519_dalek::ristretto::RistrettoPoint;
+// use curve25519_dalek::scalar::Scalar;
 
 fn bench_add(c: &mut Criterion) {
     let rng = &mut test_rng();
@@ -28,12 +27,12 @@ fn bench_add(c: &mut Criterion) {
         b.iter(|| first + second)
     });
 
-    group.bench_function(BenchmarkId::new("curve25519_dalek::Scalar", 1), |b| {
-        let first = Scalar::random(&mut OsRng);
-        let second = Scalar::random(&mut OsRng);
+    // group.bench_function(BenchmarkId::new("curve25519_dalek::Scalar", 1), |b| {
+    //     let first = Scalar::random(&mut OsRng);
+    //     let second = Scalar::random(&mut OsRng);
 
-        b.iter(|| first + second)
-    });
+    //     b.iter(|| first + second)
+    // });
 }
 
 fn bench_mul(c: &mut Criterion) {
@@ -47,16 +46,16 @@ fn bench_mul(c: &mut Criterion) {
         b.iter(|| first * second)
     });
 
-    group.bench_function(BenchmarkId::new("curve25519_dalek::Scalar", 1), |b| {
-        let first = Scalar::random(&mut OsRng);
-        let second = Scalar::random(&mut OsRng);
+    // group.bench_function(BenchmarkId::new("curve25519_dalek::Scalar", 1), |b| {
+    //     let first = Scalar::random(&mut OsRng);
+    //     let second = Scalar::random(&mut OsRng);
 
-        b.iter(|| first * second)
-    });
+    //     b.iter(|| first * second)
+    // });
 }
 
 fn bench_exp(c: &mut Criterion) {
-    let rng = &mut OsRng;
+    // let rng = &mut OsRng;
     let mut group = c.benchmark_group("sm");
 
     group.bench_function(BenchmarkId::new("ark-bls12-381::G1", 1), |b| {
@@ -66,12 +65,12 @@ fn bench_exp(c: &mut Criterion) {
         b.iter(|| point.mul(scalar.into_bigint()))
     });
 
-    group.bench_function(BenchmarkId::new("curve25519::RistrettoPoint", 1), |b| {
-        let scalar = Scalar::random(rng);
-        let point = RistrettoPoint::random(rng);
+    // group.bench_function(BenchmarkId::new("curve25519::RistrettoPoint", 1), |b| {
+    //     let scalar = Scalar::random(rng);
+    //     let point = RistrettoPoint::random(rng);
 
-        b.iter(|| scalar * point)
-    });
+    //     b.iter(|| scalar * point)
+    // });
 }
 
 criterion_group! {
