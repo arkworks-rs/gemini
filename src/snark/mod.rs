@@ -51,8 +51,9 @@
 //! \end{align}
 //! $$
 //!
-//! The first one can be checked internally by the verifier, while the second can be done via
-//! the tensorcheck protocol.
+//! Both claims can be checked via the tensorcheck protocol.
+//! The evaluations of the base polynomials are generated internally by the verifier, using the R1CS matrices
+//! and the statement provided as input.
 
 mod elastic_prover;
 mod time_prover;

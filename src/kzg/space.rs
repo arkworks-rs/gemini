@@ -17,8 +17,7 @@ use super::{Commitment, EvaluationProof};
 
 const LENGTH_MISMATCH_MSG: &str = "Expecting at least one element in the committer key.";
 
-/// The streaming SRS for the polynomial commitment scheme consists of a stream of consecutive powers of g.
-/// It also implements functions for `setup`, `commit` and `open`.
+/// The streaming SRS for the polynomial commitment scheme consists of the stream of consecutive powers of $G$.
 #[derive(Clone)]
 pub struct CommitterKeyStream<E, SG>
 where

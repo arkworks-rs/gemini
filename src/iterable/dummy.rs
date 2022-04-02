@@ -1,5 +1,4 @@
-//! DummyStream: A stream that comes in handy for testing purposes.
-//! This stream will always return the same element `e`.
+//! Dummy streams used mostly for testing purposes.
 use ark_ff::{PrimeField, Zero};
 use ark_std::vec::Vec;
 use ark_std::{iter, rand::RngCore};

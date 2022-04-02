@@ -1,3 +1,5 @@
+//! Collection of errors and falurest in the proof system.
+
 use ark_std::fmt;
 
 /// Error identifying a failure in the proof verification.

@@ -3,32 +3,32 @@
 //! # Background
 //! [[KZG](https://www.iacr.org/archive/asiacrypt2010/6477178/6477178.pdf)]
 //! commitments are pretty simple:
-//! - A [`CommitterKey`](self::CommitterKey) is consists of a sequence \\(\vec G \defeq (G, \tau G, \dots, \tau^DG)\\).
-//! - A [`Commitment`](self::EvaluationProof) is a polynomial \\(f(x)\\) is \\(C \defeq \langle \vec f, \vec G \rangle \\).
+//! - A [`CommitterKey`](self::CommitterKey) is consists of a sequence $\vec G \defeq (G, \tau G, \dots, \tau^DG)$.
+//! - A [`Commitment`](self::EvaluationProof) is a polynomial $f(x)$ is $C \defeq \langle \vec f, \vec G \rangle $.
 //! - An [`EvaluationProof`](self::EvaluationProof)
-//! for the polynomial \\(f\\)
-//! in the evaluation point \\(\alpha\\)
-//! is a commitment to the quotient of \\(f(x)\\) by \\((\tau - \alpha)\\).
-//! The remainder is the evaluation \\(f(\alpha)\\).
-//! When evaluation over points \\((\alpha_0, \dots, \alpha_m)\\),
-//! we can consider at once the quotient of \\(f(x)\\) by \\(Z\\) (the polynomial whose roots are \\(\alpha_i\\)).
-//! The remainder is a polynomial \\(r\\) such that \\(r(\alpha_i) = f(\alpha_i)\\).
-//! We refer to the proof as \\(\pi\\).
+//! for the polynomial $f$
+//! in the evaluation point $\alpha$
+//! is a commitment to the quotient of $f(x)$ by $(\tau - \alpha)$.
+//! The remainder is the evaluation $f(\alpha)$.
+//! When evaluation over points $(\alpha_0, \dots, \alpha_m)$,
+//! we can consider at once the quotient of $f(x)$ by $Z$ (the polynomial whose roots are $\alpha_i$).
+//! The remainder is a polynomial $r$ such that $r(\alpha_i) = f(\alpha_i)$.
+//! We refer to the proof as $\pi$.
 //!
-//! To verify a proof \\(\pi\\) proving that \\(f(\alpha) = \mu\\), one considers the pairing equation:
+//! To verify a proof $\pi$ proving that $f(\alpha) = \mu$, one considers the pairing equation:
 //! \\[
 //! e(C, \tau H - \mu H) = e(f - \mu G, H)
 //! \\]
-//! To verify a proof \\(\pi\\) over a set of points \\(f(\alpha_i) = \mu_i\\),
-//! consider the polynomial \\(\nu\\) such that \\(\nu(\alpha_i) = \mu_i \\), and check:
+//! To verify a proof $\pi$ over a set of points $f(\alpha_i) = \mu_i$,
+//! consider the polynomial $\nu$ such that $\nu(\alpha_i) = \mu_i $, and check:
 //! \\[
 //! e(C, Z) = e(f - \nu, H).
 //! \\]
 //!
-//! It is also possible to open multiple polynomials \\(f_0, \dots, f_n\\)
+//! It is also possible to open multiple polynomials $f_0, \dots, f_n$
 //!  _on the same set of evaluation points_
-//! by asking the verifier a random challenge \\(\eta\\), and opening instead
-//! \\(\sum_i \eta^i f_i \\).
+//! by asking the verifier a random challenge $\eta$, and opening instead
+//! $\sum_i \eta^i f_i $.
 //!
 //! _Nota bene:_ despite it is also possible to open multiple polynomials
 //! over different points [[BDFG20](https://eprint.iacr.org/2020/081.pdf)],
@@ -112,7 +112,7 @@ TODO: Remove the following constants
 pub const MAX_MSM_BUFFER: usize = 1 << 20;
 pub const MAX_MSM_BUFFER_LOG: usize = 20;
 
-/// A Kate polynomial commitment over a bilinear group, represented as a single \\(\GG_1\\) element.
+/// A Kate polynomial commitment over a bilinear group, represented as a single $\GG_1$ element.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Commitment<E: PairingEngine>(pub(crate) E::G1Affine);
 
@@ -130,7 +130,7 @@ impl<E: PairingEngine> ark_ff::ToBytes for Commitment<E> {
     }
 }
 
-/// Polynomial evaluation proof, represented as a single \\(\GG_1\\) element.
+/// Polynomial evaluation proof, represented as a single $\GG_1$ element.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EvaluationProof<E: PairingEngine>(pub E::G1Affine);
 
@@ -166,9 +166,9 @@ pub(crate) type VerificationResult = Result<(), VerificationError>;
 /// It also implements verification functions for the evaluation proof.
 #[derive(Debug, PartialEq, Eq)]
 pub struct VerifierKey<E: PairingEngine> {
-    /// The generator of  \\(\GG_1\\)
+    /// The generator of $\GG_1$
     powers_of_g: Vec<E::G1Affine>,
-    /// The generator og \\(\GG_2\\), together with its multiplication by the trapdoor.
+    /// The generator of $\GG_2$, together with its multiplication by the trapdoor.
     powers_of_g2: Vec<E::G2Affine>,
 }
 
@@ -281,7 +281,7 @@ fn interpolate_poly<E: PairingEngine>(
     res
 }
 
-/// The polynomial in \\(\FF\\) that vanishes in all the points `points`.
+/// The polynomial in $\FF$ that vanishes in all the points `points`.
 fn vanishing_polynomial<F: Field>(points: &[F]) -> DensePolynomial<F> {
     let one = DensePolynomial::from_coefficients_vec(vec![F::one()]);
     points

@@ -1,7 +1,7 @@
 //! The tensorcheck IOP protocol for proving multivariate evaluations
-//! \\(f(\rho_0, \dots, \rho_{n-1})\\).
+//! $f(\rho_0, \dots, \rho_{n-1})$.
 //!
-//! Let \\(f(x) \in \FF\[x\]\\) be a polynomial of degree \\(2^n \\)
+//! Let $f(x) \in \FF\[x\]$ be a polynomial of degree $2^n $
 //! represented as the a vector of its coefficients.
 //! The tensor check allows to prove the scalar product:
 //!
@@ -9,19 +9,19 @@
 //! \langle f, \otimes_j (1, \rho_j) \rangle = t
 //! \\]
 //!
-//! for some target \\(t\\).
+//! for some target $t$.
 //! The argument exploits even/odd folding of the polynomial.
-//! That is, consider the polynomials \\(f_e, f_o \in \FF\[x\]\\)
-//! of degree \\(2^{n-1}\\):
+//! That is, consider the polynomials $f_e, f_o \in \FF\[x\]$
+//! of degree $2^{n-1}$:
 //!
 //! \\[
 //! f(x) = f_e(x^2) + x f_o(x^2).
 //! \\]
 //!
 //! Send as an oracle message
-//! \\( f'(x) = f_e(x) + \rho_0 f_o(x) \\).
+//! $ f'(x) = f_e(x) + \rho_0 f_o(x) $.
 //! The verifier checks that each folded polynomial is computed correcly by
-//!  testing on a random point \\(\beta\\):
+//!  testing on a random point $\beta$:
 //!
 //! \\[
 //! f'(\beta^2) =
@@ -31,10 +31,10 @@
 //!
 //! It proceeds recursively until the polynomial is of degree 1.
 //! If we consider the map
-//! \\(
+//! $
 //! \FF[x_0, \dots, x_{n-1}] \to \FF\[x\]:
 //! f(x_0, \dots, x_n) \mapsto f(x, x^2, \dots, x^{2^{n-1}})
-//! \\)
+//! $
 //! we are effectively
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
@@ -69,8 +69,8 @@ const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 /// Evaluate a folded polynomial tree at the point `x`.
 ///
 /// Make a single pass over the [`FoldedPolynomialTree`](crate::subprotocols::sumcheck::streams::FoldedPolynomialTree)
-/// and return a vector storing \\(f^{(j)}(x)\\) at the \\(j-1\\)-th position.
-/// Foldings are in the interval \\(1, \dots, n-1\\).
+/// and return a vector storing $f^{(j)}(x)$ at the $j-1$-th position.
+/// Foldings are in the interval $1, \dots, n-1$.
 pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
 where
     F: Field,
@@ -90,11 +90,11 @@ where
 
 /// Compute the evaluation of folded polynomials in the next round.
 ///
-/// Let \\( f(x) \\) denote the polynomial in the current round,
-/// \\( f'(x) \\) denote the folded polynomial in the next round,
-/// \\( \beta \\) denote the evaluation point, and \\( \rho \\) denote the randomness for folding.
+/// Let $ f(x) $ denote the polynomial in the current round,
+/// $ f'(x) $ denote the folded polynomial in the next round,
+/// $ \beta $ denote the evaluation point, and $ \rho $ denote the randomness for folding.
 ///
-/// This function computes \\( f'(\beta^2) = \frac{f(\beta) + f(-\beta)}{2} + \rho \cdot \frac{f(\beta) - f(-\beta)}{2\beta}\\)
+/// This function computes $ f'(\beta^2) = \frac{f(\beta) + f(-\beta)}{2} + \rho \cdot \frac{f(\beta) - f(-\beta)}{2\beta}$
 #[inline]
 pub fn evaluate_sq_fp<F: Field>(
     eval_parent_pos: &F,

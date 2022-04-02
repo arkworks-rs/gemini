@@ -1,6 +1,7 @@
 //! A base library for iterfacing with streams of vectors and matrices.
 //!
-//! This library presents the abstraction layer for the _streaming model_.
+//! This library extends the abstraction layer provided by [`ark_std::iterable::Iterable`]
+//! This implements the so-called _streaming model_.
 //! Essentially, it provides a set of handy utilities as a wrapper around iterators.
 
 // DummyStream
