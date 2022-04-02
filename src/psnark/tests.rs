@@ -151,8 +151,6 @@ fn test_psnark_correctness() {
 
     let time_proof = Proof::new_time(&r1cs, &ck);
 
-    time_proof.size_in_bytes();
-
     assert!(time_proof
         .verify(&r1cs, &vk, &index_comms, num_non_zero)
         .is_ok())

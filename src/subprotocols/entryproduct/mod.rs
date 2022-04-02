@@ -23,9 +23,8 @@
 //! $$
 //!
 use ark_ec::PairingEngine;
-use ark_ff::PrimeField;
+use ark_serialize::*;
 use ark_std::vec::Vec;
-use ark_std::Zero;
 
 use crate::kzg::Commitment;
 use crate::subprotocols::sumcheck::Prover;
@@ -46,19 +45,10 @@ mod tests;
 /// Sometimes the verifier already knows the entry product result.
 /// For this reason, the product $t$ is never sent or added to the transcript.
 /// It is expected that the developer takes care of it in the upper protocol layer.
-#[derive(Debug, PartialEq, Eq)]
+#[derive(CanonicalSerialize, Debug, PartialEq, Eq)]
 pub struct ProverMsgs<E: PairingEngine> {
     pub acc_v_commitments: Vec<Commitment<E>>,
     pub claimed_sumchecks: Vec<E::Fr>,
-}
-
-impl<E: PairingEngine> ProverMsgs<E> {
-    pub(crate) fn size_in_bytes(&self) -> usize {
-        let size_of_fe_in_bytes = E::Fr::zero().into_bigint().as_ref().len() * 8;
-        let size_of_gp_in_bytes = self.acc_v_commitments[0].size_in_bytes();
-        self.acc_v_commitments.len() * size_of_gp_in_bytes
-            + self.claimed_sumchecks.len() * size_of_fe_in_bytes
-    }
 }
 
 /// The entryproduct transcript and subclaims.

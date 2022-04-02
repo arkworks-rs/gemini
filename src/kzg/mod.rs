@@ -99,6 +99,7 @@ use ark_ff::{Field, One, PrimeField, Zero};
 use ark_poly::{univariate::DensePolynomial, UVPolynomial};
 use ark_std::io::Write;
 use ark_std::ops::{Add, Mul};
+use ark_serialize::*;
 
 use ark_std::fmt;
 
@@ -107,14 +108,8 @@ use ark_ec::{msm::VariableBase, AffineCurve, PairingEngine};
 use crate::misc::{linear_combination, powers};
 
 /// A Kate polynomial commitment over a bilinear group, represented as a single \\(\GG_1\\) element.
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(CanonicalSerialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub struct Commitment<E: PairingEngine>(pub(crate) E::G1Affine);
-
-impl<E: PairingEngine> Commitment<E> {
-    pub(crate) fn size_in_bytes(&self) -> usize {
-        ark_ff::to_bytes![E::G1Affine::zero()].unwrap().len() / 2
-    }
-}
 
 #[inline]
 fn msm<E: PairingEngine>(bases: &[E::G1Affine], scalars: &[E::Fr]) -> E::G1Affine {
@@ -131,7 +126,7 @@ impl<E: PairingEngine> ark_ff::ToBytes for Commitment<E> {
 }
 
 /// Polynomial evaluation proof, represented as a single $\GG_1$ element.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(CanonicalSerialize, Clone, Debug, PartialEq, Eq)]
 pub struct EvaluationProof<E: PairingEngine>(pub E::G1Affine);
 
 impl<E: PairingEngine> Add for EvaluationProof<E> {

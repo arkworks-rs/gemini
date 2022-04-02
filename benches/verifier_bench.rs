@@ -2,10 +2,6 @@
 #[macro_use]
 extern crate criterion;
 
-
-
-
-
 use ark_gemini::misc::{joint_matrices, sum_matrices};
 use ark_gemini::psnark::Proof;
 
@@ -17,7 +13,6 @@ use criterion::{BenchmarkId, Criterion};
 
 const NUM_DOMAIN_RANGE: Range<usize> = 12..21;
 
-// const NUM_CONSTRAINTS: usize = 65536;
 fn batch_verify_bench(c: &mut Criterion) {
     let mut rng = test_rng();
 
@@ -40,8 +35,6 @@ fn batch_verify_bench(c: &mut Criterion) {
 
         let proof = Proof::new_time(&r1cs, &ck);
 
-        println!("Proof Size in Bytes: {}", proof.size_in_bytes());
-
         group.sample_size(10).bench_with_input(
             BenchmarkId::new("Verify/".to_string(), d),
             &d,
@@ -50,9 +43,6 @@ fn batch_verify_bench(c: &mut Criterion) {
     }
 }
 
-// fn bench_bls_381(c: &mut Criterion) {
-//     batch_verify_bench(c);
-// }
 
 criterion_group! {
     name=verifier_benchmarks;
@@ -62,5 +52,3 @@ criterion_group! {
 
 criterion_main! {verifier_benchmarks}
 
-// criterion_group!(benches, bench_bls_381);
-// criterion_main!(benches);

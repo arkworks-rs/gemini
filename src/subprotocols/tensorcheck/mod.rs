@@ -40,10 +40,10 @@
 //!
 use ark_ec::PairingEngine;
 use ark_ff::Field;
-use ark_ff::PrimeField;
+use ark_serialize::*;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
-use ark_std::{One, Zero};
+use ark_std::One;
 
 use merlin::Transcript;
 
@@ -109,7 +109,7 @@ pub fn evaluate_sq_fp<F: Field>(
 }
 
 /// The struct for the tensor check proof.
-#[derive(PartialEq, Eq)]
+#[derive(CanonicalSerialize, PartialEq, Eq)]
 pub struct TensorcheckProof<E: PairingEngine> {
     /// The commitments for all the folded polynomials in the tensor check.
     pub folded_polynomials_commitments: Vec<Commitment<E>>,
@@ -121,16 +121,6 @@ pub struct TensorcheckProof<E: PairingEngine> {
     pub base_polynomials_evaluations: Vec<[E::Fr; 3]>,
 }
 
-impl<E: PairingEngine> TensorcheckProof<E> {
-    pub(crate) fn size_in_bytes(&self) -> usize {
-        let size_of_fe_in_bytes = E::Fr::zero().into_bigint().as_ref().len() * 8;
-        let size_of_gp_in_bytes = self.folded_polynomials_commitments[0].size_in_bytes();
-        self.folded_polynomials_commitments.len() * size_of_gp_in_bytes
-            + self.folded_polynomials_evaluations.len() * 2 * size_of_fe_in_bytes
-            + size_of_gp_in_bytes
-            + self.base_polynomials_evaluations.len() * 3 * size_of_fe_in_bytes
-    }
-}
 
 /// The function for folding polynomials using given challenges for each round.
 /// It skips the last challenge since the result can be obtained from asserted results.
