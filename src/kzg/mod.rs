@@ -106,15 +106,15 @@ use ark_ec::{msm::VariableBase, AffineCurve, PairingEngine};
 
 use crate::misc::{linear_combination, powers};
 
-/*
-TODO: Remove the following constants
-*/
-pub const MAX_MSM_BUFFER: usize = 1 << 20;
-pub const MAX_MSM_BUFFER_LOG: usize = 20;
-
-/// A Kate polynomial commitment over a bilinear group, represented as a single $\GG_1$ element.
+/// A Kate polynomial commitment over a bilinear group, represented as a single \\(\GG_1\\) element.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Commitment<E: PairingEngine>(pub(crate) E::G1Affine);
+
+impl<E: PairingEngine> Commitment<E> {
+    pub(crate) fn size_in_bytes(&self) -> usize {
+        ark_ff::to_bytes![E::G1Affine::zero()].unwrap().len() / 2
+    }
+}
 
 #[inline]
 fn msm<E: PairingEngine>(bases: &[E::G1Affine], scalars: &[E::Fr]) -> E::G1Affine {

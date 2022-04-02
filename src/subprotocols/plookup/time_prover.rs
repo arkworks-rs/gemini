@@ -62,9 +62,22 @@ fn plookup_subset<F: Field>(v: &[F], y: &F) -> Vec<F> {
     v.iter().map(|e| *e + y).collect()
 }
 
-pub(crate) fn sorted<F: Field>(set: &[F], index: &[usize]) -> Vec<F> {
-    let mut frequency = vec![1; set.len()];
+pub(crate) fn compute_frequency(set_len: usize, index: &[usize]) -> Vec<usize> {
+    let mut frequency = vec![1; set_len];
     index.iter().for_each(|&i| frequency[i] += 1);
+    frequency
+}
+
+pub(crate) fn extend_frequency(frequency: &Vec<usize>) -> Vec<usize> {
+    let mut res = Vec::new();
+    frequency
+        .iter()
+        .enumerate()
+        .for_each(|(i, f)| res.append(&mut vec![i; *f]));
+    res
+}
+
+pub(crate) fn sorted<F: Field>(set: &[F], frequency: &Vec<usize>) -> Vec<F> {
     let mut sorted = Vec::new();
     frequency
         .iter()
@@ -92,7 +105,8 @@ pub fn plookup<F: Field>(
 
     let lookup_set = plookup_set(&set, y, z);
     let lookup_subset = plookup_subset(&subset, y);
-    let sorted = sorted(&set, &index);
+    let frequency = compute_frequency(set.len(), &index);
+    let sorted = sorted(&set, &frequency);
     let lookup_sorted = plookup_set(&sorted, y, z);
     [lookup_set, lookup_subset, lookup_sorted]
 }

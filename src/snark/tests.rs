@@ -15,6 +15,7 @@ fn test_snark_consistency() {
     let rng = &mut test_rng();
     let num_constraints = 8;
     let num_variables = 8;
+    let max_msm_buffer = 20;
 
     let circuit = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
@@ -50,7 +51,7 @@ fn test_snark_consistency() {
         joint_len: num_constraints,
     };
     let ck_stream = CommitterKeyStream::from(&ck);
-    let space_proof = Proof::new_elastic(r1cs_stream, ck_stream);
+    let space_proof = Proof::new_elastic(r1cs_stream, ck_stream, max_msm_buffer);
 
     assert_eq!(time_proof, space_proof);
 }

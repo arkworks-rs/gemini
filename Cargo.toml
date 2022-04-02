@@ -31,6 +31,10 @@ name = "commit_bench"
 harness = false
 name = "msm_bench"
 
+[[bench]]
+harness = false
+name = "verifier_bench"
+
 [patch.crates-io]
 ark-std = {git = "https://github.com/arkworks-rs/utils"}
 ark-ec = {git = "https://github.com/arkworks-rs/algebra"}

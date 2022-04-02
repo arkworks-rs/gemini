@@ -15,7 +15,9 @@ use crate::misc::{
 
 use crate::subprotocols::entryproduct::time_prover::{accumulated_product, monic, right_rotation};
 use crate::subprotocols::entryproduct::EntryProduct;
-use crate::subprotocols::plookup::time_prover::{alg_hash, lookup, plookup, sorted};
+use crate::subprotocols::plookup::time_prover::{
+    alg_hash, compute_frequency, extend_frequency, lookup, plookup, sorted,
+};
 use crate::subprotocols::sumcheck::{
     proof::Sumcheck, time_prover::TimeProver, time_prover::Witness,
 };
@@ -91,8 +93,14 @@ impl<E: PairingEngine> Proof<E> {
         let alpha_star = lookup(&c_challenges, &row_index);
         let z_star = lookup(&r1cs.z, &col_index);
 
+        let ck_row = ck.index_by(&row_index[..]);
+        let ck_col = ck.index_by(&col_index[..]);
+
         let z_r_commitments_time = start_timer!(|| "Commitments to z* and r*");
-        let z_r_commitments = ck.batch_commit(vec![&ralpha_star, &r_star, &alpha_star, &z_star]);
+        let mut z_r_commitments =
+            ck_row.batch_commit(vec![&a_challenges, &b_challenges, &c_challenges]);
+        z_r_commitments.push(ck_col.commit(&r1cs.z));
+        // let z_r_commitments = ck.batch_commit(vec![&ralpha_star, &r_star, &alpha_star, &z_star]);
         end_timer!(z_r_commitments_time);
 
         transcript.append_commitment(b"ra*", &z_r_commitments[0]);
@@ -122,18 +130,30 @@ impl<E: PairingEngine> Proof<E> {
         let zeta = transcript.get_challenge(b"zeta");
 
         let sorted_commitments_time = start_timer!(|| "Commitments to sorted vectors");
-        let sorted_polynomials = [
-            &sorted(
-                &alg_hash(&b_challenges, 0..b_challenges.len(), &zeta),
-                &row_index,
-            ),
-            &sorted(
-                &alg_hash(&c_challenges, 0..c_challenges.len(), &zeta),
-                &row_index,
-            ),
-            &sorted(&alg_hash(&r1cs.z, 0..r1cs.z.len(), &zeta), &col_index),
+        let alg_hash_poly = [
+            alg_hash(&b_challenges, 0..b_challenges.len(), &zeta),
+            alg_hash(&c_challenges, 0..c_challenges.len(), &zeta),
+            alg_hash(&r1cs.z, 0..r1cs.z.len(), &zeta),
         ];
-        let sorted_commitments = ck.batch_commit(sorted_polynomials);
+        let frequency = [
+            compute_frequency(alg_hash_poly[0].len(), &row_index),
+            compute_frequency(alg_hash_poly[2].len(), &col_index),
+        ];
+        let sorted_polynomials = [
+            &sorted(&alg_hash_poly[0], &frequency[0]),
+            &sorted(&alg_hash_poly[1], &frequency[0]),
+            &sorted(&alg_hash_poly[2], &frequency[1]),
+        ];
+
+        let ext_fre = [
+            extend_frequency(&frequency[0]),
+            extend_frequency(&frequency[1]),
+        ];
+        let ck_fre = [ck.index_by(&ext_fre[0]), ck.index_by(&ext_fre[1])];
+        let mut sorted_commitments =
+            ck_fre[0].batch_commit(vec![&alg_hash_poly[0], &alg_hash_poly[1]]);
+        sorted_commitments.push(ck_fre[1].commit(&alg_hash_poly[2]));
+        // let sorted_commitments = ck.batch_commit(sorted_polynomials);
         end_timer!(sorted_commitments_time);
 
         transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);

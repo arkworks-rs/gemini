@@ -25,6 +25,7 @@ pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
+    max_msm_buffer: usize,
 ) -> TensorcheckProof<E>
 where
     F: Field,
@@ -39,7 +40,8 @@ where
     let time_ck = ck.as_committer_key(usize::min(1 << SPACE_TIME_THRESHOLD, ck.powers_of_g.len()));
     let (tensorcheck_sfoldings, tensorcheck_tfoldings) =
         partially_foldtree(body_polynomials.0, tensorcheck_challenges);
-    let mut folded_polynomials_commitments = ck.commit_folding(&tensorcheck_sfoldings);
+    let mut folded_polynomials_commitments =
+        ck.commit_folding(&tensorcheck_sfoldings, max_msm_buffer);
     folded_polynomials_commitments.extend(time_ck.batch_commit(&tensorcheck_tfoldings));
 
     // add commitments to transcript
@@ -81,8 +83,13 @@ where
     let open_space_chals = &open_chals[1..];
     let tensorcheck_foldings =
         FoldedPolynomialTree::new(body_polynomials.0, tensorcheck_challenges);
-    let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points);
-    let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, open_space_chals);
+    let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points, max_msm_buffer);
+    let (_, proof) = ck.open_folding(
+        tensorcheck_foldings,
+        &eval_points,
+        open_space_chals,
+        max_msm_buffer,
+    );
     // let time_proof = time_ck.batch_open_multi_points(tensorcheck_tfoldings, &eval_points, open_time_chals);
     let evaluation_proof = proof_w + proof;
     end_timer!(tensorcheck_open_time);
@@ -100,6 +107,7 @@ pub fn tensorcheck<F, E, SG, SB, SF1>(
     ck: CommitterKeyStream<E, SG>,
     base_polynomial: &SB,
     body_polynomials: (&SF1, &[F]),
+    max_msm_buffer: usize,
 ) -> TensorcheckProof<E>
 where
     F: Field,
@@ -113,7 +121,7 @@ where
     let tensorcheck_challenges = strip_last(body_polynomials.1);
     let tensorcheck_foldings =
         FoldedPolynomialTree::new(body_polynomials.0, tensorcheck_challenges);
-    let folded_polynomials_commitments = ck.commit_folding(&tensorcheck_foldings);
+    let folded_polynomials_commitments = ck.commit_folding(&tensorcheck_foldings, max_msm_buffer);
 
     // add commitments to transcript
     folded_polynomials_commitments
@@ -143,8 +151,13 @@ where
     let open_chal_len = body_polynomials.1.len() + 1;
     let open_chals = powers(open_chal, open_chal_len);
 
-    let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points);
-    let (_, proof) = ck.open_folding(tensorcheck_foldings, &eval_points, &open_chals[1..]);
+    let (_, proof_w) = ck.open_multi_points(base_polynomial, &eval_points, max_msm_buffer);
+    let (_, proof) = ck.open_folding(
+        tensorcheck_foldings,
+        &eval_points,
+        &open_chals[1..],
+        max_msm_buffer,
+    );
     let evaluation_proof = proof_w + proof;
     TensorcheckProof {
         folded_polynomials_commitments,
@@ -161,6 +174,7 @@ impl<E: PairingEngine> Proof<E> {
     pub fn new_elastic<SM, SG, SZ, SW>(
         r1cs: R1csStream<SM, SZ, SW>,
         ck: CommitterKeyStream<E, SG>,
+        max_msm_buffer: usize,
     ) -> Proof<E>
     where
         E: PairingEngine,
@@ -182,7 +196,7 @@ impl<E: PairingEngine> Proof<E> {
             crate::misc::_features_enabled(),
             crate::SPACE_TIME_THRESHOLD,
             crate::misc::TENSOR_EXPANSION_LOG,
-            crate::kzg::MAX_MSM_BUFFER_LOG,
+            max_msm_buffer,
         );
 
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
@@ -232,6 +246,7 @@ impl<E: PairingEngine> Proof<E> {
             ck,
             &r1cs.witness,
             (&tensorcheck_polynomials, &second_proof.challenges),
+            max_msm_buffer,
         );
         end_timer!(tensorcheck_time);
 

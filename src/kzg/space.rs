@@ -8,7 +8,7 @@ use ark_std::vec::Vec;
 
 use crate::iterable::{Iterable, Reverse};
 use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
-use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
+use crate::kzg::vanishing_polynomial;
 use crate::misc::ceil_div;
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
 
@@ -55,12 +55,17 @@ where
     }
 
     /// Evaluate a single polynomial at the point `alpha`, and provide an evaluation proof along with the evaluation.
-    pub fn open<SF>(&self, polynomial: &SF, alpha: &E::Fr) -> (E::Fr, EvaluationProof<E>)
+    pub fn open<SF>(
+        &self,
+        polynomial: &SF,
+        alpha: &E::Fr,
+        max_msm_buffer: usize,
+    ) -> (E::Fr, EvaluationProof<E>)
     where
         SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
-        let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
+        let mut quotient = ChunkedPippenger::new(max_msm_buffer);
 
         let mut bases = self.powers_of_g.iter();
         let scalars = polynomial.iter();
@@ -87,13 +92,14 @@ where
         &self,
         polynomial: &SF,
         points: &[E::Fr],
+        max_msm_buffer: usize,
     ) -> (Vec<E::Fr>, EvaluationProof<E>)
     where
         SF: Iterable,
         SF::Item: Borrow<E::Fr>,
     {
         let zeros = vanishing_polynomial(points);
-        let mut quotient = ChunkedPippenger::new(MAX_MSM_BUFFER);
+        let mut quotient = ChunkedPippenger::new(max_msm_buffer);
         let mut bases = self.powers_of_g.iter();
         bases
             .advance_by(self.powers_of_g.len() - polynomial.len() + zeros.degree())
@@ -152,6 +158,7 @@ where
     pub fn commit_folding<SF>(
         &self,
         polynomials: &FoldedPolynomialTree<E::Fr, SF>,
+        max_msm_buffer: usize,
     ) -> Vec<Commitment<E>>
     where
         SF: Iterable,
@@ -161,7 +168,7 @@ where
         let mut pippengers: Vec<ChunkedPippenger<E::G1Affine>> = Vec::new();
         let mut folded_bases = Vec::new();
         for i in 1..n + 1 {
-            let pippenger = ChunkedPippenger::with_size(MAX_MSM_BUFFER / n);
+            let pippenger = ChunkedPippenger::with_size(max_msm_buffer / n);
             let mut bases = self.powers_of_g.iter();
 
             let delta = self.powers_of_g.len() - ceil_div(polynomials.len(), 1 << i);
@@ -190,6 +197,7 @@ where
         polynomials: FoldedPolynomialTree<'a, E::Fr, SF>,
         points: &[E::Fr],
         etas: &[E::Fr],
+        max_msm_buffer: usize,
     ) -> (Vec<Vec<E::Fr>>, EvaluationProof<E>)
     where
         SG: Iterable,
@@ -199,7 +207,7 @@ where
         SF::Item: Borrow<E::Fr> + Copy,
     {
         let n = polynomials.depth();
-        let mut pippenger = HashMapPippenger::<E::G1Affine>::new(MAX_MSM_BUFFER);
+        let mut pippenger = HashMapPippenger::<E::G1Affine>::new(max_msm_buffer);
         let mut folded_bases = Vec::new();
         let zeros = vanishing_polynomial(points);
         let mut remainders = vec![VecDeque::new(); n];
@@ -286,6 +294,7 @@ fn test_open_multi_points() {
     use ark_poly::UVPolynomial;
     use ark_std::test_rng;
 
+    let max_msm_buffer = 1 << 20;
     let rng = &mut test_rng();
     // f = 80*x^6 + 80*x^5 + 88*x^4 + 3*x^3 + 73*x^2 + 7*x + 24
     let polynomial = [
@@ -303,24 +312,32 @@ fn test_open_multi_points() {
     let time_ck = CommitterKey::<Bls12_381>::new(200, 3, rng);
     let space_ck = CommitterKeyStream::from(&time_ck);
 
-    let (remainder, _commitment) =
-        space_ck.open_multi_points(&polynomial_stream, &[beta.square(), beta, -beta]);
+    let (remainder, _commitment) = space_ck.open_multi_points(
+        &polynomial_stream,
+        &[beta.square(), beta, -beta],
+        max_msm_buffer,
+    );
     let evaluation_remainder = evaluate_be(&remainder, &beta);
     assert_eq!(evaluation_remainder, Fr::from(1807299544171u64));
 
-    let (remainder, _commitment) = space_ck.open_multi_points(&polynomial_stream, &[beta]);
+    let (remainder, _commitment) =
+        space_ck.open_multi_points(&polynomial_stream, &[beta], max_msm_buffer);
     assert_eq!(remainder.len(), 1);
 
     // get a random polynomial with random coefficient,
     let polynomial = DensePolynomial::rand(100, rng).coeffs().to_vec();
     let polynomial_stream = &polynomial[..];
     let beta = Fr::rand(rng);
-    let (_, evaluation_proof_batch) = space_ck.open_multi_points(&polynomial_stream, &[beta]);
-    let (_, evaluation_proof_single) = space_ck.open(&polynomial_stream, &beta);
+    let (_, evaluation_proof_batch) =
+        space_ck.open_multi_points(&polynomial_stream, &[beta], max_msm_buffer);
+    let (_, evaluation_proof_single) = space_ck.open(&polynomial_stream, &beta, max_msm_buffer);
     assert_eq!(evaluation_proof_batch, evaluation_proof_single);
 
-    let (remainder, _evaluation_poof) =
-        space_ck.open_multi_points(&polynomial_stream, &[beta, -beta, beta.square()]);
+    let (remainder, _evaluation_poof) = space_ck.open_multi_points(
+        &polynomial_stream,
+        &[beta, -beta, beta.square()],
+        max_msm_buffer,
+    );
     let expected_evaluation = evaluate_be(&remainder, &beta);
     let obtained_evaluation = evaluate_be(&polynomial, &beta);
     assert_eq!(expected_evaluation, obtained_evaluation);

@@ -89,7 +89,7 @@ impl<E: PairingEngine> CommitterKey<E> {
         indices
             .iter()
             .zip(&self.powers_of_g)
-            .for_each(|(&i, g)| indexed_powers_of_g[i] = indexed_powers_of_g[i] + *g);
+            .for_each(|(&i, &g)| indexed_powers_of_g[i] = indexed_powers_of_g[i] + g);
         Self {
             powers_of_g2: self.powers_of_g2.clone(),
             powers_of_g: indexed_powers_of_g,
