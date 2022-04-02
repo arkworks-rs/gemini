@@ -3,7 +3,7 @@ use crate::circuit::{
     generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit, R1csStream,
 };
 use crate::iterable::dummy::Mat;
-use crate::iterable::Reversed;
+use crate::iterable::Reverse;
 
 use crate::kzg::{CommitterKey, CommitterKeyStream};
 use crate::misc::{joint_matrices, product_matrix_vector, sum_matrices};
@@ -31,17 +31,17 @@ fn test_consistency() {
     let c_rowmaj = matrix_into_rowmaj(&r1cs.c);
 
     let r1cs_stream = R1csStream {
-        z: Reversed::new(r1cs.z.as_slice()),
+        z: Reverse(r1cs.z.as_slice()),
         a_colmaj: Mat(a_colmaj.as_slice(), rows),
         b_colmaj: Mat(b_colmaj.as_slice(), rows),
         c_colmaj: Mat(c_colmaj.as_slice(), rows),
         a_rowmaj: Mat(a_rowmaj.as_slice(), rows),
         b_rowmaj: Mat(b_rowmaj.as_slice(), rows),
         c_rowmaj: Mat(c_rowmaj.as_slice(), rows),
-        witness: Reversed::new(r1cs.w.as_slice()),
-        z_a: Reversed::new(z_a.as_slice()),
-        z_b: Reversed::new(z_b.as_slice()),
-        z_c: Reversed::new(z_c.as_slice()),
+        witness: Reverse(r1cs.w.as_slice()),
+        z_a: Reverse(z_a.as_slice()),
+        z_b: Reverse(z_b.as_slice()),
+        z_c: Reverse(z_c.as_slice()),
         nonzero: num_constraints,
         joint_len: 384,
     };

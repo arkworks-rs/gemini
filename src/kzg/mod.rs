@@ -185,7 +185,8 @@ impl<E: PairingEngine> VerifierKey<E> {
     ) -> VerificationResult {
         let scalars = [(-alpha).into_bigint(), E::Fr::one().into_bigint()];
         let ep = VariableBase::msm(&self.powers_of_g2, &scalars);
-        let lhs = commitment.0.into_projective() - self.powers_of_g[0].mul(evaluation.into_bigint());
+        let lhs =
+            commitment.0.into_projective() - self.powers_of_g[0].mul(evaluation.into_bigint());
         let g2 = self.powers_of_g2[0];
 
         if E::pairing(lhs, g2) == E::pairing(proof.0, ep) {

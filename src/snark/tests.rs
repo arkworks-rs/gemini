@@ -4,7 +4,7 @@ use ark_std::test_rng;
 use crate::circuit::matrix_into_colmaj;
 use crate::circuit::matrix_into_rowmaj;
 use crate::circuit::{generate_relation, random_circuit, R1csStream};
-use crate::iterable::Reversed;
+use crate::iterable::Reverse;
 use crate::kzg::CommitterKey;
 use crate::kzg::CommitterKeyStream;
 use crate::misc::product_matrix_vector;
@@ -35,17 +35,17 @@ fn test_snark_consistency() {
     let c_colm = matrix_into_rowmaj(&r1cs.c);
 
     let r1cs_stream = R1csStream {
-        z: Reversed::new(r1cs.z.as_slice()),
+        z: Reverse(r1cs.z.as_slice()),
         a_colmaj: a_rowm.as_slice(),
         b_colmaj: b_rowm.as_slice(),
         c_colmaj: c_rowm.as_slice(),
         a_rowmaj: a_colm.as_slice(),
         b_rowmaj: b_colm.as_slice(),
         c_rowmaj: c_colm.as_slice(),
-        witness: Reversed::new(r1cs.w.as_slice()),
-        z_a: Reversed::new(z_a.as_slice()),
-        z_b: Reversed::new(z_b.as_slice()),
-        z_c: Reversed::new(z_c.as_slice()),
+        witness: Reverse(r1cs.w.as_slice()),
+        z_a: Reverse(z_a.as_slice()),
+        z_b: Reverse(z_b.as_slice()),
+        z_c: Reverse(z_c.as_slice()),
         nonzero: num_constraints,
         joint_len: num_constraints,
     };

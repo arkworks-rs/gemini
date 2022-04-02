@@ -8,7 +8,7 @@ use ark_std::vec::Vec;
 
 use merlin::Transcript;
 
-use crate::iterable::Reversed;
+use crate::iterable::Reverse;
 use crate::misc::fold_polynomial;
 use crate::misc::hadamard;
 use crate::misc::ip;
@@ -148,7 +148,7 @@ fn test_folding_consistency() {
     // Easy folding:
     // test consistency between the time-efficient and the space-efficient algorithm, for vectors of size 2ˆn.
     let f = DensePolynomial::<F>::rand(15, rng);
-    let rev_f = Reversed::new(&f.coeffs);
+    let rev_f = Reverse(&f.coeffs);
 
     let trivial_folded_stream = FoldedPolynomialStream::new(&rev_f, &[]);
     let mut collected_stream = trivial_folded_stream.iter().collect::<Vec<_>>();
@@ -179,7 +179,7 @@ fn test_folding_consistency() {
     // Difficult folding:
     // test consistency between the time-efficiencot and the space-efficient algorithm, for vectors of odd size.
     let f = DensePolynomial::<F>::rand(18, rng);
-    let rev_f = Reversed::new(&f.coeffs);
+    let rev_f = Reverse(&f.coeffs);
 
     let trivial_folded_stream = FoldedPolynomialStream::new(&rev_f, &[]);
     let mut collected_stream = trivial_folded_stream.iter().collect::<Vec<_>>();

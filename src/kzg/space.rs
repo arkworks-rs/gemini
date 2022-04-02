@@ -6,7 +6,7 @@ use ark_std::borrow::Borrow;
 use ark_std::collections::VecDeque;
 use ark_std::vec::Vec;
 
-use crate::iterable::{Iterable, Reversed};
+use crate::iterable::{Iterable, Reverse};
 use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
 use crate::kzg::{vanishing_polynomial, MAX_MSM_BUFFER};
 use crate::misc::ceil_div;
@@ -244,14 +244,11 @@ where
 }
 
 impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
-    for CommitterKeyStream<E, Reversed<'a, E::G1Affine>>
+    for CommitterKeyStream<E, Reverse<&'a [E::G1Affine]>>
 {
     fn from(ck: &'a CommitterKey<E>) -> Self {
         CommitterKeyStream {
-            powers_of_g: Reversed::new(&ck.powers_of_g),
-            /*
-                TODO: Gives more G2 elements
-            */
+            powers_of_g: Reverse(ck.powers_of_g.as_slice()),
             powers_of_g2: ck.powers_of_g2.clone(),
         }
     }

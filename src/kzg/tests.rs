@@ -5,7 +5,7 @@ use ark_std::test_rng;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
 
-use crate::iterable::{Iterable, Reversed};
+use crate::iterable::{Iterable, Reverse};
 use crate::kzg::space::CommitterKeyStream;
 use crate::kzg::time::CommitterKey;
 use crate::kzg::VerifierKey;
@@ -16,7 +16,7 @@ fn test_commitment_consistency() {
     let rng = &mut ark_std::test_rng();
     let d = 15;
     let polynomial = DensePolynomial::<Fr>::rand(d, rng);
-    let polynomial_stream = Reversed::new(polynomial.coeffs());
+    let polynomial_stream = Reverse(polynomial.coeffs());
     let time_ck = CommitterKey::<Bls12_381>::new(d + 1, 3, rng);
     let space_ck = CommitterKeyStream::from(&time_ck);
 
@@ -43,7 +43,7 @@ fn test_open_consistency() {
     let rng = &mut ark_std::test_rng();
     let d = 15;
     let polynomials = DensePolynomial::<Fr>::rand(d, rng);
-    let polynomial_stream = Reversed::new(polynomials.coeffs());
+    let polynomial_stream = Reverse(polynomials.coeffs());
     let time_ck = CommitterKey::<Bls12_381>::new(d + 1, 3, rng);
     let space_ck = CommitterKeyStream::from(&time_ck);
     let alpha = Fr::rand(rng);

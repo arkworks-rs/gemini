@@ -1,11 +1,10 @@
 //! A space-efficient implementation of Pippenger's algorithm.
 use ark_ec::{AffineCurve, ProjectiveCurve};
-use ark_ff::{BigInteger, PrimeField};
 use ark_ff::Zero;
+use ark_ff::{BigInteger, PrimeField};
 use ark_std::borrow::Borrow;
 use ark_std::ops::AddAssign;
 use ark_std::vec::Vec;
-
 
 use super::bounded_ln_without_floats;
 use crate::iterable::Iterable;
@@ -179,9 +178,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
                 .map(|s| s.into_bigint())
                 .collect::<Vec<_>>();
             self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(
-                    &bases, &scalars,
-                ));
+                .add_assign(ark_ec::msm::VariableBase::msm(&bases, &scalars));
             self.buffer.clear();
         }
     }
@@ -198,9 +195,7 @@ impl<G: AffineCurve> HashMapPippenger<G> {
                 .collect::<Vec<_>>();
 
             self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(
-                    &bases, &scalars,
-                ));
+                .add_assign(ark_ec::msm::VariableBase::msm(&bases, &scalars));
         }
         self.result
     }
@@ -244,11 +239,10 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
         self.scalars_buffer.push(*scalar.borrow());
         self.bases_buffer.push(*base.borrow());
         if self.scalars_buffer.len() == self.buf_size {
-            self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(
-                    self.bases_buffer.as_slice(),
-                    self.scalars_buffer.as_slice(),
-                ));
+            self.result.add_assign(ark_ec::msm::VariableBase::msm(
+                self.bases_buffer.as_slice(),
+                self.scalars_buffer.as_slice(),
+            ));
             self.scalars_buffer.clear();
             self.bases_buffer.clear();
         }
@@ -258,11 +252,10 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
     #[inline(always)]
     pub fn finalize(mut self) -> G::Projective {
         if !self.scalars_buffer.is_empty() {
-            self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(
-                    self.bases_buffer.as_slice(),
-                    self.scalars_buffer.as_slice(),
-                ));
+            self.result.add_assign(ark_ec::msm::VariableBase::msm(
+                self.bases_buffer.as_slice(),
+                self.scalars_buffer.as_slice(),
+            ));
         }
         self.result
     }

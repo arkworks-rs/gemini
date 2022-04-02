@@ -1,7 +1,7 @@
 //! Implementation of Peppinger's algorithm.
 use ark_ec::{AffineCurve, ProjectiveCurve};
-use ark_ff::{BigInteger, PrimeField};
 use ark_ff::Zero;
+use ark_ff::{BigInteger, PrimeField};
 use ark_std::cmp::Ordering;
 use ark_std::vec::Vec;
 

@@ -1,12 +1,10 @@
 //! A base library for iterfacing with streams of vectors and matrices.
 //!
 //! This library extends the abstraction layer provided by [`ark_std::iterable::Iterable`]
-//! This implements the so-called _streaming model_.
-//! Essentially, it provides a set of handy utilities as a wrapper around iterators.
+//! with streams that repeat the same element over and over, and that iterate in reversed order.
 
-// DummyStream
 pub mod dummy;
 pub(crate) mod slice;
 
-pub use slice::Reversed;
+pub use slice::Reverse;
 pub use ark_std::iterable::Iterable;

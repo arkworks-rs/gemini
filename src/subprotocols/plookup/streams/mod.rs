@@ -54,14 +54,14 @@ fn test_consistency() {
     use ark_std::UniformRand;
 
     use super::time_prover::plookup_set;
-    use crate::iterable::Reversed;
+    use crate::iterable::Reverse;
 
     let rng = &mut test_rng();
     let v = (0..5).map(|_| F::rand(rng)).collect::<Vec<_>>();
     let y = F::rand(rng);
     let z = F::rand(rng);
     let time_set = plookup_set(&v, &y, &z);
-    let set_stream = Reversed::new(&v);
+    let set_stream = Reverse(&v);
     let mut elastic_set = LookupSetStreamer::new(&set_stream, y, z)
         .iter()
         .collect::<Vec<_>>();

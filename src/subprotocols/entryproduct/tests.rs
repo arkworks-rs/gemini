@@ -51,7 +51,7 @@ fn test_entry_product_consistency() {
 fn test_sumcheck_inputs_consistency() {
     use super::streams::{ProductStream, RightRotationStreamer};
     use crate::iterable::Iterable;
-    use crate::iterable::Reversed;
+    use crate::iterable::Reverse;
     use ark_bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
@@ -69,7 +69,7 @@ fn test_sumcheck_inputs_consistency() {
     let acc_v = accumulated_product(&monic_v);
 
     // space-efficient
-    let vector_stream = Reversed::new(&vector[..]);
+    let vector_stream = Reverse(&vector[..]);
     let mut rrot_v_stream = RightRotationStreamer::new(&vector_stream, &F::one())
         .iter()
         .cloned()

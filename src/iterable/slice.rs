@@ -4,22 +4,18 @@ use super::Iterable;
 /// Reversed stream for Rust slice.
 /// It outputs elements in the slice in reversed order.
 #[derive(Clone, Copy)]
-pub struct Reversed<'a, T>(&'a [T]);
-
-impl<'a, T> Reversed<'a, T> {
-    /// Initialize a new stream for the slice.
-    pub fn new(slice: &'a [T]) -> Self {
-        Self(slice)
-    }
-}
-
-impl<'a, T> Iterable for Reversed<'a, T>
+pub struct Reverse<I>(pub I)
 where
-    T: Copy + Send + Sync,
-{
-    type Item = &'a T;
+    I: Iterable,
+    I::Iter: DoubleEndedIterator;
 
-    type Iter = ark_std::iter::Rev<ark_std::slice::Iter<'a, T>>;
+impl<I> Iterable for Reverse<I>
+where
+    I: Iterable,
+    I::Iter: DoubleEndedIterator,
+{
+    type Item = I::Item;
+    type Iter = ark_std::iter::Rev<I::Iter>;
 
     #[inline]
     fn iter(&self) -> Self::Iter {
