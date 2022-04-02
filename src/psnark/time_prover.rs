@@ -220,11 +220,11 @@ impl<E: PairingEngine> Proof<E> {
 
         let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&ralpha_star, &psi)];
         accumulated_vec.iter().for_each(|v| {
-            ralpha_star_acc_mu_evals.push(evaluate_le(&v, &psi));
+            ralpha_star_acc_mu_evals.push(evaluate_le(v, &psi));
         });
 
-        let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), &second_challenges_head);
-        let s_1_prime = ip(&hadamard(&r_star, &val_b), &second_challenges_head);
+        let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), second_challenges_head);
+        let s_1_prime = ip(&hadamard(&r_star, &val_b), second_challenges_head);
         // let s_2_prime = ip(&hadamard(&alpha_star, &val_c), &second_challenges_head);
         // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
         // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
@@ -237,17 +237,17 @@ impl<E: PairingEngine> Proof<E> {
         provers.extend(entry_products.provers);
 
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&ralpha_star, &second_challenges_head),
+            &hadamard(&ralpha_star, second_challenges_head),
             &val_a,
             &E::Fr::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&r_star, &second_challenges_head),
+            &hadamard(&r_star, second_challenges_head),
             &val_b,
             &E::Fr::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
-            &hadamard(&alpha_star, &second_challenges_head),
+            &hadamard(&alpha_star, second_challenges_head),
             &val_c,
             &E::Fr::one(),
         ))));
@@ -272,9 +272,9 @@ impl<E: PairingEngine> Proof<E> {
             &val_a,
             &val_b,
             &val_c,
-            &sorted_polynomials[0],
-            &sorted_polynomials[1],
-            &sorted_polynomials[2],
+            sorted_polynomials[0],
+            sorted_polynomials[1],
+            sorted_polynomials[2],
             &accumulated_vec[0],
             &accumulated_vec[1],
             &accumulated_vec[2],
@@ -290,7 +290,7 @@ impl<E: PairingEngine> Proof<E> {
 
         let shift_monic_lookup_vec = lookup_vec
             .iter()
-            .map(|v| right_rotation(&(monic(&v))))
+            .map(|v| right_rotation(&(monic(v))))
             .collect::<Vec<_>>();
         let mut third_proof_vec = Vec::new();
 
@@ -321,7 +321,7 @@ impl<E: PairingEngine> Proof<E> {
             (&[&z_star], &second_proof.challenges[..]),
             (
                 &[&ralpha_star, &r_star, &alpha_star],
-                &hadamard(&second_proof.challenges, &third_proof_challlenges_head)[..],
+                &hadamard(&second_proof.challenges, third_proof_challlenges_head)[..],
             ),
         ];
 

@@ -523,7 +523,7 @@ impl<E: PairingEngine> Proof<E> {
                     hadamard(&subclaim_3.challenges, &mu_powers2),
                     subclaim_3.challenges.clone(),
                     subclaim_2.challenges.clone(),
-                    hadamard(&subclaim_2.challenges, &subclaim_3_chal_leading),
+                    hadamard(&subclaim_2.challenges, subclaim_3_chal_leading),
                 ],
                 beta,
                 batch_consistency,

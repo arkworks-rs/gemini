@@ -14,7 +14,6 @@ mod streams;
 mod tests;
 
 use ark_ec::PairingEngine;
-use ark_ff::PrimeField;
 use ark_std::vec::Vec;
 use ark_std::Zero;
 
@@ -52,8 +51,10 @@ pub struct Proof<E: PairingEngine> {
 
 impl<E: PairingEngine> Proof<E> {
     pub fn size_in_bytes(&self) -> usize {
+        use ark_ff::PrimeField;
+
         let mut res = 0;
-        let size_of_fe_in_bytes = E::Fr::zero().into_repr().as_ref().len() * 8;
+        let size_of_fe_in_bytes = E::Fr::zero().into_bigint().as_ref().len() * 8;
         let size_of_gp_in_bytes = self.witness_commitment.size_in_bytes();
 
         // witness_commitment: Commitment<E>,

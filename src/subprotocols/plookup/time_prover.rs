@@ -24,7 +24,7 @@ pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, &z: &F) -> Vec<F> {
     let y1z = (F::one() + z) * y;
     let len = v.len();
     if len == 0 {
-        return Vec::new();
+        Vec::new()
     } else {
         let head = Some(y1z + z * v[0]).into_iter();
         let trunk = (0..len - 1).map(|i| y1z + v[i] + z * v[i + 1]);
@@ -105,7 +105,7 @@ pub fn plookup<F: Field>(
 
     let lookup_set = plookup_set(&set, y, z);
     let lookup_subset = plookup_subset(&subset, y);
-    let frequency = compute_frequency(set.len(), &index);
+    let frequency = compute_frequency(set.len(), index);
     let sorted = sorted(&set, &frequency);
     let lookup_sorted = plookup_set(&sorted, y, z);
     [lookup_set, lookup_subset, lookup_sorted]

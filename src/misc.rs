@@ -305,25 +305,22 @@ pub fn joint_matrices<F: Field>(
     let a = a
         .iter()
         .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let b = b
         .iter()
         .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
     let c = c
         .iter()
         .enumerate()
-        .map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
-        .flatten()
+        .flat_map(|(r, row)| row.iter().map(move |(f, i)| ((r, *i), *f)))
         .collect::<BTreeMap<(usize, usize), F>>();
 
-    for (cc, col) in joint_matrix.into_iter().enumerate() {
+    for (cc, col) in joint_matrix.iter().enumerate() {
         for i in col {
             let row_val = F::from(*i as u64);
             let col_val = F::from(cc as u64);
@@ -333,9 +330,9 @@ pub fn joint_matrices<F: Field>(
             row_vec.push(row_val);
             col_vec.push(col_val);
             // We insert zeros if a matrix doesn't contain an entry at the given (row, col) location.
-            val_a_vec.push(a.get(&(*i, cc)).copied().unwrap_or(F::zero()));
-            val_b_vec.push(b.get(&(*i, cc)).copied().unwrap_or(F::zero()));
-            val_c_vec.push(c.get(&(*i, cc)).copied().unwrap_or(F::zero()));
+            val_a_vec.push(a.get(&(*i, cc)).copied().unwrap_or_else(F::zero));
+            val_b_vec.push(b.get(&(*i, cc)).copied().unwrap_or_else(F::zero));
+            val_c_vec.push(c.get(&(*i, cc)).copied().unwrap_or_else(F::zero));
         }
     }
 
@@ -363,7 +360,7 @@ pub fn evaluate_tensor_poly<F: Field>(elements: &[F], x: F) -> F {
         res *= tmp;
         s = s.square();
     }
-    return res;
+    res
 }
 
 /// Efficient evaluation for polynomials of the form:
@@ -411,7 +408,7 @@ fn test_evaluate_index_poly() {
     let rng = &mut ark_std::test_rng();
     let x = F::rand(rng);
     let n = 147;
-    let index_polynomial = (0..n as u64).map(|i| F::from(i)).collect::<Vec<_>>();
+    let index_polynomial = (0..n as u64).map(F::from).collect::<Vec<_>>();
 
     let got = evaluate_index_poly(x, n);
     let expected = evaluate_le(&index_polynomial, &x);

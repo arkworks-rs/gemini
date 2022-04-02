@@ -125,10 +125,10 @@ impl<E: PairingEngine> TensorcheckProof<E> {
     pub(crate) fn size_in_bytes(&self) -> usize {
         let size_of_fe_in_bytes = E::Fr::zero().into_bigint().as_ref().len() * 8;
         let size_of_gp_in_bytes = self.folded_polynomials_commitments[0].size_in_bytes();
-        return self.folded_polynomials_commitments.len() * size_of_gp_in_bytes
+        self.folded_polynomials_commitments.len() * size_of_gp_in_bytes
             + self.folded_polynomials_evaluations.len() * 2 * size_of_fe_in_bytes
             + size_of_gp_in_bytes
-            + self.base_polynomials_evaluations.len() * 3 * size_of_fe_in_bytes;
+            + self.base_polynomials_evaluations.len() * 3 * size_of_fe_in_bytes
     }
 }
 

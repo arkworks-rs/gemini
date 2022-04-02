@@ -17,7 +17,7 @@ pub struct ProverMsgs<F: Field>(pub(crate) Vec<RoundMsg<F>>, pub(crate) Vec<[F; 
 impl<F: PrimeField + Field> ProverMsgs<F> {
     pub(crate) fn size_in_bytes(&self) -> usize {
         let size_of_fe_in_bytes = F::zero().into_bigint().as_ref().len() * 8;
-        return (self.0.len() + self.1.len()) * 2 * size_of_fe_in_bytes;
+        (self.0.len() + self.1.len()) * 2 * size_of_fe_in_bytes
     }
 }
 

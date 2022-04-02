@@ -2,23 +2,18 @@
 #[macro_use]
 extern crate criterion;
 
-use ark_bls12_381::{Bls12_381, Fr as BlsFr};
-use ark_ff::PrimeField;
-use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
-use ark_gemini::kzg::CommitterKeyStream;
-use ark_gemini::misc::{joint_matrices, product_matrix_vector, sum_matrices};
+
+
+
+
+use ark_gemini::misc::{joint_matrices, sum_matrices};
 use ark_gemini::psnark::Proof;
-use ark_poly::univariate::DensePolynomial;
-use ark_relations::{
-    lc,
-    r1cs::{ConstraintSynthesizer, ConstraintSystemRef, SynthesisError},
-};
+
+
 use ark_std::ops::Range;
 use ark_std::test_rng;
-use ark_std::{ops::Mul, UniformRand};
-use criterion::{black_box, BenchmarkId, Criterion};
 
-const NUM_VERIFY_REPEATITIONS: usize = 50;
+use criterion::{BenchmarkId, Criterion};
 
 const NUM_DOMAIN_RANGE: Range<usize> = 12..21;
 
@@ -48,9 +43,9 @@ fn batch_verify_bench(c: &mut Criterion) {
         println!("Proof Size in Bytes: {}", proof.size_in_bytes());
 
         group.sample_size(10).bench_with_input(
-            BenchmarkId::new(format!("Verify/"), d),
+            BenchmarkId::new("Verify/".to_string(), d),
             &d,
-            |b, &d| b.iter(|| proof.verify(&r1cs, &vk, &index_comms, size)),
+            |b, &_d| b.iter(|| proof.verify(&r1cs, &vk, &index_comms, size)),
         );
     }
 }

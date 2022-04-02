@@ -56,8 +56,8 @@ impl<E: PairingEngine> ProverMsgs<E> {
     pub(crate) fn size_in_bytes(&self) -> usize {
         let size_of_fe_in_bytes = E::Fr::zero().into_bigint().as_ref().len() * 8;
         let size_of_gp_in_bytes = self.acc_v_commitments[0].size_in_bytes();
-        return self.acc_v_commitments.len() * size_of_gp_in_bytes
-            + self.claimed_sumchecks.len() * size_of_fe_in_bytes;
+        self.acc_v_commitments.len() * size_of_gp_in_bytes
+            + self.claimed_sumchecks.len() * size_of_fe_in_bytes
     }
 }
 

@@ -266,7 +266,7 @@ fn test_batch_sumcheck_correctness() {
     let subclaim = Subclaim::new_batch(
         &mut verifier_transcript,
         &prover_messages,
-        &vec![asserted_sum, asserted_sum2],
+        &[asserted_sum, asserted_sum2],
     );
     assert!(subclaim.is_ok());
 }
