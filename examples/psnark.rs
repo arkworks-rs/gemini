@@ -2,14 +2,15 @@ use ark_ec::bls12::Bls12;
 use ark_ec::{AffineCurve, PairingEngine};
 use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
 use ark_gemini::kzg::CommitterKeyStream;
-use ark_gemini::psnark::Proof;
+use ark_serialize::CanonicalSerialize;
 use ark_std::rand::Rng;
 use ark_std::test_rng;
 use clap::Parser;
 
-type PE = Bls12<ark_bls12_381::Parameters>;
 type G1 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G1Affine;
 type G2 = <Bls12<ark_bls12_381::Parameters> as PairingEngine>::G2Affine;
+type Proof = ark_gemini::psnark::Proof<ark_bls12_381::Bls12_381>;
+
 
 /// Start a watcher thread that will print the memory (stack+heap) currently allocated at regular intervals.
 /// Informations are going to be printed only with feature "print-trace" enabled, and within a linux system.
@@ -51,36 +52,35 @@ struct SnarkConfig {
     time_prover: bool,
 }
 
-fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
+fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
     let instance_size = 1 << instance_logsize;
     let max_msm_buffer = 1 << 20;
 
     let g1 = G1::prime_subgroup_generator();
     let g2 = G2::prime_subgroup_generator();
     let r1cs_stream = dummy_r1cs_stream(rng, instance_size);
-    let ck = CommitterKeyStream::<PE, _> {
+    let ck = CommitterKeyStream {
         powers_of_g: DummyStreamer::new(g1, instance_size * 3 + 1),
         powers_of_g2: vec![g2; 4],
     };
-    println!("Proving an instance of log size  {}", instance_logsize);
-    Proof::new_elastic(&r1cs_stream, &ck, max_msm_buffer);
+
+    Proof::new_elastic(&r1cs_stream, &ck, max_msm_buffer)
 }
 
-fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) {
+fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
     let num_constraints = 1 << instance_logsize;
     let num_variables = 1 << instance_logsize;
 
     // let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
     // let r1cs = ark_gemini::circuit::generate_relation(circuit);
     let r1cs = ark_gemini::circuit::dummy_r1cs(rng, num_constraints);
-    let ck = ark_gemini::kzg::CommitterKey::<ark_bls12_381::Bls12_381>::new(
+    let ck = ark_gemini::kzg::CommitterKey::new(
         num_constraints + num_variables,
         5,
         rng,
     );
 
-    println!("Proving an instance of log size  {}", instance_logsize);
-    Proof::new_time(&r1cs, &ck);
+    Proof::new_time(&r1cs, &ck)
 }
 
 fn main() {
@@ -89,9 +89,11 @@ fn main() {
     env_logger::init();
     memory_traces();
 
-    if snark_config.time_prover {
+    println!("Proving an instance of log size  {}", snark_config.instance_logsize);
+    let proof = if snark_config.time_prover {
         time_snark_main(rng, snark_config.instance_logsize)
     } else {
         elastic_snark_main(rng, snark_config.instance_logsize)
-    }
+    };
+    println!("proof-size {}B", proof.serialized_size());
 }

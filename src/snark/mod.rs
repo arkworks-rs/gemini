@@ -65,13 +65,14 @@ mod streams;
 mod tests;
 
 use ark_ec::PairingEngine;
+use ark_serialize::*;
 
 use crate::kzg::Commitment;
 use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The SNARK proof, composed of all prover's messages sent throughout the protocol.
-#[derive(PartialEq, Eq)]
+#[derive(CanonicalSerialize, PartialEq, Eq)]
 pub struct Proof<E: PairingEngine> {
     witness_commitment: Commitment<E>,
     zc_alpha: E::Fr,
