@@ -6,5 +6,5 @@
 pub mod dummy;
 pub(crate) mod slice;
 
-pub use slice::Reverse;
 pub use ark_std::iterable::Iterable;
+pub use slice::Reverse;

@@ -4,6 +4,8 @@ use ark_std::marker::PhantomData;
 
 use crate::iterable::Iterable;
 
+const LEN_MISMATCH_ERRMSG: &'static str = "Iterable::len mismatch with actual stream length.";
+
 #[derive(Clone, Copy)]
 pub struct HadamardStreamer<'a, F, S0, S1>(&'a S0, &'a S1, PhantomData<F>);
 
@@ -56,12 +58,27 @@ where
     type Iter = HadamardIter<F, S0::Iter, S1::Iter>;
 
     fn iter(&self) -> Self::Iter {
-        HadamardIter(self.0.iter(), self.1.iter(), PhantomData)
+        let mut iter0 = self.0.iter();
+        let mut iter1 = self.1.iter();
+
+        // align the streams to the shortest one.
+        // If attempting to align the stream fails, this means that Iterable::len is providing
+        // unccurate information about the actual length.
+        // In this unfortunate event, fail panicking.
+        if self.0.len() > self.1.len() {
+            iter0
+                .advance_by(self.0.len() - self.1.len())
+                .expect(LEN_MISMATCH_ERRMSG)
+        } else if self.1.len() > self.0.len() {
+            iter1
+                .advance_by(self.1.len() - self.0.len())
+                .expect(LEN_MISMATCH_ERRMSG)
+        }
+        HadamardIter(iter0, iter1, PhantomData)
     }
 
     fn len(&self) -> usize {
-        assert_eq!(self.0.len(), self.1.len());
-        self.0.len()
+        usize::min(self.0.len(), self.1.len())
     }
 }
 

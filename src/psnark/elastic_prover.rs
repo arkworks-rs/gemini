@@ -14,7 +14,7 @@ use crate::kzg::{CommitterKeyStream, EvaluationProof};
 use crate::misc::{evaluate_be, hadamard, ip_unsafe, powers, powers2, strip_last, MatrixElement};
 use crate::psnark::streams::{
     AlgebraicHash, HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream,
-    LookupStreamer, LookupTensorStreamer, TensorStreamer,
+    LookupStreamer, LookupTensorStreamer, Tensor,
 };
 use crate::psnark::Proof;
 use crate::subprotocols::entryproduct::streams::entry_product_streams;
@@ -148,8 +148,8 @@ impl<E: PairingEngine> Proof<E> {
         let alpha_short = &powers2(alpha, len);
         let ralpha_short = &hadamard(r_short, alpha_short);
         // expand the randomness for each matrix
-        let rs = TensorStreamer::new(r_short, 1 << len);
-        let alphas = TensorStreamer::new(alpha_short, 1 << len);
+        let rs = Tensor(r_short);
+        let alphas = Tensor(alpha_short);
         // lookup in the randomness for the nonzero positions
         let ralpha_star = LookupTensorStreamer::new(ralpha_short, &row);
         let r_star = LookupTensorStreamer::new(r_short, &row);
@@ -245,7 +245,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // _nota bene_: the variable `ep_r` needs to be defined _before_ `provers` is allocated,
         // so that its lifetime will not conflict with the lifetime of the `provers`.
-        let ep_r = TensorStreamer::new(&sumcheck2.challenges, r_star.len());
+        let ep_r = Tensor(&sumcheck2.challenges);
         let lhs_ralpha_star = HadamardStreamer::new(&ralpha_star, &ep_r);
         let lhs_r_star = HadamardStreamer::new(&r_star, &ep_r);
         let lhs_alpha_star = HadamardStreamer::new(&alpha_star, &ep_r);

@@ -97,9 +97,9 @@ pub mod tests;
 
 use ark_ff::{Field, One, PrimeField, Zero};
 use ark_poly::{univariate::DensePolynomial, UVPolynomial};
+use ark_serialize::*;
 use ark_std::io::Write;
 use ark_std::ops::{Add, Mul};
-use ark_serialize::*;
 
 use ark_std::fmt;
 

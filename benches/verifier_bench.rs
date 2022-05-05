@@ -5,7 +5,6 @@ extern crate criterion;
 use ark_gemini::misc::{joint_matrices, sum_matrices};
 use ark_gemini::psnark::Proof;
 
-
 use ark_std::ops::Range;
 use ark_std::test_rng;
 
@@ -43,7 +42,6 @@ fn batch_verify_bench(c: &mut Criterion) {
     }
 }
 
-
 criterion_group! {
     name=verifier_benchmarks;
     config=Criterion::default();
@@ -51,4 +49,3 @@ criterion_group! {
 }
 
 criterion_main! {verifier_benchmarks}
-

@@ -121,7 +121,6 @@ pub struct TensorcheckProof<E: PairingEngine> {
     pub base_polynomials_evaluations: Vec<[E::Fr; 3]>,
 }
 
-
 /// The function for folding polynomials using given challenges for each round.
 /// It skips the last challenge since the result can be obtained from asserted results.
 pub fn foldings_polynomial<F: Field>(polynomial: &[F], challenges: &[F]) -> Vec<Vec<F>> {

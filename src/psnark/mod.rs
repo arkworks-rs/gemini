@@ -47,4 +47,3 @@ pub struct Proof<E: PairingEngine> {
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
     tensorcheck_proof: TensorcheckProof<E>,
 }
-
