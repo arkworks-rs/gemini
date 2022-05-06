@@ -149,15 +149,14 @@ impl<E: PairingEngine> Proof<E> {
             .iter()
             .map(|e| vec![*e])
             .collect::<Vec<_>>();
-        assert!(vk
-            .verify_multi_points(
-                &commitments,
-                &[mu],
-                &evaluations[..],
-                &self.ralpha_star_acc_mu_proof,
-                &open_chal,
-            )
-            .is_ok());
+        vk.verify_multi_points(
+            &commitments,
+            &[mu],
+            &evaluations[..],
+            &self.ralpha_star_acc_mu_proof,
+            &open_chal,
+        )
+        .map_err(|_e| VerificationError)?;
 
         // transcript.append_scalar(b"r_val_chal_a", &self.rstars_vals[0]);
         // transcript.append_scalar(b"r_val_chal_b", &self.rstars_vals[1]);
@@ -303,9 +302,8 @@ impl<E: PairingEngine> Proof<E> {
                 zeta,
                 set_len + num_non_zero,
             );
-        // assert!(false);
         tmp *= batch_consistency;
-        //
+
         // lookup alpha*
         direct_base_polynomials_evaluations_2[0] += tmp
             * compute_plookup_set_eval(

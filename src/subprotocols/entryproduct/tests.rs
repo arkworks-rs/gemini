@@ -31,10 +31,7 @@ fn test_entry_product_relation() {
     let entry_product = monic_v.iter().product::<F>();
     let twist = powers(chal, rrot_v.len());
     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
-    assert_eq!(
-        lhs,
-        entry_product - chal.pow(&[(n+1) as u64])
-    );
+    assert_eq!(lhs, entry_product - chal.pow(&[(n + 1) as u64]));
 }
 
 #[test]

@@ -73,11 +73,7 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
     // let circuit = ark_gemini::circuit::random_circuit(rng, num_constraints, num_variables);
     // let r1cs = ark_gemini::circuit::generate_relation(circuit);
     let r1cs = ark_gemini::circuit::dummy_r1cs(rng, num_constraints);
-    let ck = ark_gemini::kzg::CommitterKey::new(
-        num_constraints + num_variables,
-        5,
-        rng,
-    );
+    let ck = ark_gemini::kzg::CommitterKey::new(num_constraints + num_variables, 5, rng);
 
     Proof::new_time(&r1cs, &ck)
 }
@@ -88,7 +84,10 @@ fn main() {
     env_logger::init();
     memory_traces();
 
-    println!("Proving an instance of log size  {}", snark_config.instance_logsize);
+    println!(
+        "Proving an instance of log size  {}",
+        snark_config.instance_logsize
+    );
     let proof = if snark_config.time_prover {
         time_snark_main(rng, snark_config.instance_logsize)
     } else {
