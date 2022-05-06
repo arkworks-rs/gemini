@@ -1,5 +1,5 @@
 use ark_bls12_381::{Bls12_381, Fr as F};
-use ark_ff::{Field, One};
+use ark_ff::Field;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
 use merlin::Transcript;
@@ -7,25 +7,33 @@ use merlin::Transcript;
 use super::time_prover::{accumulated_product, monic, right_rotation};
 use super::EntryProduct;
 use crate::kzg::{CommitterKey, CommitterKeyStream};
-use crate::misc::{evaluate_le, hadamard, ip, powers};
+use crate::misc::{hadamard, ip, powers};
 
 use crate::iterable::dummy::DummyStreamer;
 
 #[test]
 fn test_entry_product_relation() {
+    // given a vector f of length N and P the claimed products of its entries and a challenge psi
+    // let monic(f) be f extended with a leading 1
+    // and g = accumulated(monic(f))
+    // and y = (1, psi, psi^2, ..., psi^N)
+    // where g = accumulated(a) is the vector of accumulated products g_{i-1} = g_i * f_{i-1}
+    // Then the following relation is satisfied for a ran:
+    // <shift(monic(f)) o y, g> = e - psi^{N+1}
     let rng = &mut ark_std::test_rng();
     let n = 1000usize;
     let v = (0..n).map(|_| F::rand(rng)).collect::<Vec<_>>();
     let monic_v = monic(&v);
-    let rrot_v = right_rotation(&monic_v);
+    let chal = F::rand(rng);
+    let mut rrot_v = right_rotation(&monic_v);
+    rrot_v.iter_mut().for_each(|x| *x -= chal);
     let acc_v = accumulated_product(&monic_v);
     let entry_product = monic_v.iter().product::<F>();
-    let chal = F::one();
     let twist = powers(chal, rrot_v.len());
     let lhs = ip(&hadamard(&rrot_v, &twist), &acc_v);
     assert_eq!(
         lhs,
-        chal * evaluate_le(&acc_v, &chal) + entry_product - chal.pow(&[n as u64])
+        entry_product - chal.pow(&[(n+1) as u64])
     );
 }
 
