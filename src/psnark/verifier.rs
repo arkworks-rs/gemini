@@ -14,8 +14,27 @@ use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
-fn compute_entry_prod_eval<F: Field>(ori_eval: F, eval_point: F) -> F {
-    eval_point * ori_eval + F::one()
+/// Given oracle access to a polynomial $f \in \FF[x]$ and a field element $\psi \in \FF$, returns $(f - \psi)(x)$.
+#[inline]
+fn eval_entryprod<F: Field>(oracle: impl FnOnce(F) -> F, psi: F, n: usize) -> impl FnOnce(F) -> F {
+    move |x| oracle(x) - psi * evaluate_geometric_poly(x, n)
+}
+
+/// Given oracle access to a polynomial $f$, return $xf(x) + 1$.
+///
+/// This corresponds to the right rotation of the polynomial
+/// extended with a leading $1$ on the top.
+#[inline]
+fn eval_shift<F: Field>(oracle: impl FnOnce(F) -> F) -> impl FnOnce(F) -> F {
+    move |x|  x * oracle(x) + F::one()
+}
+
+/// Given a polynomial oracle, compute the plookup subset evalution using the randomness of the verifier `y, `z`.
+///
+/// Given oracle access to a polynomial $f$ of degree $n$, return $f(x) + \zeta * [n](x) + y * (1 + x + x^2 + .. + x^{n-1})$.
+#[inline]
+const fn eval_plookup_subset<F: Field>(oracle: impl FnOnce(F) -> F, index_oracle: impl Fn(F) -> F, y: F, zeta: F, n:usize) -> impl FnOnce(F) -> F {
+    move |x| oracle(x) + zeta * index_oracle(x) + y * evaluate_geometric_poly(x, n)
 }
 
 fn compute_plookup_subset_eval<F: Field>(
@@ -27,9 +46,20 @@ fn compute_plookup_subset_eval<F: Field>(
     zeta: F,
     n: usize,
 ) -> F {
-    let ori_eval = subset_eval + zeta * index_eval + y * evaluate_geometric_poly(eval_point, n);
-    compute_entry_prod_eval(ori_eval, eval_point)
+    let oracle = |_x| subset_eval;
+    let index_oracle = |_x| index_eval;
+    eval_shift(eval_plookup_subset(oracle, index_oracle, y, zeta, n))(eval_point)
 }
+
+
+/// Given a polynomial oracle, compute the plookup set evalution using the randomness of the verifier `y, `z`.
+/// It would have been nice to have this be a higher level function returning `impl Fn(F) -> impl Fn(F) -> F`
+/// and use currying to introduct the randomness, but this is unfortunately not yet supported in the Rust type system.
+#[inline]
+fn eval_plookup_set<F: Field>(oracle: impl Fn(F) -> F, y: F, z: F, n:usize) -> impl Fn(F) -> F {
+    move |x| (F::one() + z) * y * evaluate_geometric_poly(x, n+1) + (x + z) * oracle(x)
+}
+
 
 fn compute_plookup_set_eval<F: Field>(
     set_eval: F,
@@ -39,10 +69,8 @@ fn compute_plookup_set_eval<F: Field>(
     _zeta: F,
     n: usize,
 ) -> F {
-    let ori_eval = (F::one() + z) * y * evaluate_geometric_poly(eval_point, n + 1)
-        + eval_point * set_eval
-        + z * set_eval;
-    compute_entry_prod_eval(ori_eval, eval_point)
+    let oracle = |_x| set_eval;
+    eval_shift(eval_plookup_set(oracle, y, z, n))(eval_point)
 }
 
 impl<E: PairingEngine> Proof<E> {
@@ -455,7 +483,6 @@ impl<E: PairingEngine> Proof<E> {
         direct_base_polynomials_evaluations_2[1] +=
             tmp * self.tensorcheck_proof.base_polynomials_evaluations[3][2];
         tmp *= batch_consistency;
-        //
         // Third
         let direct_base_polynomials_evaluations_3 = [
             self.tensorcheck_proof.base_polynomials_evaluations[4][1],

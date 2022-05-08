@@ -164,7 +164,6 @@ impl<E: PairingEngine> Proof<E> {
         let chi = transcript.get_challenge(b"chi");
 
         // TODO: Make sorted vectors as input to the plookup function.
-
         let r_lookup_vec = plookup(&r_star, &b_challenges, &row_index, &gamma, &chi, &zeta);
         let r_prod_vec = product3(&r_lookup_vec);
         let r_accumulated_vec = accproduct3(&r_lookup_vec);
