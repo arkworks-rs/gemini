@@ -44,13 +44,18 @@ pub(crate) fn accumulated_product<F: Field>(v: &[F]) -> Vec<F> {
     acc_v
 }
 
-/// Given as input \\(f(x) \in \FF[x]\\) of degree \\(N\\)
-/// represented as a vector of its coefficient (in little-endian),
-/// return \\(f(x) + x^N\\).
+/// Given as input a polynomial $f(x) \in \FF[x]$ of degree $N$, return $f(x) + x^N$.
+#[inline]
 pub(crate) fn monic<F: Field>(v: &[F]) -> Vec<F> {
     let mut monic_v = v.to_vec();
     monic_v.push(F::one());
     monic_v
+}
+
+// Subtract (inplace) a constant `scalar` from each elemnt of `v`.
+#[inline]
+pub(crate) fn sub_scalar_inplace<F: Field>(v: &mut [F], scalar: &F)  {
+    v.iter_mut().for_each(|x| *x -= scalar)
 }
 
 impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
@@ -68,7 +73,7 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
 
         // XXX. we do not really need to store monic_vs, we can just extend every element of vs with 1.
         let monic_vs = vs.iter().map(|v| monic(v)).collect::<Vec<_>>();
-        let rrot_vs = monic_vs
+        let mut rrot_vs = monic_vs
             .iter()
             .map(|v| right_rotation(v))
             .collect::<Vec<_>>();
@@ -82,6 +87,10 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             .for_each(|acc_v_commitment| transcript.append_commitment(b"acc_v", acc_v_commitment));
 
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+
+        // rrot_vs is shift(f) - psi
+        rrot_vs.iter_mut().for_each(|rrot_v| sub_scalar_inplace(rrot_v, &chal));
+
 
         let provers = rrot_vs
             .iter()

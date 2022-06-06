@@ -211,26 +211,9 @@ impl<E: PairingEngine> Proof<E> {
         );
 
         let psi = entry_products.chal;
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-
-        let mut polynomials = vec![&ralpha_star];
-        polynomials.extend(&accumulated_vec);
-        let ralpha_star_acc_mu_proof = ck.batch_open_multi_points(&polynomials, &[psi], &open_chal);
-
-        let mut ralpha_star_acc_mu_evals = vec![evaluate_le(&ralpha_star, &psi)];
-        accumulated_vec.iter().for_each(|v| {
-            ralpha_star_acc_mu_evals.push(evaluate_le(v, &psi));
-        });
-
         let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_star, &val_b), second_challenges_head);
-        // let s_2_prime = ip(&hadamard(&alpha_star, &val_c), &second_challenges_head);
-        // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
-        // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
-        ralpha_star_acc_mu_evals
-            .iter()
-            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
+
 
         let mut provers = Vec::new();
         provers.extend(entry_products.provers);
@@ -349,8 +332,6 @@ impl<E: PairingEngine> Proof<E> {
             subset_z_ep: z_prod_vec[1],
             sorted_z_commitment: sorted_commitments[2],
             ep_msgs: entry_products.msgs,
-            ralpha_star_acc_mu_proof,
-            ralpha_star_acc_mu_evals,
             rstars_vals: [s_0_prime, s_1_prime],
             third_sumcheck_msgs: third_proof.prover_messages(),
             tensorcheck_proof,

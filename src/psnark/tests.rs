@@ -88,10 +88,6 @@ fn test_consistency() {
     );
     assert_eq!(elastic_proof.ep_msgs, time_proof.ep_msgs);
     assert_eq!(
-        elastic_proof.ralpha_star_acc_mu_proof,
-        time_proof.ralpha_star_acc_mu_proof
-    );
-    assert_eq!(
         elastic_proof.third_sumcheck_msgs,
         time_proof.third_sumcheck_msgs
     );

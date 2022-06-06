@@ -296,48 +296,12 @@ impl<E: PairingEngine> Proof<E> {
         let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
         let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
 
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-        let open_chals = powers(open_chal, 10);
-        let polynomial = lincomb!(
-            (
-                ralpha_star,
-                pl_set_acc_r,
-                pl_subset_acc_r,
-                pl_sorted_acc_r,
-                pl_set_acc_alpha,
-                pl_subset_acc_alpha,
-                pl_sorted_acc_alpha,
-                pl_set_acc_z,
-                pl_subset_acc_z,
-                pl_sorted_acc_z
-            ),
-            &open_chals
-        );
-        let ralpha_star_acc_mu_proof = ck.open(&polynomial, &psi, max_msm_buffer).1;
-
-        let ralpha_star_acc_mu_evals = vec![
-            evaluate_be(ralpha_star.iter(), &psi),
-            evaluate_be(pl_set_acc_r.iter(), &psi),
-            evaluate_be(pl_subset_acc_r.iter(), &psi),
-            evaluate_be(pl_sorted_acc_r.iter(), &psi),
-            evaluate_be(pl_set_acc_alpha.iter(), &psi),
-            evaluate_be(pl_subset_acc_alpha.iter(), &psi),
-            evaluate_be(pl_sorted_acc_alpha.iter(), &psi),
-            evaluate_be(pl_set_acc_z.iter(), &psi),
-            evaluate_be(pl_subset_acc_z.iter(), &psi),
-            evaluate_be(pl_sorted_acc_z.iter(), &psi),
-        ];
         // compute the claimed entry products for
         // <r_a* \otimes (sumcheck chals), val_a>
         // <r_b* \otimes (sumcheck chals), val_b>
         // <r_c* \otimes (sumcheck chals), val_c> (not needed as it can be derived)
         let r_val_chal_a = ip_unsafe(lhs_ralpha_star.iter(), val_a.iter());
         let r_val_chal_b = ip_unsafe(lhs_r_star.iter(), val_b.iter());
-
-        ralpha_star_acc_mu_evals
-            .iter()
-            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
         // Add to the list of inner-products claims (obtained from the entry product)
         // additional inner products:
@@ -622,8 +586,6 @@ impl<E: PairingEngine> Proof<E> {
             subset_z_ep,
             sorted_z_commitment,
             ep_msgs: msgs,
-            ralpha_star_acc_mu_evals,
-            ralpha_star_acc_mu_proof,
             rstars_vals: [r_val_chal_a, r_val_chal_b],
             third_sumcheck_msgs: sumcheck3.prover_messages(),
             tensorcheck_proof,

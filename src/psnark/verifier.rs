@@ -44,11 +44,12 @@ fn compute_plookup_subset_eval<F: Field>(
     y: F,
     _z: F,
     zeta: F,
+    psi: F,
     n: usize,
 ) -> F {
     let oracle = |_x| subset_eval;
     let index_oracle = |_x| index_eval;
-    eval_shift(eval_plookup_subset(oracle, index_oracle, y, zeta, n))(eval_point)
+    eval_entryprod(eval_shift(eval_plookup_subset(oracle, index_oracle, y, zeta, n)), psi, n)(eval_point)
 }
 
 
@@ -67,10 +68,11 @@ fn compute_plookup_set_eval<F: Field>(
     y: F,
     z: F,
     _zeta: F,
+    psi: F,
     n: usize,
 ) -> F {
     let oracle = |_x| set_eval;
-    eval_shift(eval_plookup_set(oracle, y, z, n))(eval_point)
+    eval_entryprod(eval_shift(eval_plookup_set(oracle, y, z, n)), psi, n)(eval_point)
 }
 
 impl<E: PairingEngine> Proof<E> {
@@ -167,31 +169,8 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|acc_v_commitment| transcript.append_commitment(b"acc_v", acc_v_commitment));
 
         let mu = transcript.get_challenge::<E::Fr>(b"ep-chal");
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
-
         let mut commitments = vec![self.r_star_commitments[0]];
         commitments.extend(&self.ep_msgs.acc_v_commitments);
-
-        let evaluations = self
-            .ralpha_star_acc_mu_evals
-            .iter()
-            .map(|e| vec![*e])
-            .collect::<Vec<_>>();
-        vk.verify_multi_points(
-            &commitments,
-            &[mu],
-            &evaluations[..],
-            &self.ralpha_star_acc_mu_proof,
-            &open_chal,
-        )
-        .map_err(|_e| VerificationError)?;
-
-        // transcript.append_scalar(b"r_val_chal_a", &self.rstars_vals[0]);
-        // transcript.append_scalar(b"r_val_chal_b", &self.rstars_vals[1]);
-        self.ralpha_star_acc_mu_evals
-            .iter()
-            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &self.ralpha_star_acc_mu_proof);
 
         // Verify the third sumcheck
         // TODO: The following should be derived from the evaluations
@@ -201,7 +180,6 @@ impl<E: PairingEngine> Proof<E> {
             (subclaim_2.final_foldings[0][1] - self.rstars_vals[0] - self.rstars_vals[1] * eta)
                 * eta.square().inverse().unwrap(),
         );
-        asserted_sum_3.push(self.ralpha_star_acc_mu_evals[0]);
 
         let subclaim_3 =
             Subclaim::new_batch(&mut transcript, &self.third_sumcheck_msgs, &asserted_sum_3)?;
@@ -276,6 +254,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -286,6 +265,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len,
             );
         tmp *= batch_consistency;
@@ -298,6 +278,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -308,6 +289,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         tmp *= batch_consistency;
@@ -319,6 +301,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len + num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -328,6 +311,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len + num_non_zero,
             );
         tmp *= batch_consistency;
@@ -341,6 +325,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -351,6 +336,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len,
             );
         tmp *= batch_consistency;
@@ -363,6 +349,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -373,6 +360,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         tmp *= batch_consistency;
@@ -384,6 +372,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len + num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -393,6 +382,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 set_len + num_non_zero,
             );
         tmp *= batch_consistency;
@@ -415,6 +405,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_variables,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -424,6 +415,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_variables,
             );
         tmp *= batch_consistency;
@@ -436,6 +428,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -446,6 +439,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_non_zero,
             );
         tmp *= batch_consistency;
@@ -457,6 +451,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_variables + num_non_zero,
             );
         direct_base_polynomials_evaluations_2[1] += tmp
@@ -466,6 +461,7 @@ impl<E: PairingEngine> Proof<E> {
                 y,
                 z,
                 zeta,
+                mu,
                 num_variables + num_non_zero,
             );
         tmp *= batch_consistency;

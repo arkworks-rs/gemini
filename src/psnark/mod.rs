@@ -15,9 +15,8 @@ mod tests;
 
 use ark_ec::PairingEngine;
 use ark_serialize::*;
-use ark_std::vec::Vec;
 
-use crate::kzg::{Commitment, EvaluationProof};
+use crate::kzg::Commitment;
 use crate::subprotocols::entryproduct;
 use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::subprotocols::tensorcheck::TensorcheckProof;
@@ -41,8 +40,6 @@ pub struct Proof<E: PairingEngine> {
     subset_z_ep: E::Fr,
     sorted_z_commitment: Commitment<E>,
     ep_msgs: entryproduct::ProverMsgs<E>,
-    ralpha_star_acc_mu_evals: Vec<E::Fr>,
-    ralpha_star_acc_mu_proof: EvaluationProof<E>,
     rstars_vals: [E::Fr; 2],
     third_sumcheck_msgs: ProverMsgs<E::Fr>,
     tensorcheck_proof: TensorcheckProof<E>,
