@@ -214,7 +214,6 @@ impl<E: PairingEngine> Proof<E> {
         let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_star, &val_b), second_challenges_head);
 
-
         let mut provers = Vec::new();
         provers.extend(entry_products.provers);
 
@@ -276,23 +275,15 @@ impl<E: PairingEngine> Proof<E> {
             .collect::<Vec<_>>();
         let mut third_proof_vec = Vec::new();
 
-        third_proof_vec.extend(&shift_monic_lookup_vec);
+        assert!(accumulated_vec.len() == 9);
+        third_proof_vec.extend(&accumulated_vec);
         third_proof_vec.extend(&[&val_a, &val_b, &val_c, &alpha_star]);
 
         // third_proof.challenges might be longer than second_proof.challenges because of
         // the batched sumcheck involves entry products polynomials.
-        let body_polynomials_0 = [
-            &accumulated_vec[0],
-            &accumulated_vec[1],
-            &accumulated_vec[2],
-            &accumulated_vec[3],
-            &accumulated_vec[4],
-            &accumulated_vec[5],
-            &accumulated_vec[6],
-            &accumulated_vec[7],
-            &accumulated_vec[8],
-            &r_star,
-        ];
+        let mut body_polynomials_0 = Vec::new();
+        body_polynomials_0.extend(&shift_monic_lookup_vec);
+        body_polynomials_0.extend(&[&r_star]);
         let third_proof_challlenges_head = &third_proof.challenges[..second_proof.challenges.len()];
         let tc_body_polynomials = [
             (

@@ -54,7 +54,7 @@ pub(crate) fn monic<F: Field>(v: &[F]) -> Vec<F> {
 
 // Subtract (inplace) a constant `scalar` from each elemnt of `v`.
 #[inline]
-pub(crate) fn sub_scalar_inplace<F: Field>(v: &mut [F], scalar: &F)  {
+pub(crate) fn sub_scalar_inplace<F: Field>(v: &mut [F], scalar: &F) {
     v.iter_mut().for_each(|x| *x -= scalar)
 }
 
@@ -89,14 +89,15 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
 
         // rrot_vs is shift(f) - psi
-        rrot_vs.iter_mut().for_each(|rrot_v| sub_scalar_inplace(rrot_v, &chal));
-
+        rrot_vs
+            .iter_mut()
+            .for_each(|rrot_v| sub_scalar_inplace(rrot_v, &chal));
 
         let provers = rrot_vs
             .iter()
             .zip(acc_vs.iter())
             .map(|(rrot_v, acc_v)| {
-                let witness = Witness::new(acc_v, rrot_v, &chal);
+                let witness = Witness::new(rrot_v, acc_v, &chal);
                 Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>
             })
             .collect::<Vec<_>>();
@@ -104,9 +105,8 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             .iter()
             .zip(acc_vs.iter())
             .map(|(cp, acc_v)| {
-                let acc_v_chal = evaluate_le(acc_v, &chal);
-                let chal_n = chal.pow(&[acc_v.len() as u64]);
-                acc_v_chal * chal + cp - chal_n
+                let chal_n = chal.pow(&[(acc_v.len() + 1) as u64]);
+                *cp - chal_n
             })
             .collect::<Vec<_>>();
 
@@ -138,11 +138,9 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
         transcript.append_commitment(b"acc_v", &acc_v_commitments[0]);
 
         let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
-        let claimed_sumchecks = vec![
-            chal * evaluate_le(&acc_v, &chal) + claimed_product - chal.pow(&[acc_v.len() as u64]),
-        ];
+        let claimed_sumchecks = vec![claimed_product - chal.pow(&[(acc_v.len() + 1) as u64])];
 
-        let witness = Witness::new(&acc_v, &rrot_v, &chal);
+        let witness = Witness::new(&rrot_v, &acc_v, &chal);
         let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>];
         let msgs = ProverMsgs {
             acc_v_commitments,
