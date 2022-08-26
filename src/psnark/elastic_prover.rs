@@ -45,7 +45,7 @@ where
     let mut evaluations_w = [F::zero(); 3];
     cfg_iter!(eval_points)
         .zip(cfg_iter_mut!(evaluations_w))
-        .for_each(|(eval_point, dst)| *dst = evaluate_be(base_polynomial.iter(), eval_point));
+        .for_each(|(eval_point, dst)| *dst = evaluate_be(base_polynomial.iter(), &eval_point));
 
     evaluations_w
         .iter()

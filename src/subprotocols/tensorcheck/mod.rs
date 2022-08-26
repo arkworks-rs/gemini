@@ -72,7 +72,7 @@ const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
 /// Make a single pass over the [`FoldedPolynomialTree`](crate::subprotocols::sumcheck::streams::FoldedPolynomialTree)
 /// and return a vector storing $f^{(j)}(x)$ at the $j-1$-th position.
 /// Foldings are in the interval $1, \dots, n-1$.
-pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<F, S>, x: F) -> Vec<F>
+pub fn evaluate_folding<F, S>(polynomials: &FoldedPolynomialTree<'_, F, S>, x: F) -> Vec<F>
 where
     F: Field,
     S: Iterable,
@@ -136,7 +136,7 @@ pub fn foldings_polynomial<F: Field>(polynomial: &[F], challenges: &[F]) -> Vec<
 
 /// Store in memory all polynomial foldings after `threshold_level`
 pub(crate) fn transcribe_foldings<F, S>(
-    foldings: FoldedPolynomialTree<F, S>,
+    foldings: FoldedPolynomialTree<'_, F, S>,
     threshold_level: usize,
 ) -> Vec<Vec<F>>
 where

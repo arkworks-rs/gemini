@@ -142,7 +142,7 @@ impl<E: PairingEngine> core::iter::Sum for EvaluationProof<E> {
 pub struct VerificationError;
 
 impl fmt::Display for VerificationError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Error in stream.")
     }
 }

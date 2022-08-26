@@ -157,7 +157,7 @@ where
     /// The function takes as input a committer key and the tree structure of all the folding polynomials, and produces the desired commitment for each polynomial.
     pub fn commit_folding<SF>(
         &self,
-        polynomials: &FoldedPolynomialTree<E::Fr, SF>,
+        polynomials: &FoldedPolynomialTree<'_, E::Fr, SF>,
         max_msm_buffer: usize,
     ) -> Vec<Commitment<E>>
     where
