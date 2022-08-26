@@ -1,6 +1,6 @@
 use ark_ff::Field;
 use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::DenseUVPolynomial;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 

@@ -1,10 +1,10 @@
 //! An impementation of a time-efficient version of Kate et al's polynomial commitment,
 //! with optimization from [\[BDFG20\]](https://eprint.iacr.org/2020/081.pdf).
 use ark_ec::msm::FixedBase;
-use ark_ec::PairingEngine;
-use ark_ec::{AffineCurve, ProjectiveCurve};
+use ark_ec::ProjectiveCurve;
+use ark_ec::{AffineCurve, PairingEngine};
 use ark_ff::{PrimeField, Zero};
-use ark_poly::{univariate::DensePolynomial, UVPolynomial};
+use ark_poly::{univariate::DensePolynomial, DenseUVPolynomial};
 use ark_std::borrow::Borrow;
 use ark_std::ops::Div;
 use ark_std::rand::RngCore;
@@ -63,7 +63,7 @@ impl<E: PairingEngine> CommitterKey<E> {
         let powers_of_g2 = powers_of_tau
             .iter()
             .take(max_eval_points + 1)
-            .map(|t| g2.mul(t.into_bigint()).into_affine())
+            .map(|t| g2.mul_bigint(t.into_bigint()).into_affine())
             .collect::<Vec<_>>();
 
         CommitterKey {
@@ -177,7 +177,7 @@ fn test_trivial_commitment() {
     use ark_bls12_381::Bls12_381;
     use ark_bls12_381::Fr;
     use ark_poly::univariate::DensePolynomial;
-    use ark_poly::UVPolynomial;
+    use ark_poly::DenseUVPolynomial;
     use ark_std::One;
 
     let rng = &mut ark_std::test_rng();
@@ -197,8 +197,8 @@ fn test_commitment() {
     use ark_bls12_381::Bls12_381;
     use ark_bls12_381::Fr;
     use ark_poly::univariate::DensePolynomial;
+    use ark_poly::DenseUVPolynomial;
     use ark_poly::Polynomial;
-    use ark_poly::UVPolynomial;
 
     let rng = &mut ark_std::test_rng();
     let ck = CommitterKey::<Bls12_381>::new(100, 3, rng);

@@ -7,7 +7,7 @@ use criterion::{BenchmarkId, Criterion};
 use ark_bls12_381::Fr;
 use ark_ff::One;
 use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::DenseUVPolynomial;
 
 use ark_gemini::subprotocols::sumcheck::proof::Sumcheck;
 

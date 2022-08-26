@@ -291,7 +291,7 @@ fn test_open_multi_points() {
     use ark_bls12_381::{Bls12_381, Fr};
     use ark_ff::Field;
     use ark_poly::univariate::DensePolynomial;
-    use ark_poly::UVPolynomial;
+    use ark_poly::DenseUVPolynomial;
     use ark_std::test_rng;
 
     let max_msm_buffer = 1 << 20;

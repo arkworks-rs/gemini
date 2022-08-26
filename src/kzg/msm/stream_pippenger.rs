@@ -1,4 +1,5 @@
 //! A space-efficient implementation of Pippenger's algorithm.
+use ark_ec::msm::VariableBaseMSM;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::Zero;
 use ark_ff::{BigInteger, PrimeField};
@@ -40,6 +41,7 @@ where
 pub fn msm_chunks<G, F, I: ?Sized, J>(bases_stream: &J, scalars_stream: &I) -> G::Projective
 where
     G: AffineCurve<ScalarField = F>,
+    G::Projective: VariableBaseMSM<MSMBase = G, Scalar = G::ScalarField>,
     I: Iterable,
     F: PrimeField,
     I::Item: Borrow<F>,
@@ -67,7 +69,7 @@ where
             .take(step)
             .map(|s| s.borrow().into_bigint())
             .collect::<Vec<_>>();
-        result.add_assign(ark_ec::msm::VariableBase::msm(
+        result.add_assign(<G::Projective as ark_ec::msm::VariableBaseMSM>::msm_bigint(
             bases_step.as_slice(),
             scalars_step.as_slice(),
         ));
@@ -148,7 +150,10 @@ pub struct HashMapPippenger<G: AffineCurve> {
     pub result: G::Projective,
 }
 
-impl<G: AffineCurve> HashMapPippenger<G> {
+impl<G: AffineCurve> HashMapPippenger<G>
+where
+    G::Projective: VariableBaseMSM<MSMBase = G, Scalar = G::ScalarField>,
+{
     /// Producce a new hash map with the maximum msm buffer size.
     pub fn new(max_msm_buffer: usize) -> Self {
         Self {
@@ -178,7 +183,9 @@ impl<G: AffineCurve> HashMapPippenger<G> {
                 .map(|s| s.into_bigint())
                 .collect::<Vec<_>>();
             self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(&bases, &scalars));
+                .add_assign(<G::Projective as ark_ec::msm::VariableBaseMSM>::msm_bigint(
+                    &bases, &scalars,
+                ));
             self.buffer.clear();
         }
     }
@@ -195,7 +202,9 @@ impl<G: AffineCurve> HashMapPippenger<G> {
                 .collect::<Vec<_>>();
 
             self.result
-                .add_assign(ark_ec::msm::VariableBase::msm(&bases, &scalars));
+                .add_assign(<G::Projective as ark_ec::msm::VariableBaseMSM>::msm_bigint(
+                    &bases, &scalars,
+                ));
         }
         self.result
     }
@@ -209,7 +218,10 @@ pub struct ChunkedPippenger<G: AffineCurve> {
     pub buf_size: usize,
 }
 
-impl<G: AffineCurve> ChunkedPippenger<G> {
+impl<G: AffineCurve> ChunkedPippenger<G>
+where
+    G::Projective: VariableBaseMSM<MSMBase = G, Scalar = G::ScalarField>,
+{
     /// Initialize a chunked Pippenger instance with default parameters.
     pub fn new(max_msm_buffer: usize) -> Self {
         Self {
@@ -239,10 +251,11 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
         self.scalars_buffer.push(*scalar.borrow());
         self.bases_buffer.push(*base.borrow());
         if self.scalars_buffer.len() == self.buf_size {
-            self.result.add_assign(ark_ec::msm::VariableBase::msm(
-                self.bases_buffer.as_slice(),
-                self.scalars_buffer.as_slice(),
-            ));
+            self.result
+                .add_assign(<G::Projective as ark_ec::msm::VariableBaseMSM>::msm_bigint(
+                    self.bases_buffer.as_slice(),
+                    self.scalars_buffer.as_slice(),
+                ));
             self.scalars_buffer.clear();
             self.bases_buffer.clear();
         }
@@ -252,10 +265,11 @@ impl<G: AffineCurve> ChunkedPippenger<G> {
     #[inline(always)]
     pub fn finalize(mut self) -> G::Projective {
         if !self.scalars_buffer.is_empty() {
-            self.result.add_assign(ark_ec::msm::VariableBase::msm(
-                self.bases_buffer.as_slice(),
-                self.scalars_buffer.as_slice(),
-            ));
+            self.result
+                .add_assign(<G::Projective as ark_ec::msm::VariableBaseMSM>::msm_bigint(
+                    self.bases_buffer.as_slice(),
+                    self.scalars_buffer.as_slice(),
+                ));
         }
         self.result
     }
@@ -349,12 +363,15 @@ mod test {
     use crate::kzg::msm::ChunkedPippenger;
 
     use super::StreamPippenger;
+    use ark_ec::msm::VariableBaseMSM;
     use ark_ec::{AffineCurve, ProjectiveCurve};
     use ark_ff::PrimeField;
     use ark_std::vec::Vec;
 
-    fn test_var_base_msm<G: AffineCurve>() {
-        use ark_ec::msm::VariableBase;
+    fn test_var_base_msm<G: AffineCurve>()
+    where
+        G::Projective: VariableBaseMSM<MSMBase = G, Scalar = G::ScalarField>,
+    {
         use ark_ff::UniformRand;
 
         const SAMPLES: usize = 1 << 2;
@@ -369,7 +386,7 @@ mod test {
             .collect::<Vec<_>>();
         let g = <G::Projective as ProjectiveCurve>::batch_normalization_into_affine(&g);
 
-        let arkworks = VariableBase::msm(g.as_slice(), v.as_slice());
+        let arkworks = <G::Projective as VariableBaseMSM>::msm_bigint(g.as_slice(), v.as_slice());
 
         let mut p = StreamPippenger::<G>::new(3, 20);
         p.add_chunk(&g, v.into_iter());
@@ -377,8 +394,10 @@ mod test {
         assert_eq!(arkworks.into_affine(), mine.into_affine());
     }
 
-    fn test_chunked_pippenger<G: AffineCurve>() {
-        use ark_ec::msm::VariableBase;
+    fn test_chunked_pippenger<G: AffineCurve>()
+    where
+        G::Projective: VariableBaseMSM<MSMBase = G, Scalar = G::ScalarField>,
+    {
         use ark_ff::UniformRand;
 
         const SAMPLES: usize = 1 << 10;
@@ -393,7 +412,7 @@ mod test {
             .collect::<Vec<_>>();
         let g = <G::Projective as ProjectiveCurve>::batch_normalization_into_affine(&g);
 
-        let arkworks = VariableBase::msm(g.as_slice(), v.as_slice());
+        let arkworks = <G::Projective as VariableBaseMSM>::msm_bigint(g.as_slice(), v.as_slice());
 
         let mut p = ChunkedPippenger::<G>::new(1 << 20);
         for (s, g) in v.iter().zip(g) {

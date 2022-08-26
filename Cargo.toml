@@ -42,7 +42,6 @@ ark-ff = {git = "https://github.com/arkworks-rs/algebra"}
 ark-serialize = {git = "https://github.com/arkworks-rs/algebra"}
 ark-serialize-derive = {git = "https://github.com/arkworks-rs/algebra"}
 ark-poly = {git = "https://github.com/arkworks-rs/algebra"}
-ark-poly-commit = {git = "https://github.com/arkworks-rs/poly-commit"}
 ark-bls12-381 = {git = "https://github.com/arkworks-rs/curves"}
 ark-relations = {git = "https://github.com/arkworks-rs/snark"}
 

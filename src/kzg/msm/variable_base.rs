@@ -186,7 +186,7 @@ fn test_var_base_msm() {
         let mut acc = G::Projective::zero();
 
         for (base, scalar) in bases.iter().zip(scalars.iter()) {
-            acc += &base.mul(*scalar);
+            acc += &base.mul_bigint(*scalar);
         }
         acc
     }

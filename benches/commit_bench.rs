@@ -6,7 +6,7 @@ use ark_bls12_381::{Bls12_381, Fr};
 use ark_gemini::kzg::CommitterKey;
 use ark_gemini::kzg::CommitterKeyStream;
 use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::DenseUVPolynomial;
 use criterion::{BenchmarkId, Criterion};
 
 fn bench_commit(c: &mut Criterion) {
