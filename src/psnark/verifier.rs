@@ -1,5 +1,5 @@
 //! The verifier for the algebraic holographicc proofs.
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::vec::Vec;
 use ark_std::{One, Zero};
@@ -45,13 +45,13 @@ fn compute_plookup_set_eval<F: Field>(
     compute_entry_prod_eval(ori_eval, eval_point)
 }
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Verification function for Preprocsessing SNARK proof.
     /// The input contains the R1CS instance and the verification key
     /// of polynomial commitment.
     pub fn verify(
         &self,
-        r1cs: &R1cs<E::Fr>,
+        r1cs: &R1cs<E::ScalarField>,
         vk: &VerifierKey<E>,
         index_comms: &Vec<Commitment<E>>,
         num_non_zero: usize,
@@ -60,7 +60,7 @@ impl<E: PairingEngine> Proof<E> {
         let witness_commitment = self.witness_commitment;
 
         transcript.append_commitment(b"witness", &witness_commitment);
-        let alpha: E::Fr = transcript.get_challenge(b"alpha");
+        let alpha: E::ScalarField = transcript.get_challenge(b"alpha");
         transcript.append_scalar(b"zc(alpha)", &self.zc_alpha);
 
         // Verify the first sumcheck
@@ -79,7 +79,7 @@ impl<E: PairingEngine> Proof<E> {
             .for_each(|(c, s)| transcript.append_commitment(*s, c));
         transcript.append_commitment(b"z*", &self.z_star_commitment);
 
-        let eta = transcript.get_challenge::<E::Fr>(b"chal");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"chal");
         let challenges = powers(eta, 3);
 
         // Verify the second sumcheck
@@ -90,7 +90,7 @@ impl<E: PairingEngine> Proof<E> {
         let subclaim_2 =
             Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
 
-        let zeta = transcript.get_challenge::<E::Fr>(b"zeta");
+        let zeta = transcript.get_challenge::<E::ScalarField>(b"zeta");
 
         vec![
             self.sorted_alpha_commitment,
@@ -108,8 +108,8 @@ impl<E: PairingEngine> Proof<E> {
         )
         .for_each(|(c, s)| transcript.append_commitment(s.as_bytes(), c));
 
-        let y = transcript.get_challenge::<E::Fr>(b"gamma");
-        let z = transcript.get_challenge::<E::Fr>(b"chi");
+        let y = transcript.get_challenge::<E::ScalarField>(b"gamma");
+        let z = transcript.get_challenge::<E::ScalarField>(b"chi");
 
         vec![
             self.set_alpha_ep,
@@ -138,8 +138,8 @@ impl<E: PairingEngine> Proof<E> {
             .iter()
             .for_each(|acc_v_commitment| transcript.append_commitment(b"acc_v", acc_v_commitment));
 
-        let mu = transcript.get_challenge::<E::Fr>(b"ep-chal");
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let mu = transcript.get_challenge::<E::ScalarField>(b"ep-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         let mut commitments = vec![self.r_star_commitments[0]];
         commitments.extend(&self.ep_msgs.acc_v_commitments);
@@ -179,12 +179,12 @@ impl<E: PairingEngine> Proof<E> {
             Subclaim::new_batch(&mut transcript, &self.third_sumcheck_msgs, &asserted_sum_3)?;
 
         // Consistency check
-        let batch_consistency = transcript.get_challenge::<E::Fr>(b"batch_challenge");
+        let batch_consistency = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         self.tensorcheck_proof
             .folded_polynomials_commitments
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
-        let beta = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        let beta = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
 
         // asserted_res_vec
         let mut asserted_res_vec_1 = Vec::new();
@@ -220,8 +220,8 @@ impl<E: PairingEngine> Proof<E> {
         // direct_base_polynomials_evaluations
         // First
         // accumulated
-        let mut direct_base_polynomials_evaluations_1 = [E::Fr::zero(); 2];
-        let mut tmp = E::Fr::one();
+        let mut direct_base_polynomials_evaluations_1 = [E::ScalarField::zero(); 2];
+        let mut tmp = E::ScalarField::one();
         for i in 13..22 {
             direct_base_polynomials_evaluations_1[0] +=
                 tmp * self.tensorcheck_proof.base_polynomials_evaluations[i][1];
@@ -236,8 +236,8 @@ impl<E: PairingEngine> Proof<E> {
         tmp *= batch_consistency;
 
         // Second
-        let mut direct_base_polynomials_evaluations_2 = [E::Fr::zero(); 2];
-        let mut tmp = E::Fr::one();
+        let mut direct_base_polynomials_evaluations_2 = [E::ScalarField::zero(); 2];
+        let mut tmp = E::ScalarField::one();
         let set_len = 1 << subclaim_1.challenges.len();
         // lookup r*
         direct_base_polynomials_evaluations_2[0] += tmp
@@ -370,7 +370,7 @@ impl<E: PairingEngine> Proof<E> {
         tmp *= batch_consistency;
         //
         // lookup z*
-        let beta_power = E::Fr::pow(&beta, &[r1cs.x.len() as u64]);
+        let beta_power = E::ScalarField::pow(&beta, &[r1cs.x.len() as u64]);
         let z_pos = evaluate_le(&r1cs.x, &beta)
             + beta_power * self.tensorcheck_proof.base_polynomials_evaluations[0][1];
         let z_neg = if (r1cs.x.len() & 1) == 0 {
@@ -462,8 +462,8 @@ impl<E: PairingEngine> Proof<E> {
             self.tensorcheck_proof.base_polynomials_evaluations[4][2],
         ];
         // // Fourth
-        let mut direct_base_polynomials_evaluations_4 = [E::Fr::zero(); 2];
-        let mut tmp = E::Fr::one();
+        let mut direct_base_polynomials_evaluations_4 = [E::ScalarField::zero(); 2];
+        let mut tmp = E::ScalarField::one();
         direct_base_polynomials_evaluations_4[0] +=
             tmp * self.tensorcheck_proof.base_polynomials_evaluations[1][1];
         direct_base_polynomials_evaluations_4[1] +=

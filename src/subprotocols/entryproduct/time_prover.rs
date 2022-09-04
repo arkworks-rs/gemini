@@ -1,4 +1,4 @@
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
@@ -53,7 +53,7 @@ pub(crate) fn monic<F: Field>(v: &[F]) -> Vec<F> {
     monic_v
 }
 
-impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
+impl<E: Pairing> EntryProduct<E, Box<dyn Prover<E::ScalarField>>> {
     /// Creates a new grand product argument using the time prover.
     ///
     /// # Panics
@@ -61,8 +61,8 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
     pub fn new_time_batch(
         transcript: &mut Transcript,
         ck: &CommitterKey<E>,
-        vs: &[Vec<E::Fr>],
-        claimed_products: &[E::Fr],
+        vs: &[Vec<E::ScalarField>],
+        claimed_products: &[E::ScalarField],
     ) -> Self {
         assert_eq!(vs.len(), claimed_products.len());
 
@@ -81,14 +81,14 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
             .iter()
             .for_each(|acc_v_commitment| transcript.append_commitment(b"acc_v", acc_v_commitment));
 
-        let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+        let chal = transcript.get_challenge::<E::ScalarField>(b"ep-chal");
 
         let provers = rrot_vs
             .iter()
             .zip(acc_vs.iter())
             .map(|(rrot_v, acc_v)| {
                 let witness = Witness::new(acc_v, rrot_v, &chal);
-                Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>
+                Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::ScalarField>>
             })
             .collect::<Vec<_>>();
         let claimed_sumchecks = claimed_products
@@ -117,8 +117,8 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
     pub fn new_time(
         transcript: &mut Transcript,
         ck: &CommitterKey<E>,
-        v: &[E::Fr],
-        claimed_product: E::Fr,
+        v: &[E::ScalarField],
+        claimed_product: E::ScalarField,
     ) -> Self {
         let monic_v = monic(v);
         let rrot_v = right_rotation(&monic_v);
@@ -128,13 +128,13 @@ impl<E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr>>> {
         let acc_v_commitments = vec![ck.commit(&acc_v)];
         transcript.append_commitment(b"acc_v", &acc_v_commitments[0]);
 
-        let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+        let chal = transcript.get_challenge::<E::ScalarField>(b"ep-chal");
         let claimed_sumchecks = vec![
             chal * evaluate_le(&acc_v, &chal) + claimed_product - chal.pow(&[acc_v.len() as u64]),
         ];
 
         let witness = Witness::new(&acc_v, &rrot_v, &chal);
-        let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::Fr>>];
+        let provers = vec![Box::new(TimeProver::new(witness)) as Box<dyn Prover<E::ScalarField>>];
         let msgs = ProverMsgs {
             acc_v_commitments,
             claimed_sumchecks,

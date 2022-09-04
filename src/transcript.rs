@@ -2,7 +2,7 @@
 use ark_std::vec::Vec;
 use merlin::Transcript;
 
-use ark_ec::{AffineCurve, PairingEngine};
+use ark_ec::{pairing::Pairing, AffineRepr};
 use ark_ff::Field;
 use ark_serialize::CanonicalSerialize;
 
@@ -18,20 +18,16 @@ pub trait GeminiTranscript {
     fn append_scalar<F: Field>(&mut self, label: &'static [u8], scalar: &F);
 
     /// Append a `Group` with the given label.
-    fn append_point<G: AffineCurve>(&mut self, label: &'static [u8], point: &G);
+    fn append_point<G: AffineRepr>(&mut self, label: &'static [u8], point: &G);
 
     /// Compute a `label`ed challenge scalar from the given commitments and the choice bit.
     fn get_challenge<F: Field>(&mut self, label: &'static [u8]) -> F;
 
     /// Add a `Commitment` with the given label.
-    fn append_commitment<E: PairingEngine>(
-        &mut self,
-        label: &'static [u8],
-        commitment: &Commitment<E>,
-    );
+    fn append_commitment<E: Pairing>(&mut self, label: &'static [u8], commitment: &Commitment<E>);
 
     // Add an `EvaluationProof` with the given label.
-    fn append_evaluation_proof<E: PairingEngine>(
+    fn append_evaluation_proof<E: Pairing>(
         &mut self,
         label: &'static [u8],
         proof: &EvaluationProof<E>,
@@ -46,17 +42,13 @@ impl GeminiTranscript for Transcript {
         self.append_message(label, &message)
     }
 
-    fn append_point<G: AffineCurve>(&mut self, label: &'static [u8], point: &G) {
+    fn append_point<G: AffineRepr>(&mut self, label: &'static [u8], point: &G) {
         let mut message = Vec::new();
         point.serialize_uncompressed(&mut message).unwrap();
         self.append_message(label, &message);
     }
 
-    fn append_commitment<E: PairingEngine>(
-        &mut self,
-        label: &'static [u8],
-        commitment: &Commitment<E>,
-    ) {
+    fn append_commitment<E: Pairing>(&mut self, label: &'static [u8], commitment: &Commitment<E>) {
         let mut message = Vec::new();
         commitment.0.serialize_uncompressed(&mut message).unwrap();
         self.append_message(label, &message)
@@ -78,7 +70,7 @@ impl GeminiTranscript for Transcript {
         }
     }
 
-    fn append_evaluation_proof<E: PairingEngine>(
+    fn append_evaluation_proof<E: Pairing>(
         &mut self,
         label: &'static [u8],
         proof: &EvaluationProof<E>,

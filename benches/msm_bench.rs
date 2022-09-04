@@ -31,7 +31,7 @@ fn bench_msm(c: &mut Criterion) {
             .map(|_| ark_bls12_381::Fr::rand(rng))
             .collect::<Vec<_>>();
         let bases = (0..size)
-            .map(|_| ark_bls12_381::G1Projective::rand(rng).into_affine())
+            .map(|_| ark_bls12_381::G1::rand(rng).into_affine())
             .collect::<Vec<_>>();
 
         group

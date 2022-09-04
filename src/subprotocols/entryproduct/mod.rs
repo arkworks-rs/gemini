@@ -22,7 +22,7 @@
 //! \end{aligned}
 //! $$
 //!
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_serialize::*;
 use ark_std::vec::Vec;
 
@@ -46,17 +46,17 @@ mod tests;
 /// For this reason, the product $t$ is never sent or added to the transcript.
 /// It is expected that the developer takes care of it in the upper protocol layer.
 #[derive(CanonicalSerialize, Debug, PartialEq, Eq)]
-pub struct ProverMsgs<E: PairingEngine> {
+pub struct ProverMsgs<E: Pairing> {
     pub acc_v_commitments: Vec<Commitment<E>>,
-    pub claimed_sumchecks: Vec<E::Fr>,
+    pub claimed_sumchecks: Vec<E::ScalarField>,
 }
 
 /// The entryproduct transcript and subclaims.
-pub struct EntryProduct<E: PairingEngine, P: Prover<E::Fr>> {
+pub struct EntryProduct<E: Pairing, P: Prover<E::ScalarField>> {
     /// The messages sent by the prover.
     pub msgs: ProverMsgs<E>,
     /// The challenge sent by the verifier.
-    pub chal: E::Fr,
+    pub chal: E::ScalarField,
     /// The sumcheck subclaims, parametrized in a time (or elastic) [`Prover`](crate::subprotocols::sumcheck::Prover).
     pub provers: Vec<P>,
 }

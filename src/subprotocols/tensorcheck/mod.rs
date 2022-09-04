@@ -38,7 +38,7 @@
 //! we are effectively
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_serialize::*;
 use ark_std::borrow::Borrow;
@@ -110,15 +110,15 @@ pub fn evaluate_sq_fp<F: Field>(
 
 /// The struct for the tensor check proof.
 #[derive(CanonicalSerialize, PartialEq, Eq)]
-pub struct TensorcheckProof<E: PairingEngine> {
+pub struct TensorcheckProof<E: Pairing> {
     /// The commitments for all the folded polynomials in the tensor check.
     pub folded_polynomials_commitments: Vec<Commitment<E>>,
     /// The evaluations of all the folded polynomials in the tensor check.
-    pub folded_polynomials_evaluations: Vec<[E::Fr; 2]>,
+    pub folded_polynomials_evaluations: Vec<[E::ScalarField; 2]>,
     /// The batched evaluation proof for both base polynomials and folded polynomials.
     pub evaluation_proof: EvaluationProof<E>,
     /// The evaluations of base polynomials, which are used to construct evaluations in the initial round of tensor check.
-    pub base_polynomials_evaluations: Vec<[E::Fr; 3]>,
+    pub base_polynomials_evaluations: Vec<[E::ScalarField; 3]>,
 }
 
 /// The function for folding polynomials using given challenges for each round.
@@ -179,7 +179,7 @@ where
     (partial_foldings, transcribed_foldings)
 }
 
-impl<E: PairingEngine> TensorcheckProof<E> {
+impl<E: Pairing> TensorcheckProof<E> {
     /// The function for construct tensor check proof in a time-efficient way.
     ///
     /// It takes as input the randomness generator `transcript`, the committer key `ck`,
@@ -192,15 +192,15 @@ impl<E: PairingEngine> TensorcheckProof<E> {
     pub fn new_time<const N: usize, const M: usize>(
         transcript: &mut Transcript,
         ck: &CommitterKey<E>,
-        base_polynomials: [&Vec<E::Fr>; N],
-        body_polynomials: [(&[&Vec<E::Fr>], &[E::Fr]); M],
+        base_polynomials: [&Vec<E::ScalarField>; N],
+        body_polynomials: [(&[&Vec<E::ScalarField>], &[E::ScalarField]); M],
     ) -> TensorcheckProof<E> {
         let max_len = body_polynomials
             .iter()
             .map(|x| x.0.len())
             .fold(0, usize::max);
 
-        let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
+        let batch_challenge = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
 
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
@@ -219,7 +219,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
         folded_polynomials_commitments
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
-        let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        let eval_chal = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
         let minus_eval_chal = -eval_chal;
         let eval_chal2 = eval_chal.square();
 
@@ -256,7 +256,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .iter()
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         let evaluation_proof = ck.batch_open_multi_points(
             &all_polynomials[..],
@@ -285,20 +285,20 @@ impl<E: PairingEngine> TensorcheckProof<E> {
         &self,
         transcript: &mut Transcript,
         vk: &VerifierKey<E>,
-        asserted_res_vec: &[Vec<E::Fr>],
+        asserted_res_vec: &[Vec<E::ScalarField>],
         base_polynomials_commitments: &[Commitment<E>],
-        direct_base_polynomials_evaluations: &[[E::Fr; 2]],
-        fold_randomness: &[Vec<E::Fr>],
-        eval_chal: E::Fr,
-        batch_challenge: E::Fr,
+        direct_base_polynomials_evaluations: &[[E::ScalarField; 2]],
+        fold_randomness: &[Vec<E::ScalarField>],
+        eval_chal: E::ScalarField,
+        batch_challenge: E::ScalarField,
     ) -> VerificationResult
     where
-        E: PairingEngine,
+        E: Pairing,
     {
         let minus_eval_chal = -eval_chal;
         let eval_chal2 = eval_chal.square();
 
-        let two_inv = E::Fr::one().double().inverse().unwrap();
+        let two_inv = E::ScalarField::one().double().inverse().unwrap();
         let two_beta_inv = eval_chal.double().inverse().unwrap();
 
         let mut evaluations = Vec::new();
@@ -371,7 +371,7 @@ impl<E: PairingEngine> TensorcheckProof<E> {
             .iter()
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         vk.verify_multi_points(
             &all_commitments,

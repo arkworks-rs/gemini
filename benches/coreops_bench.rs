@@ -9,7 +9,7 @@ use ark_std::UniformRand;
 use criterion::{BenchmarkId, Criterion};
 
 use ark_bls12_381::Fr;
-use ark_bls12_381::G1Projective;
+use ark_bls12_381::G1;
 use ark_ec::{AffineCurve, ProjectiveCurve};
 use ark_ff::fields::PrimeField;
 
@@ -60,7 +60,7 @@ fn bench_exp(c: &mut Criterion) {
 
     group.bench_function(BenchmarkId::new("ark-bls12-381::G1", 1), |b| {
         let scalar = Fr::rand(&mut test_rng());
-        let point = G1Projective::rand(&mut test_rng()).into_affine();
+        let point = G1::rand(&mut test_rng()).into_affine();
 
         b.iter(|| point.mul(scalar.into_bigint()))
     });

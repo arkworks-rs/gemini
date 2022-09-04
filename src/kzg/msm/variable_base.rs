@@ -1,8 +1,9 @@
 //! Implementation of Peppinger's algorithm.
-use ark_ec::{AffineCurve, ProjectiveCurve};
+use ark_ec::{AffineRepr, Group};
 use ark_ff::Zero;
 use ark_ff::{BigInteger, PrimeField};
 use ark_std::cmp::Ordering;
+use ark_std::ops::AddAssign;
 use ark_std::vec::Vec;
 
 // #[cfg(feature = "parallel")]
@@ -95,10 +96,10 @@ pub struct VariableBaseMSM;
 
 impl VariableBaseMSM {
     /// Multi-scalar multiplciaiton of bases and scalars.
-    pub fn multi_scalar_mul<G: AffineCurve>(
+    pub fn multi_scalar_mul<G: AffineRepr>(
         bases: &[G],
         scalars: &[<G::ScalarField as PrimeField>::BigInt],
-    ) -> G::Projective {
+    ) -> G::Group {
         let size = scalars.len();
 
         let c = if size < 32 {
@@ -115,7 +116,7 @@ impl VariableBaseMSM {
             .map(|s| digits(s, c, num_bits))
             .collect::<Vec<_>>();
 
-        let zero = G::Projective::zero();
+        let zero = G::Group::zero();
 
         // Each window is of size `c`.
         // We divide up the bits 0..num_bits into windows of size `c`, and
@@ -130,10 +131,10 @@ impl VariableBaseMSM {
                 for (digits, base) in scalar_digits.iter().zip(bases) {
                     let scalar = digits[i];
                     match scalar.cmp(&0) {
-                        Ordering::Greater => buckets[(scalar - 1) as usize].add_assign_mixed(base),
+                        Ordering::Greater => buckets[(scalar - 1) as usize].add_assign(base),
                         Ordering::Less => {
-                            let basem = -*base;
-                            buckets[(-scalar - 1) as usize].add_assign_mixed(&basem);
+                            let basem = -base.into_group();
+                            buckets[(-scalar - 1) as usize].add_assign(&basem);
                         }
                         Ordering::Equal => (),
                     }
@@ -153,7 +154,7 @@ impl VariableBaseMSM {
                 // `running_sum` = sum_{j in i..num_buckets} bucket[j],
                 // where we iterate backward from i = num_buckets to 0.
                 let buckets = buckets.into_iter();
-                let mut running_sum = G::Projective::zero();
+                let mut running_sum = G::Group::zero();
 
                 let mut res = zero;
                 buckets.into_iter().rev().for_each(|b| {
@@ -177,13 +178,14 @@ impl VariableBaseMSM {
 
 #[test]
 fn test_var_base_msm() {
+    use ark_ec::CurveGroup;
     use ark_ff::{One, PrimeField, UniformRand, Zero};
 
-    fn naive_var_base_msm<G: AffineCurve>(
+    fn naive_var_base_msm<G: AffineRepr>(
         bases: &[G],
         scalars: &[<G::ScalarField as PrimeField>::BigInt],
-    ) -> G::Projective {
-        let mut acc = G::Projective::zero();
+    ) -> G::Group {
+        let mut acc = G::Group::zero();
 
         for (base, scalar) in bases.iter().zip(scalars.iter()) {
             acc += &base.mul_bigint(*scalar);
@@ -204,7 +206,7 @@ fn test_var_base_msm() {
         .map(|_| G1Projective::rand(&mut rng))
         .collect::<Vec<_>>();
 
-    let g = <G1Projective as ProjectiveCurve>::batch_normalization_into_affine(&g);
+    let g = <G1Projective as CurveGroup>::normalize_batch(&g);
 
     let naive = naive_var_base_msm(g.as_slice(), v.as_slice());
     let fast = VariableBaseMSM::multi_scalar_mul(g.as_slice(), v.as_slice());

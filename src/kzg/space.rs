@@ -1,5 +1,6 @@
 //! Space-efficient implementation of the polynomial commitment of Kate et al.
-use ark_ec::{PairingEngine, ProjectiveCurve};
+use ark_ec::pairing::Pairing;
+use ark_ec::CurveGroup;
 use ark_ff::{PrimeField, Zero};
 use ark_poly::Polynomial;
 use ark_std::borrow::Borrow;
@@ -21,7 +22,7 @@ const LENGTH_MISMATCH_MSG: &str = "Expecting at least one element in the committ
 #[derive(Clone)]
 pub struct CommitterKeyStream<E, SG>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
@@ -33,7 +34,7 @@ where
 
 impl<E, SG> CommitterKeyStream<E, SG>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
@@ -58,12 +59,12 @@ where
     pub fn open<SF>(
         &self,
         polynomial: &SF,
-        alpha: &E::Fr,
+        alpha: &E::ScalarField,
         max_msm_buffer: usize,
-    ) -> (E::Fr, EvaluationProof<E>)
+    ) -> (E::ScalarField, EvaluationProof<E>)
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         let mut quotient = ChunkedPippenger::new(max_msm_buffer);
 
@@ -75,7 +76,7 @@ where
             .advance_by(self.powers_of_g.len() - polynomial.len())
             .expect(LENGTH_MISMATCH_MSG);
 
-        let mut previous = E::Fr::zero();
+        let mut previous = E::ScalarField::zero();
         for (scalar, base) in scalars.zip(bases) {
             quotient.add(base, previous.into_bigint());
             let coefficient = previous * alpha + scalar.borrow();
@@ -91,12 +92,12 @@ where
     pub fn open_multi_points<SF>(
         &self,
         polynomial: &SF,
-        points: &[E::Fr],
+        points: &[E::ScalarField],
         max_msm_buffer: usize,
-    ) -> (Vec<E::Fr>, EvaluationProof<E>)
+    ) -> (Vec<E::ScalarField>, EvaluationProof<E>)
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         let zeros = vanishing_polynomial(points);
         let mut quotient = ChunkedPippenger::new(max_msm_buffer);
@@ -105,7 +106,7 @@ where
             .advance_by(self.powers_of_g.len() - polynomial.len() + zeros.degree())
             .unwrap();
 
-        let mut state = VecDeque::<E::Fr>::with_capacity(points.len());
+        let mut state = VecDeque::<E::ScalarField>::with_capacity(points.len());
 
         let mut polynomial_iterator = polynomial.iter();
 
@@ -132,7 +133,7 @@ where
     pub fn commit<SF: ?Sized>(&self, polynomial: &SF) -> Commitment<E>
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         assert!(self.powers_of_g.len() >= polynomial.len());
 
@@ -147,7 +148,7 @@ where
         polynomials: &[&'a dyn Iterable<Item = F, Iter = &mut dyn Iterator<Item = F>>],
     ) -> Vec<Commitment<E>>
     where
-        F: Borrow<E::Fr>,
+        F: Borrow<E::ScalarField>,
     {
         polynomials.iter().map(|&p| self.commit(p)).collect()
     }
@@ -157,12 +158,12 @@ where
     /// The function takes as input a committer key and the tree structure of all the folding polynomials, and produces the desired commitment for each polynomial.
     pub fn commit_folding<SF>(
         &self,
-        polynomials: &FoldedPolynomialTree<'_, E::Fr, SF>,
+        polynomials: &FoldedPolynomialTree<'_, E::ScalarField, SF>,
         max_msm_buffer: usize,
     ) -> Vec<Commitment<E>>
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         let n = polynomials.depth();
         let mut pippengers: Vec<ChunkedPippenger<E::G1Affine>> = Vec::new();
@@ -194,17 +195,17 @@ where
     /// `eta` is the random challenge for batching folding polynomials.
     pub fn open_folding<'a, SF>(
         &self,
-        polynomials: FoldedPolynomialTree<'a, E::Fr, SF>,
-        points: &[E::Fr],
-        etas: &[E::Fr],
+        polynomials: FoldedPolynomialTree<'a, E::ScalarField, SF>,
+        points: &[E::ScalarField],
+        etas: &[E::ScalarField],
         max_msm_buffer: usize,
-    ) -> (Vec<Vec<E::Fr>>, EvaluationProof<E>)
+    ) -> (Vec<Vec<E::ScalarField>>, EvaluationProof<E>)
     where
         SG: Iterable,
         SF: Iterable,
-        E: PairingEngine,
+        E: Pairing,
         SG::Item: Borrow<E::G1Affine>,
-        SF::Item: Borrow<E::Fr> + Copy,
+        SF::Item: Borrow<E::ScalarField> + Copy,
     {
         let n = polynomials.depth();
         let mut pippenger = HashMapPippenger::<E::G1Affine>::new(max_msm_buffer);
@@ -218,7 +219,7 @@ where
             bases.advance_by(delta).expect(LENGTH_MISMATCH_MSG);
 
             (0..points.len()).for_each(|_| {
-                remainders[i - 1].push_back(E::Fr::zero());
+                remainders[i - 1].push_back(E::ScalarField::zero());
             });
 
             folded_bases.push(bases);
@@ -251,7 +252,7 @@ where
     }
 }
 
-impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
+impl<'a, E: Pairing> From<&'a CommitterKey<E>>
     for CommitterKeyStream<E, Reverse<&'a [E::G1Affine]>>
 {
     fn from(ck: &'a CommitterKey<E>) -> Self {
@@ -264,7 +265,7 @@ impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
 
 impl<E, SG> From<&CommitterKeyStream<E, SG>> for VerifierKey<E>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {

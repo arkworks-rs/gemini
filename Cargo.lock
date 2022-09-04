@@ -15,9 +15,9 @@ dependencies = [
 
 [[package]]
 name = "aho-corasick"
-version = "0.7.18"
+version = "0.7.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e37cfd5e7657ada45f742d6e99ca5788580b5c529dc78faf11ece6dc702656f"
+checksum = "b4f55bd91a0978cbfd91c457a164bab8b4001c833b7f323132c0a4e1922dd44e"
 dependencies = [
  "memchr",
 ]
@@ -25,7 +25,7 @@ dependencies = [
 [[package]]
 name = "ark-bls12-381"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/curves#52577f93ba7c9b2fcac6d48d657074861476e202"
+source = "git+https://github.com/arkworks-rs/curves#3af6ec17d6de844d5be66b8d081c0c109227ad26"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -35,7 +35,7 @@ dependencies = [
 [[package]]
 name = "ark-ec"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "ark-ff",
  "ark-poly",
@@ -43,6 +43,7 @@ dependencies = [
  "ark-std",
  "derivative",
  "hashbrown",
+ "itertools",
  "num-traits",
  "rayon",
  "zeroize",
@@ -51,7 +52,7 @@ dependencies = [
 [[package]]
 name = "ark-ff"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "ark-ff-asm",
  "ark-ff-macros",
@@ -70,7 +71,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-asm"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "quote",
  "syn",
@@ -79,7 +80,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-macros"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "num-bigint",
  "num-traits",
@@ -98,7 +99,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "clap 3.2.17",
+ "clap 3.2.20",
  "criterion",
  "env_logger",
  "hashbrown",
@@ -114,7 +115,7 @@ dependencies = [
 [[package]]
 name = "ark-poly"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -138,7 +139,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "ark-serialize-derive",
  "ark-std",
@@ -148,7 +149,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize-derive"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#0e6f627e698e9d6e365da835b2d61bc2284692e2"
+source = "git+https://github.com/arkworks-rs/algebra#423018fd762f280d91f76f1c8d19d5740300c804"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -238,9 +239,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.17"
+version = "3.2.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29e724a68d9319343bb3328c9cc2dfde263f4b3142ee1059a9980580171c954b"
+checksum = "23b71c3ce99b7611011217b366d923f1d0a7e07a92bb2dbf1e84508c673ca3bd"
 dependencies = [
  "atty",
  "bitflags",
@@ -255,9 +256,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "3.2.17"
+version = "3.2.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13547f7012c01ab4a0e8f8967730ada8f9fdf419e8b6c792788f39cf4e46eefa"
+checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -637,9 +638,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.13.1"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "074864da206b4973b84eb91683020dbefd6a8c3f0f38e054d93954e891935e4e"
+checksum = "2f7254b99e31cad77da24b08ebf628882739a608578bb1bcdfc1f9c21260d7c0"
 
 [[package]]
 name = "oorandom"
@@ -655,9 +656,9 @@ checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
 name = "paste"
-version = "1.0.8"
+version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9423e2b32f7a043629287a536f21951e8c6a82482d0acb1eeebfc90bc2225b22"
+checksum = "b1de2e551fb905ac83f73f7aedf2f0cb4a0da7e35efa24a202a936269f1f18e1"
 
 [[package]]
 name = "pin-project-lite"

@@ -1,6 +1,6 @@
 //! Time-efficient preprocessing SNARK for R1CS.
 
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
@@ -45,11 +45,11 @@ fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
     ]
 }
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
-    pub fn new_time(r1cs: &R1cs<E::Fr>, ck: &CommitterKey<E>) -> Proof<E> {
+    pub fn new_time(r1cs: &R1cs<E::ScalarField>, ck: &CommitterKey<E>) -> Proof<E> {
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
         let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
         let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
@@ -108,7 +108,7 @@ impl<E: PairingEngine> Proof<E> {
         transcript.append_commitment(b"rc*", &z_r_commitments[2]);
         transcript.append_commitment(b"z*", &z_r_commitments[3]);
 
-        let eta = transcript.get_challenge::<E::Fr>(b"chal");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"chal");
         let challenges = powers(eta, 3);
 
         let r_star_val = linear_combination(
@@ -122,7 +122,12 @@ impl<E: PairingEngine> Proof<E> {
         .unwrap();
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
+        let second_proof = Sumcheck::new_time(
+            &mut transcript,
+            &z_star,
+            &r_star_val,
+            &E::ScalarField::one(),
+        );
         let second_challenges = tensor(&second_proof.challenges);
         let second_challenges_head = &second_challenges[..num_non_zero];
         end_timer!(second_sumcheck_time);
@@ -212,7 +217,7 @@ impl<E: PairingEngine> Proof<E> {
         );
 
         let psi = entry_products.chal;
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         let mut polynomials = vec![&ralpha_star];
         polynomials.extend(&accumulated_vec);
@@ -239,17 +244,17 @@ impl<E: PairingEngine> Proof<E> {
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&ralpha_star, second_challenges_head),
             &val_a,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&r_star, second_challenges_head),
             &val_b,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&alpha_star, second_challenges_head),
             &val_c,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &r_star,

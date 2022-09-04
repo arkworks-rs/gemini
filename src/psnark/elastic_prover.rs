@@ -1,5 +1,5 @@
 //! Space-efficient preprocessing SNARK for R1CS.
-use ark_ec::PairingEngine;
+use ark_ec::{pairing::Pairing, CurveGroup};
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::boxed::Box;
@@ -53,7 +53,7 @@ where
     evaluations_w
 }
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
     /// and the _streaming_ committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
@@ -67,10 +67,10 @@ impl<E: PairingEngine> Proof<E> {
         SZ: Iterable + Copy,
         SW: Iterable + Copy,
         SG: Iterable,
-        SM::Item: Borrow<MatrixElement<E::Fr>>,
-        SZ::Item: Borrow<E::Fr> + Copy,
-        SW::Item: Borrow<E::Fr>,
-        SZ::Item: Borrow<E::Fr>,
+        SM::Item: Borrow<MatrixElement<E::ScalarField>>,
+        SZ::Item: Borrow<E::ScalarField> + Copy,
+        SW::Item: Borrow<E::ScalarField>,
+        SZ::Item: Borrow<E::ScalarField>,
         SG::Item: Borrow<E::G1Affine>,
     {
         let psnark_time = start_timer!(|| module_path!());
@@ -173,7 +173,7 @@ impl<E: PairingEngine> Proof<E> {
 
         // second sumcheck
         // batch the randomness for the three matrices and invoke the sumcheck protocol.
-        let challenge = transcript.get_challenge::<E::Fr>(b"chal");
+        let challenge = transcript.get_challenge::<E::ScalarField>(b"chal");
         let challenges = powers(challenge, 3);
         // assert_eq!(val_a.len(), val_b.len());
         assert_eq!(val_a.len(), val_c.len());
@@ -186,7 +186,7 @@ impl<E: PairingEngine> Proof<E> {
         );
 
         let sumcheck_time = start_timer!(|| "sumcheck2");
-        let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::Fr::one());
+        let sumcheck2 = Sumcheck::new_elastic(&mut transcript, z_star, rhs, E::ScalarField::one());
         end_timer!(sumcheck_time);
 
         // Lookup protocol (plookup) for r_a \subset r, z* \subset r
@@ -228,13 +228,13 @@ impl<E: PairingEngine> Proof<E> {
         // XXXX. There is no need to compute the sorted ones as they can be derived.
         let set_alpha_ep = pl_set_alpha.iter().product();
         let subset_alpha_ep = pl_subset_alpha.iter().product();
-        let sorted_alpha_ep = pl_sorted_alpha.iter().product::<E::Fr>();
+        let sorted_alpha_ep = pl_sorted_alpha.iter().product::<E::ScalarField>();
         let set_r_ep = pl_set_r.iter().product();
         let subset_r_ep = pl_subset_r.iter().product();
-        let sorted_r_ep = pl_sorted_r.iter().product::<E::Fr>();
+        let sorted_r_ep = pl_sorted_r.iter().product::<E::ScalarField>();
         let set_z_ep = pl_set_z.iter().product();
         let subset_z_ep = pl_subset_z.iter().product();
-        let sorted_z_ep = pl_sorted_z.iter().product::<E::Fr>();
+        let sorted_z_ep = pl_sorted_z.iter().product::<E::ScalarField>();
 
         transcript.append_scalar(b"set_r_ep", &set_alpha_ep);
         transcript.append_scalar(b"subset_r_ep", &subset_alpha_ep);
@@ -296,7 +296,7 @@ impl<E: PairingEngine> Proof<E> {
         let (pl_subset_sh_z, pl_subset_acc_z) = entry_product_streams(&pl_subset_z);
         let (pl_sorted_sh_z, pl_sorted_acc_z) = entry_product_streams(&pl_sorted_z);
 
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
         let open_chals = powers(open_chal, 10);
         let polynomial = lincomb!(
             (
@@ -344,17 +344,17 @@ impl<E: PairingEngine> Proof<E> {
         provers.push(Box::new(ElasticProver::new(
             lhs_ralpha_star,
             val_a,
-            E::Fr::one(),
+            E::ScalarField::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
             lhs_r_star,
             val_b,
-            E::Fr::one(),
+            E::ScalarField::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
             lhs_alpha_star,
             val_c,
-            E::Fr::one(),
+            E::ScalarField::one(),
         )));
         provers.push(Box::new(ElasticProver::new(
             r_star.clone(),
@@ -369,7 +369,7 @@ impl<E: PairingEngine> Proof<E> {
         // tensorcheck protocol
         let tc_time = start_timer!(|| "tensorcheck");
 
-        let tc_chal = transcript.get_challenge::<E::Fr>(b"batch_challenge");
+        let tc_chal = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         let tc_challenges = powers(tc_chal, 13);
 
         let body_polynomials_0 = &lincomb!(
@@ -447,7 +447,7 @@ impl<E: PairingEngine> Proof<E> {
             .iter()
             .for_each(|c| transcript.append_commitment(b"commitment", c));
 
-        let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        let eval_chal = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
 
         let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
@@ -480,8 +480,8 @@ impl<E: PairingEngine> Proof<E> {
                 .map(|(x, y)| [x, y]),
         );
 
-        let field_row = IntoField::<_, E::Fr>::new(&row);
-        let field_col = IntoField::<_, E::Fr>::new(&col);
+        let field_row = IntoField::<_, E::ScalarField>::new(&row);
+        let field_col = IntoField::<_, E::ScalarField>::new(&col);
         let base_polynomials_evaluations = vec![
             evaluate_base_polynomial(&mut transcript, &r1cs.witness, &eval_points),
             evaluate_base_polynomial(&mut transcript, &ralpha_star, &eval_points),
@@ -517,7 +517,7 @@ impl<E: PairingEngine> Proof<E> {
             .flatten()
             .for_each(|e| transcript.append_scalar(b"eval", e));
 
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         let open_chal_len = folded_polynomials_evaluations.len() * tensorcheck_foldings_2.depth()
             + 3 * base_polynomials_evaluations.len();
@@ -558,7 +558,7 @@ impl<E: PairingEngine> Proof<E> {
         // do this for each element.
         let open_time = start_timer!(|| "opening time");
         let evaluation_proof = EvaluationProof(
-            ck.open_multi_points(&partial_eval_stream, &eval_points, max_msm_buffer)
+            (ck.open_multi_points(&partial_eval_stream, &eval_points, max_msm_buffer)
                 .1
                  .0
                 + ck.open_folding(
@@ -592,7 +592,8 @@ impl<E: PairingEngine> Proof<E> {
                     max_msm_buffer,
                 )
                 .1
-                 .0,
+                 .0)
+                .into_affine(),
         );
         end_timer!(open_time);
 

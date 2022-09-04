@@ -13,7 +13,7 @@ mod streams;
 #[cfg(test)]
 mod tests;
 
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_serialize::*;
 use ark_std::vec::Vec;
 
@@ -24,26 +24,26 @@ use crate::subprotocols::tensorcheck::TensorcheckProof;
 
 /// The preprocessing SNARK proof, containing all prover messages.
 #[derive(CanonicalSerialize, PartialEq, Eq)]
-pub struct Proof<E: PairingEngine> {
+pub struct Proof<E: Pairing> {
     witness_commitment: Commitment<E>,
-    zc_alpha: E::Fr,
-    first_sumcheck_msgs: ProverMsgs<E::Fr>,
+    zc_alpha: E::ScalarField,
+    first_sumcheck_msgs: ProverMsgs<E::ScalarField>,
     r_star_commitments: [Commitment<E>; 3],
     z_star_commitment: Commitment<E>,
-    second_sumcheck_msgs: ProverMsgs<E::Fr>,
-    set_r_ep: E::Fr,
-    subset_r_ep: E::Fr,
+    second_sumcheck_msgs: ProverMsgs<E::ScalarField>,
+    set_r_ep: E::ScalarField,
+    subset_r_ep: E::ScalarField,
     sorted_r_commitment: Commitment<E>,
-    set_alpha_ep: E::Fr,
-    subset_alpha_ep: E::Fr,
+    set_alpha_ep: E::ScalarField,
+    subset_alpha_ep: E::ScalarField,
     sorted_alpha_commitment: Commitment<E>,
-    set_z_ep: E::Fr,
-    subset_z_ep: E::Fr,
+    set_z_ep: E::ScalarField,
+    subset_z_ep: E::ScalarField,
     sorted_z_commitment: Commitment<E>,
     ep_msgs: entryproduct::ProverMsgs<E>,
-    ralpha_star_acc_mu_evals: Vec<E::Fr>,
+    ralpha_star_acc_mu_evals: Vec<E::ScalarField>,
     ralpha_star_acc_mu_proof: EvaluationProof<E>,
-    rstars_vals: [E::Fr; 2],
-    third_sumcheck_msgs: ProverMsgs<E::Fr>,
+    rstars_vals: [E::ScalarField; 2],
+    third_sumcheck_msgs: ProverMsgs<E::ScalarField>,
     tensorcheck_proof: TensorcheckProof<E>,
 }

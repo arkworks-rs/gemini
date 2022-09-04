@@ -1,6 +1,6 @@
 //! Common data structures for the prover algorith in the scalar-product sub-argument.
 use ark_ff::Field;
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize, Read, SerializationError, Write};
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use ark_std::boxed::Box;
 use ark_std::iter::Sum;
 use ark_std::vec::Vec;
