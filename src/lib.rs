@@ -78,6 +78,7 @@ pub mod kzg;
 pub mod psnark;
 pub mod snark;
 pub mod subprotocols;
+pub mod herring;
 
 // private modules
 
