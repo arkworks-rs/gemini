@@ -1,5 +1,5 @@
 //! Space-efficient algebraic prover implementation for R1CS.
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
@@ -29,11 +29,11 @@ pub fn elastic_tensorcheck<F, E, SG, SB, SF1>(
 ) -> TensorcheckProof<E>
 where
     F: Field,
-    E: PairingEngine<Fr = F>,
+    E: Pairing<ScalarField = F>,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
     SB: Iterable,
-    SB::Item: Borrow<E::Fr>,
+    SB::Item: Borrow<E::ScalarField>,
     SF1: Iterable<Item = F>,
 {
     let tensorcheck_challenges = strip_last(body_polynomials.1);
@@ -47,8 +47,8 @@ where
     // add commitments to transcript
     folded_polynomials_commitments
         .iter()
-        .for_each(|c| transcript.append_commitment(b"commitment", c));
-    let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        .for_each(|c| transcript.append_serializable(b"commitment", c));
+    let eval_chal = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
     let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
     let mut folded_polynomials_evaluations =
@@ -70,12 +70,12 @@ where
     ];
     evaluations_w
         .iter()
-        .for_each(|e| transcript.append_scalar(b"eval", &e));
+        .for_each(|e| transcript.append_serializable(b"eval", &e));
     folded_polynomials_evaluations
         .iter()
         .flatten()
-        .for_each(|e| transcript.append_scalar(b"eval", e));
-    let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        .for_each(|e| transcript.append_serializable(b"eval", e));
+    let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
     let open_chal_len = body_polynomials.1.len() + 1;
     let open_chals = powers(open_chal, open_chal_len);
 
@@ -111,11 +111,11 @@ pub fn tensorcheck<F, E, SG, SB, SF1>(
 ) -> TensorcheckProof<E>
 where
     F: Field,
-    E: PairingEngine<Fr = F>,
+    E: Pairing<ScalarField = F>,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
     SB: Iterable,
-    SB::Item: Borrow<E::Fr>,
+    SB::Item: Borrow<E::ScalarField>,
     SF1: Iterable<Item = F>,
 {
     let tensorcheck_challenges = strip_last(body_polynomials.1);
@@ -126,8 +126,8 @@ where
     // add commitments to transcript
     folded_polynomials_commitments
         .iter()
-        .for_each(|c| transcript.append_commitment(b"commitment", c));
-    let eval_chal = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+        .for_each(|c| transcript.append_serializable(b"commitment", c));
+    let eval_chal = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
     let eval_points = [eval_chal.square(), eval_chal, -eval_chal];
 
     let folded_polynomials_evaluations = evaluate_folding(&tensorcheck_foldings, eval_points[1])
@@ -142,12 +142,12 @@ where
     ];
     evaluations_w
         .iter()
-        .for_each(|e| transcript.append_scalar(b"eval", &e));
+        .for_each(|e| transcript.append_serializable(b"eval", &e));
     folded_polynomials_evaluations
         .iter()
         .flatten()
-        .for_each(|e| transcript.append_scalar(b"eval", e));
-    let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        .for_each(|e| transcript.append_serializable(b"eval", e));
+    let open_chal = transcript.get_challenge(b"open-chal");
     let open_chal_len = body_polynomials.1.len() + 1;
     let open_chals = powers(open_chal, open_chal_len);
 
@@ -167,7 +167,7 @@ where
     }
 }
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Given as input the _streaming_ R1CS instance `r1cs`
     /// and the _streaming_ committer key `ck`,
     /// return a new SNARK using the elastic prover.
@@ -177,16 +177,16 @@ impl<E: PairingEngine> Proof<E> {
         max_msm_buffer: usize,
     ) -> Proof<E>
     where
-        E: PairingEngine,
+        E: Pairing,
         SM: Iterable + Copy,
         SZ: Iterable + Copy,
         SW: Iterable,
         SG: Iterable,
-        SM::Item: Borrow<MatrixElement<E::Fr>>,
-        SZ::Item: Borrow<E::Fr>,
-        SW::Item: Borrow<E::Fr>,
-        SZ::Item: Borrow<E::Fr>,
-        SZ::Item: Borrow<E::Fr>,
+        SM::Item: Borrow<MatrixElement<E::ScalarField>>,
+        SZ::Item: Borrow<E::ScalarField>,
+        SW::Item: Borrow<E::ScalarField>,
+        SZ::Item: Borrow<E::ScalarField>,
+        SZ::Item: Borrow<E::ScalarField>,
         SG::Item: Borrow<E::G1Affine>,
     {
         let snark_time = start_timer!(|| module_path!());
@@ -206,12 +206,12 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(witness_commitment_time);
 
         // send witness, receive challenge.
-        transcript.append_commitment(b"witness", &witness_commitment);
+        transcript.append_serializable(b"witness", &witness_commitment);
         let alpha = transcript.get_challenge(b"alpha");
 
         // send evaluation of zc(alpha)
         let zc_alpha = evaluate_be(r1cs.z_c.iter(), &alpha);
-        transcript.append_scalar(b"zc(alpha)", &zc_alpha);
+        transcript.append_serializable(b"zc(alpha)", &zc_alpha);
 
         // run the sumcheck for z_a and z_b with twist alpha
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
@@ -219,7 +219,7 @@ impl<E: PairingEngine> Proof<E> {
         end_timer!(first_sumcheck_time);
 
         // after sumcheck, generate a new challenge
-        let eta = transcript.get_challenge::<E::Fr>(b"eta");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"eta");
         // run the second sumcheck
         let b_tensors = &first_proof.challenges;
         let c_tensors = &powers2(alpha, b_tensors.len());
@@ -233,10 +233,11 @@ impl<E: PairingEngine> Proof<E> {
         let lhs = lincomb!((a_alpha, b_alpha, c_alpha), &sumcheck_batch_challenges);
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_elastic(&mut transcript, lhs, r1cs.z, E::Fr::one());
+        let second_proof =
+            Sumcheck::new_elastic(&mut transcript, lhs, r1cs.z, E::ScalarField::one());
         end_timer!(second_sumcheck_time);
 
-        let batch_challenge = transcript.get_challenge::<E::Fr>(b"batch_challenge");
+        let batch_challenge = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
 
         let tensorcheck_time = start_timer!(|| "Tensorcheck");
         let tensorcheck_batch_challenges = powers(batch_challenge, 2);

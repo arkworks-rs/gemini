@@ -1,5 +1,5 @@
 //! The Time prover for the algebraic proofs.
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::{Field, One, Zero};
 use log::debug;
 
@@ -13,12 +13,12 @@ use crate::subprotocols::tensorcheck::TensorcheckProof;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Given as input the R1CS instance `r1cs` and the committer key `ck` for the polynomial commitment scheme,
     /// produce a new SNARK proof using the time-efficient prover.
-    pub fn new_time(r1cs: &R1cs<E::Fr>, ck: &CommitterKey<E>) -> Proof<E>
+    pub fn new_time(r1cs: &R1cs<E::ScalarField>, ck: &CommitterKey<E>) -> Proof<E>
     where
-        E: PairingEngine,
+        E: Pairing,
     {
         let snark_time = start_timer!(|| module_path!());
 
@@ -38,11 +38,11 @@ impl<E: PairingEngine> Proof<E> {
         let witness_commitment = ck.commit(&r1cs.w);
         end_timer!(witness_commitment_time);
 
-        transcript.append_commitment(b"witness", &witness_commitment);
+        transcript.append_serializable(b"witness", &witness_commitment);
         let alpha = transcript.get_challenge(b"alpha");
 
         let zc_alpha = evaluate_le(&z_c, &alpha);
-        transcript.append_scalar(b"zc(alpha)", &zc_alpha);
+        transcript.append_serializable(b"zc(alpha)", &zc_alpha);
 
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_proof = Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
@@ -53,10 +53,10 @@ impl<E: PairingEngine> Proof<E> {
         let c_challenges = powers(alpha, b_challenges.len());
         let a_challenges = hadamard(&b_challenges, &c_challenges);
 
-        let eta = transcript.get_challenge::<E::Fr>(b"eta");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"eta");
         let eta2 = eta.square();
 
-        let mut abc_tensored = vec![E::Fr::zero(); r1cs.z.len()];
+        let mut abc_tensored = vec![E::ScalarField::zero(); r1cs.z.len()];
 
         for (i, row_a) in r1cs.a.iter().enumerate() {
             for &(val, col) in row_a {
@@ -77,8 +77,12 @@ impl<E: PairingEngine> Proof<E> {
         }
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof =
-            Sumcheck::new_time(&mut transcript, &abc_tensored, &r1cs.z, &E::Fr::one());
+        let second_proof = Sumcheck::new_time(
+            &mut transcript,
+            &abc_tensored,
+            &r1cs.z,
+            &E::ScalarField::one(),
+        );
         let second_sumcheck_msgs = second_proof.prover_messages();
         end_timer!(second_sumcheck_time);
 

@@ -1,4 +1,4 @@
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::boxed::Box;
@@ -16,12 +16,16 @@ use crate::transcript::GeminiTranscript;
 use super::streams::{entry_product_streams, ProductStream, RightRotationStreamer};
 use super::{EntryProduct, ProverMsgs};
 
-impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
+impl<'a, E: Pairing, S: Iterable<Item = E::ScalarField>>
     EntryProduct<
         E,
         ElasticProver<
-            SpaceProver<E::Fr, ProductStream<'a, E::Fr, S>, RightRotationStreamer<'a, S>>,
-            TimeProver<E::Fr>,
+            SpaceProver<
+                E::ScalarField,
+                ProductStream<'a, E::ScalarField, S>,
+                RightRotationStreamer<'a, S>,
+            >,
+            TimeProver<E::ScalarField>,
         >,
     >
 {
@@ -31,7 +35,7 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
         transcript: &mut Transcript,
         ck: &CommitterKeyStream<E, SG>,
         v: &'a S,
-        claimed_product: E::Fr,
+        claimed_product: E::ScalarField,
     ) -> Self
     where
         SG: Iterable,
@@ -40,9 +44,9 @@ impl<'a, E: PairingEngine, S: Iterable<Item = E::Fr>>
         let (rrot_v, acc_v) = entry_product_streams(v);
 
         let acc_v_commitments = vec![ck.commit(&acc_v)];
-        transcript.append_commitment(b"acc_v", &acc_v_commitments[0]);
+        transcript.append_serializable(b"acc_v", &acc_v_commitments[0]);
 
-        let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+        let chal = transcript.get_challenge::<E::ScalarField>(b"ep-chal");
 
         let claimed_sumchecks = vec![
             chal * evaluate_be(acc_v.iter(), &chal) + claimed_product
@@ -69,13 +73,13 @@ macro_rules! impl_elastic_batch {
             transcript: &mut Transcript,
             ck: &CommitterKeyStream<E, SG>,
             vs: ($(&'a $B,)*),
-            claimed_products: &[E::Fr],
+            claimed_products: &[E::ScalarField],
         ) -> Self
         where
             SG: Iterable,
             SG::Item: Borrow<E::G1Affine>,
             $(
-                $B: crate::iterable::Iterable<Item=E::Fr>,
+                $B: crate::iterable::Iterable<Item=E::ScalarField>,
             )*
 
         {
@@ -84,19 +88,19 @@ macro_rules! impl_elastic_batch {
             $(
                 let acc_v = ProductStream::new($B);
                 let acc_v_commitment = ck.commit(&acc_v);
-                transcript.append_commitment(b"acc_v", &acc_v_commitment);
+                transcript.append_serializable(b"acc_v", &acc_v_commitment);
                 acc_v_commitments.push(acc_v_commitment);
             )*
 
-            let chal = transcript.get_challenge::<E::Fr>(b"ep-chal");
+            let chal = transcript.get_challenge::<E::ScalarField>(b"ep-chal");
 
             let mut claimed_sumchecks = Vec::new();
-            let mut provers = Vec::<Box<dyn Prover<E::Fr> + 'a>>::new();
+            let mut provers = Vec::<Box<dyn Prover<E::ScalarField> + 'a>>::new();
             let mut claimed_products_it = claimed_products.into_iter();
 
 
             $(
-                let rrot_v = RightRotationStreamer::new($B, E::Fr::one());
+                let rrot_v = RightRotationStreamer::new($B, E::ScalarField::one());
                 let acc_v = ProductStream::new($B);
                 let claimed_product = claimed_products_it.next().expect("mismatch in claimed prod len");
 
@@ -119,7 +123,7 @@ macro_rules! impl_elastic_batch {
     };
 }
 
-impl<'a, E: PairingEngine> EntryProduct<E, Box<dyn Prover<E::Fr> + 'a>> {
+impl<'a, E: Pairing> EntryProduct<E, Box<dyn Prover<E::ScalarField> + 'a>> {
     // lets gooooo
     // impl_elastic_batch!(new_elastic_batch; A0, A1, A2);
     // impl_elastic_batch!(new_elastic_batch; A0, A1, A2, A3);

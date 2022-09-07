@@ -7,7 +7,7 @@ use crate::misc::ip;
 use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::transcript::GeminiTranscript;
 
-use super::prover::RoundMsg;
+use crate::subprotocols::sumcheck::prover::RoundMsg;
 
 /// The subclaim of the sumcheck.
 pub struct Subclaim<F: Field> {
@@ -29,8 +29,8 @@ impl<F: Field> Subclaim<F> {
         let (challenges, reduced_claim) = Self::reduce(transcript, messages, asserted_sum);
 
         // Add the final foldings to the transcript
-        transcript.append_scalar(b"final-folding", &final_foldings[0][0]);
-        transcript.append_scalar(b"final-folding", &final_foldings[0][1]);
+        transcript.append_serializable(b"final-folding", &final_foldings[0][0]);
+        transcript.append_serializable(b"final-folding", &final_foldings[0][1]);
 
         if final_foldings[0][0] * final_foldings[0][1] == reduced_claim {
             Ok(Self {
@@ -58,8 +58,8 @@ impl<F: Field> Subclaim<F> {
             .iter()
             .zip(coefficients.iter())
             .map(|(final_folding, coefficient)| {
-                transcript.append_scalar(b"final-folding-lhs", &final_folding[0]);
-                transcript.append_scalar(b"final-folding-rhs", &final_folding[1]);
+                transcript.append_serializable(b"final-folding-lhs", &final_folding[0]);
+                transcript.append_serializable(b"final-folding-rhs", &final_folding[1]);
                 final_folding[0] * final_folding[1] * coefficient
             })
             .sum();
@@ -84,7 +84,7 @@ impl<F: Field> Subclaim<F> {
         // reduce to a subclaim using the prover's messages.
         for message in messages {
             // compute the next challenge from the previous coefficients.
-            transcript.append_prover_message(b"evaluations", message);
+            transcript.append_serializable(b"evaluations", message);
             let r = transcript.get_challenge::<F>(b"challenge");
             challenges.push(r);
 

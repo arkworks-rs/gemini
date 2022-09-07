@@ -1,5 +1,5 @@
 //! The verifier for the algebraic proofs.
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 
 use crate::circuit::R1cs;
 use crate::errors::{VerificationError, VerificationResult};
@@ -12,24 +12,24 @@ use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Verification function for SNARK proof.
     /// The input contains the R1CS instance and the verification key
     /// of polynomial commitment.
-    pub fn verify(&self, r1cs: &R1cs<E::Fr>, vk: &VerifierKey<E>) -> VerificationResult {
+    pub fn verify(&self, r1cs: &R1cs<E::ScalarField>, vk: &VerifierKey<E>) -> VerificationResult {
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
         let witness_commitment = self.witness_commitment;
 
-        transcript.append_commitment(b"witness", &witness_commitment);
-        let alpha: E::Fr = transcript.get_challenge(b"alpha");
+        transcript.append_serializable(b"witness", &witness_commitment);
+        let alpha = transcript.get_challenge(b"alpha");
         let first_sumcheck_msgs = &self.first_sumcheck_msgs;
 
         // First sumcheck
-        transcript.append_scalar(b"zc(alpha)", &self.zc_alpha);
+        transcript.append_serializable(b"zc(alpha)", &self.zc_alpha);
 
         let subclaim_1 = Subclaim::new(&mut transcript, first_sumcheck_msgs, self.zc_alpha)?;
 
-        let eta = transcript.get_challenge::<E::Fr>(b"eta");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"eta");
         let etas = powers(eta, 3);
 
         let num_constraints = r1cs.a.len();
@@ -51,12 +51,12 @@ impl<E: PairingEngine> Proof<E> {
             Subclaim::new(&mut transcript, &self.second_sumcheck_msgs, asserted_sum_2)?;
 
         // Tensorcheck
-        let gamma = transcript.get_challenge::<E::Fr>(b"batch_challenge");
+        let gamma = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         self.tensorcheck_proof
             .folded_polynomials_commitments
             .iter()
-            .for_each(|c| transcript.append_commitment(b"commitment", c));
-        let beta = transcript.get_challenge::<E::Fr>(b"evaluation-chal");
+            .for_each(|c| transcript.append_serializable(b"commitment", c));
+        let beta = transcript.get_challenge::<E::ScalarField>(b"evaluation-chal");
         let beta_powers = powers(beta, num_constraints);
         let minus_beta_powers = powers(-beta, num_constraints);
 

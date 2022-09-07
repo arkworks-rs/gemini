@@ -137,7 +137,7 @@ fn test_rounds() {
     use ark_bls12_381::Fr;
     use ark_ff::One;
     use ark_poly::univariate::DensePolynomial;
-    use ark_poly::UVPolynomial;
+    use ark_poly::DenseUVPolynomial;
     let rng = &mut ark_std::test_rng();
 
     // in the smallest instance (degree-1 polynomials) a single round is necessary.
@@ -159,7 +159,7 @@ fn test_trivial_prover() {
     use ark_ff::One;
     use ark_ff::UniformRand;
     use ark_poly::univariate::DensePolynomial;
-    use ark_poly::UVPolynomial;
+    use ark_poly::DenseUVPolynomial;
 
     let rng = &mut ark_std::test_rng();
     let one = Fr::one();

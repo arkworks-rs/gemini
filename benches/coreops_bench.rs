@@ -9,12 +9,10 @@ use ark_std::UniformRand;
 use criterion::{BenchmarkId, Criterion};
 
 use ark_bls12_381::Fr;
-use ark_bls12_381::G1Projective;
-use ark_ec::{AffineCurve, ProjectiveCurve};
+use ark_bls12_381::G1Projective as G1;
+use ark_ec::ProjectiveCurve;
 use ark_ff::fields::PrimeField;
 
-// use curve25519_dalek::ristretto::RistrettoPoint;
-// use curve25519_dalek::scalar::Scalar;
 
 fn bench_add(c: &mut Criterion) {
     let rng = &mut test_rng();
@@ -60,17 +58,10 @@ fn bench_exp(c: &mut Criterion) {
 
     group.bench_function(BenchmarkId::new("ark-bls12-381::G1", 1), |b| {
         let scalar = Fr::rand(&mut test_rng());
-        let point = G1Projective::rand(&mut test_rng()).into_affine();
+        let point = G1::rand(&mut test_rng());
 
-        b.iter(|| point.mul(scalar.into_bigint()))
+        b.iter(|| point * scalar)
     });
-
-    // group.bench_function(BenchmarkId::new("curve25519::RistrettoPoint", 1), |b| {
-    //     let scalar = Scalar::random(rng);
-    //     let point = RistrettoPoint::random(rng);
-
-    //     b.iter(|| scalar * point)
-    // });
 }
 
 criterion_group! {

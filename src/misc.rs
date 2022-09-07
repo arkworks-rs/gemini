@@ -1,6 +1,5 @@
 use ark_ff::Field;
-use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::{univariate::DensePolynomial, DenseUVPolynomial};
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 
@@ -141,7 +140,6 @@ pub fn tensor<F: Field>(elements: &[F]) -> Vec<F> {
         .expect("Expecting at lest one element in the tensor product.")
         .1;
     // guaranteed to have at least one element.
-
     for (i, element) in elements_iterator {
         for j in 0..1 << i {
             tensor[(1 << i) + j] = tensor[j] * element;
@@ -279,7 +277,7 @@ pub fn sum_matrices<F: Field>(
 #[inline]
 #[allow(unused)]
 pub fn joint_matrices<F: Field>(
-    joint_matrix: &Vec<Vec<usize>>,
+    joint_matrix: &[Vec<usize>],
     _num_constraints: usize,
     _num_variables: usize,
     a: &Matrix<F>,
@@ -355,8 +353,8 @@ pub fn joint_matrices<F: Field>(
 pub fn evaluate_tensor_poly<F: Field>(elements: &[F], x: F) -> F {
     let mut res = F::one();
     let mut s = x;
-    for i in 0..elements.len() {
-        let tmp = F::one() + elements[i] * s;
+    for element in elements {
+        let tmp = F::one() + *element * s;
         res *= tmp;
         s = s.square();
     }

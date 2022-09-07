@@ -1,6 +1,6 @@
 //! Time-efficient preprocessing SNARK for R1CS.
 
-use ark_ec::PairingEngine;
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
@@ -45,11 +45,11 @@ fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
     ]
 }
 
-impl<E: PairingEngine> Proof<E> {
+impl<E: Pairing> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
-    pub fn new_time(r1cs: &R1cs<E::Fr>, ck: &CommitterKey<E>) -> Proof<E> {
+    pub fn new_time(r1cs: &R1cs<E::ScalarField>, ck: &CommitterKey<E>) -> Proof<E> {
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
         let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
         let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
@@ -59,11 +59,11 @@ impl<E: PairingEngine> Proof<E> {
         let witness_commitment = ck.commit(&r1cs.w);
         end_timer!(witness_commitment_time);
 
-        transcript.append_commitment(b"witness", &witness_commitment);
+        transcript.append_serializable(b"witness", &witness_commitment);
         let alpha = transcript.get_challenge(b"alpha");
 
         let zc_alpha = evaluate_le(&z_c, &alpha);
-        transcript.append_scalar(b"zc(alpha)", &zc_alpha);
+        transcript.append_serializable(b"zc(alpha)", &zc_alpha);
 
         let first_sumcheck_time = start_timer!(|| "First sumcheck");
         let first_proof = Sumcheck::new_time(&mut transcript, &z_a, &z_b, &alpha);
@@ -103,12 +103,12 @@ impl<E: PairingEngine> Proof<E> {
         // let z_r_commitments = ck.batch_commit(vec![&ralpha_star, &r_star, &alpha_star, &z_star]);
         end_timer!(z_r_commitments_time);
 
-        transcript.append_commitment(b"ra*", &z_r_commitments[0]);
-        transcript.append_commitment(b"rb*", &z_r_commitments[1]);
-        transcript.append_commitment(b"rc*", &z_r_commitments[2]);
-        transcript.append_commitment(b"z*", &z_r_commitments[3]);
+        transcript.append_serializable(b"ra*", &z_r_commitments[0]);
+        transcript.append_serializable(b"rb*", &z_r_commitments[1]);
+        transcript.append_serializable(b"rc*", &z_r_commitments[2]);
+        transcript.append_serializable(b"z*", &z_r_commitments[3]);
 
-        let eta = transcript.get_challenge::<E::Fr>(b"chal");
+        let eta = transcript.get_challenge::<E::ScalarField>(b"chal");
         let challenges = powers(eta, 3);
 
         let r_star_val = linear_combination(
@@ -122,7 +122,12 @@ impl<E: PairingEngine> Proof<E> {
         .unwrap();
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
-        let second_proof = Sumcheck::new_time(&mut transcript, &z_star, &r_star_val, &E::Fr::one());
+        let second_proof = Sumcheck::new_time(
+            &mut transcript,
+            &z_star,
+            &r_star_val,
+            &E::ScalarField::one(),
+        );
         let second_challenges = tensor(&second_proof.challenges);
         let second_challenges_head = &second_challenges[..num_non_zero];
         end_timer!(second_sumcheck_time);
@@ -156,15 +161,14 @@ impl<E: PairingEngine> Proof<E> {
         // let sorted_commitments = ck.batch_commit(sorted_polynomials);
         end_timer!(sorted_commitments_time);
 
-        transcript.append_commitment(b"sorted_alpha_commitment", &sorted_commitments[1]);
-        transcript.append_commitment(b"sorted_r_commitment", &sorted_commitments[0]);
-        transcript.append_commitment(b"sorted_z_commitment", &sorted_commitments[2]);
+        transcript.append_serializable(b"sorted_alpha_commitment", &sorted_commitments[1]);
+        transcript.append_serializable(b"sorted_r_commitment", &sorted_commitments[0]);
+        transcript.append_serializable(b"sorted_z_commitment", &sorted_commitments[2]);
 
         let gamma = transcript.get_challenge(b"gamma");
         let chi = transcript.get_challenge(b"chi");
 
         // TODO: Make sorted vectors as input to the plookup function.
-
         let r_lookup_vec = plookup(&r_star, &b_challenges, &row_index, &gamma, &chi, &zeta);
         let r_prod_vec = product3(&r_lookup_vec);
         let r_accumulated_vec = accproduct3(&r_lookup_vec);
@@ -187,12 +191,12 @@ impl<E: PairingEngine> Proof<E> {
         accumulated_vec.extend_from_slice(&alpha_accumulated_vec);
         accumulated_vec.extend_from_slice(&z_accumulated_vec);
 
-        transcript.append_scalar(b"set_r_ep", &alpha_prod_vec[0]);
-        transcript.append_scalar(b"subset_r_ep", &alpha_prod_vec[1]);
-        transcript.append_scalar(b"set_r_ep", &r_prod_vec[0]);
-        transcript.append_scalar(b"subset_r_ep", &r_prod_vec[1]);
-        transcript.append_scalar(b"set_z_ep", &z_prod_vec[0]);
-        transcript.append_scalar(b"subset_z_ep", &z_prod_vec[1]);
+        transcript.append_serializable(b"set_r_ep", &alpha_prod_vec[0]);
+        transcript.append_serializable(b"subset_r_ep", &alpha_prod_vec[1]);
+        transcript.append_serializable(b"set_r_ep", &r_prod_vec[0]);
+        transcript.append_serializable(b"subset_r_ep", &r_prod_vec[1]);
+        transcript.append_serializable(b"set_z_ep", &z_prod_vec[0]);
+        transcript.append_serializable(b"subset_z_ep", &z_prod_vec[1]);
 
         let entry_products = EntryProduct::new_time_batch(
             &mut transcript,
@@ -212,7 +216,7 @@ impl<E: PairingEngine> Proof<E> {
         );
 
         let psi = entry_products.chal;
-        let open_chal = transcript.get_challenge::<E::Fr>(b"open-chal");
+        let open_chal = transcript.get_challenge::<E::ScalarField>(b"open-chal");
 
         let mut polynomials = vec![&ralpha_star];
         polynomials.extend(&accumulated_vec);
@@ -226,12 +230,12 @@ impl<E: PairingEngine> Proof<E> {
         let s_0_prime = ip(&hadamard(&ralpha_star, &val_a), second_challenges_head);
         let s_1_prime = ip(&hadamard(&r_star, &val_b), second_challenges_head);
         // let s_2_prime = ip(&hadamard(&alpha_star, &val_c), &second_challenges_head);
-        // transcript.append_scalar(b"r_val_chal_a", &s_0_prime);
-        // transcript.append_scalar(b"r_val_chal_b", &s_1_prime);
+        // transcript.append_serializable(b"r_val_chal_a", &s_0_prime);
+        // transcript.append_serializable(b"r_val_chal_b", &s_1_prime);
         ralpha_star_acc_mu_evals
             .iter()
-            .for_each(|e| transcript.append_scalar(b"ralpha_star_acc_mu", e));
-        transcript.append_evaluation_proof(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
+            .for_each(|e| transcript.append_serializable(b"ralpha_star_acc_mu", e));
+        transcript.append_serializable(b"ralpha_star_mu_proof", &ralpha_star_acc_mu_proof);
 
         let mut provers = Vec::new();
         provers.extend(entry_products.provers);
@@ -239,17 +243,17 @@ impl<E: PairingEngine> Proof<E> {
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&ralpha_star, second_challenges_head),
             &val_a,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&r_star, second_challenges_head),
             &val_b,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &hadamard(&alpha_star, second_challenges_head),
             &val_c,
-            &E::Fr::one(),
+            &E::ScalarField::one(),
         ))));
         provers.push(Box::new(TimeProver::new(Witness::new(
             &r_star,

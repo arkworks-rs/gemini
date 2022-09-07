@@ -12,7 +12,7 @@ pub enum ElasticProver<S, T> {
     Time(T),
 }
 
-impl<'a, F, S1, S2, T> ElasticProver<SpaceProver<F, S1, S2>, T>
+impl<F, S1, S2, T> ElasticProver<SpaceProver<F, S1, S2>, T>
 where
     F: Field,
     S1: Iterable,

@@ -67,7 +67,7 @@ impl<F: Field> Iterator for TensorIter<F> {
         self.current_index -= n as u64;
         self.current = BitIteratorLE::new(&[self.current_index])
             .zip(&self.elements)
-            .filter_map(|(bit, &elt)| bit.then(|| elt))
+            .filter_map(|(bit, &elt)| bit.then_some(elt))
             .product();
         Ok(())
     }
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<'a, F, I> Iterator for TensorIIter<F, I>
+impl<F, I> Iterator for TensorIIter<F, I>
 where
     F: Field,
     I: Iterator,

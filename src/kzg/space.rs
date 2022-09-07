@@ -1,5 +1,8 @@
 //! Space-efficient implementation of the polynomial commitment of Kate et al.
-use ark_ec::{PairingEngine, ProjectiveCurve};
+use ark_ec::pairing::Pairing;
+use ark_ec::scalar_mul::variable_base::{ChunkedPippenger, HashMapPippenger};
+use ark_ec::CurveGroup;
+use ark_ec::VariableBaseMSM;
 use ark_ff::{PrimeField, Zero};
 use ark_poly::Polynomial;
 use ark_std::borrow::Borrow;
@@ -7,7 +10,6 @@ use ark_std::collections::VecDeque;
 use ark_std::vec::Vec;
 
 use crate::iterable::{Iterable, Reverse};
-use crate::kzg::msm::{ChunkedPippenger, HashMapPippenger};
 use crate::kzg::vanishing_polynomial;
 use crate::misc::ceil_div;
 use crate::subprotocols::sumcheck::streams::FoldedPolynomialTree;
@@ -17,11 +19,47 @@ use super::{Commitment, EvaluationProof};
 
 const LENGTH_MISMATCH_MSG: &str = "Expecting at least one element in the committer key.";
 
+/// Steaming multi-scalar multiplication algorithm with hard-coded chunk size.
+pub fn msm_chunks<G, F, I: ?Sized, J>(bases_stream: &J, scalars_stream: &I) -> G
+where
+    G: CurveGroup<ScalarField = F>,
+    I: Iterable,
+    F: PrimeField,
+    I::Item: Borrow<F>,
+    J: Iterable,
+    J::Item: Borrow<G::Affine>,
+{
+    assert!(scalars_stream.len() <= bases_stream.len());
+
+    // remove offset
+    let mut bases = bases_stream.iter();
+    let mut scalars = scalars_stream.iter();
+
+    // align the streams
+    bases
+        .advance_by(bases_stream.len() - scalars_stream.len())
+        .expect("bases not long enough");
+    let step: usize = 1 << 20;
+    let mut result = G::zero();
+    for _ in 0..(scalars_stream.len() + step - 1) / step {
+        let bases_step = (&mut bases)
+            .take(step)
+            .map(|b| *b.borrow())
+            .collect::<Vec<_>>();
+        let scalars_step = (&mut scalars)
+            .take(step)
+            .map(|s| *s.borrow())
+            .collect::<Vec<_>>();
+        result += G::msm(bases_step.as_slice(), scalars_step.as_slice());
+    }
+    result
+}
+
 /// The streaming SRS for the polynomial commitment scheme consists of the stream of consecutive powers of $G$.
 #[derive(Clone)]
 pub struct CommitterKeyStream<E, SG>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
@@ -33,7 +71,7 @@ where
 
 impl<E, SG> CommitterKeyStream<E, SG>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
@@ -58,14 +96,14 @@ where
     pub fn open<SF>(
         &self,
         polynomial: &SF,
-        alpha: &E::Fr,
+        alpha: &E::ScalarField,
         max_msm_buffer: usize,
-    ) -> (E::Fr, EvaluationProof<E>)
+    ) -> (E::ScalarField, EvaluationProof<E>)
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
-        let mut quotient = ChunkedPippenger::new(max_msm_buffer);
+        let mut quotient = ChunkedPippenger::<E::G1>::new(max_msm_buffer);
 
         let mut bases = self.powers_of_g.iter();
         let scalars = polynomial.iter();
@@ -75,7 +113,7 @@ where
             .advance_by(self.powers_of_g.len() - polynomial.len())
             .expect(LENGTH_MISMATCH_MSG);
 
-        let mut previous = E::Fr::zero();
+        let mut previous = E::ScalarField::zero();
         for (scalar, base) in scalars.zip(bases) {
             quotient.add(base, previous.into_bigint());
             let coefficient = previous * alpha + scalar.borrow();
@@ -83,7 +121,7 @@ where
         }
 
         let evaluation = previous;
-        let evaluation_proof = quotient.finalize().into_affine();
+        let evaluation_proof = quotient.finalize();
         (evaluation, EvaluationProof(evaluation_proof))
     }
 
@@ -91,21 +129,21 @@ where
     pub fn open_multi_points<SF>(
         &self,
         polynomial: &SF,
-        points: &[E::Fr],
+        points: &[E::ScalarField],
         max_msm_buffer: usize,
-    ) -> (Vec<E::Fr>, EvaluationProof<E>)
+    ) -> (Vec<E::ScalarField>, EvaluationProof<E>)
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         let zeros = vanishing_polynomial(points);
-        let mut quotient = ChunkedPippenger::new(max_msm_buffer);
+        let mut quotient = ChunkedPippenger::<E::G1>::new(max_msm_buffer);
         let mut bases = self.powers_of_g.iter();
         bases
             .advance_by(self.powers_of_g.len() - polynomial.len() + zeros.degree())
             .unwrap();
 
-        let mut state = VecDeque::<E::Fr>::with_capacity(points.len());
+        let mut state = VecDeque::<E::ScalarField>::with_capacity(points.len());
 
         let mut polynomial_iterator = polynomial.iter();
 
@@ -124,7 +162,7 @@ where
             quotient.add(base, quotient_coefficient.into_bigint());
         }
         let remainder = state.make_contiguous().to_vec();
-        let commitment = EvaluationProof(quotient.finalize().into_affine());
+        let commitment = EvaluationProof(quotient.finalize());
         (remainder, commitment)
     }
 
@@ -132,14 +170,11 @@ where
     pub fn commit<SF: ?Sized>(&self, polynomial: &SF) -> Commitment<E>
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         assert!(self.powers_of_g.len() >= polynomial.len());
 
-        Commitment(
-            crate::kzg::msm::stream_pippenger::msm_chunks(&self.powers_of_g, polynomial)
-                .into_affine(),
-        )
+        Commitment(msm_chunks(&self.powers_of_g, polynomial))
     }
 
     pub fn batch_commit<'a, F>(
@@ -147,7 +182,7 @@ where
         polynomials: &[&'a dyn Iterable<Item = F, Iter = &mut dyn Iterator<Item = F>>],
     ) -> Vec<Commitment<E>>
     where
-        F: Borrow<E::Fr>,
+        F: Borrow<E::ScalarField>,
     {
         polynomials.iter().map(|&p| self.commit(p)).collect()
     }
@@ -157,15 +192,15 @@ where
     /// The function takes as input a committer key and the tree structure of all the folding polynomials, and produces the desired commitment for each polynomial.
     pub fn commit_folding<SF>(
         &self,
-        polynomials: &FoldedPolynomialTree<E::Fr, SF>,
+        polynomials: &FoldedPolynomialTree<'_, E::ScalarField, SF>,
         max_msm_buffer: usize,
     ) -> Vec<Commitment<E>>
     where
         SF: Iterable,
-        SF::Item: Borrow<E::Fr>,
+        SF::Item: Borrow<E::ScalarField>,
     {
         let n = polynomials.depth();
-        let mut pippengers: Vec<ChunkedPippenger<E::G1Affine>> = Vec::new();
+        let mut pippengers: Vec<ChunkedPippenger<E::G1>> = Vec::new();
         let mut folded_bases = Vec::new();
         for i in 1..n + 1 {
             let pippenger = ChunkedPippenger::with_size(max_msm_buffer / n);
@@ -179,12 +214,12 @@ where
 
         for (i, coefficient) in polynomials.iter() {
             let base = folded_bases[i - 1].next().unwrap();
-            pippengers[i - 1].add(base.borrow(), coefficient.into_bigint());
+            pippengers[i - 1].add(base, coefficient.into_bigint());
         }
 
         pippengers
             .into_iter()
-            .map(|p| Commitment(p.finalize().into_affine()))
+            .map(|p| Commitment(p.finalize()))
             .collect::<Vec<_>>()
     }
 
@@ -194,20 +229,20 @@ where
     /// `eta` is the random challenge for batching folding polynomials.
     pub fn open_folding<'a, SF>(
         &self,
-        polynomials: FoldedPolynomialTree<'a, E::Fr, SF>,
-        points: &[E::Fr],
-        etas: &[E::Fr],
+        polynomials: FoldedPolynomialTree<'a, E::ScalarField, SF>,
+        points: &[E::ScalarField],
+        etas: &[E::ScalarField],
         max_msm_buffer: usize,
-    ) -> (Vec<Vec<E::Fr>>, EvaluationProof<E>)
+    ) -> (Vec<Vec<E::ScalarField>>, EvaluationProof<E>)
     where
         SG: Iterable,
         SF: Iterable,
-        E: PairingEngine,
+        E: Pairing,
         SG::Item: Borrow<E::G1Affine>,
-        SF::Item: Borrow<E::Fr> + Copy,
+        SF::Item: Borrow<E::ScalarField> + Copy,
     {
         let n = polynomials.depth();
-        let mut pippenger = HashMapPippenger::<E::G1Affine>::new(max_msm_buffer);
+        let mut pippenger = HashMapPippenger::<E::G1>::new(max_msm_buffer);
         let mut folded_bases = Vec::new();
         let zeros = vanishing_polynomial(points);
         let mut remainders = vec![VecDeque::new(); n];
@@ -218,7 +253,7 @@ where
             bases.advance_by(delta).expect(LENGTH_MISMATCH_MSG);
 
             (0..points.len()).for_each(|_| {
-                remainders[i - 1].push_back(E::Fr::zero());
+                remainders[i - 1].push_back(E::ScalarField::zero());
             });
 
             folded_bases.push(bases);
@@ -241,7 +276,7 @@ where
             pippenger.add(base, scalar);
         }
 
-        let evaluation_proof = pippenger.finalize().into_affine();
+        let evaluation_proof = pippenger.finalize();
         let remainders = remainders
             .iter_mut()
             .map(|x| x.make_contiguous().to_vec())
@@ -251,7 +286,7 @@ where
     }
 }
 
-impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
+impl<'a, E: Pairing> From<&'a CommitterKey<E>>
     for CommitterKeyStream<E, Reverse<&'a [E::G1Affine]>>
 {
     fn from(ck: &'a CommitterKey<E>) -> Self {
@@ -264,7 +299,7 @@ impl<'a, E: PairingEngine> From<&'a CommitterKey<E>>
 
 impl<E, SG> From<&CommitterKeyStream<E, SG>> for VerifierKey<E>
 where
-    E: PairingEngine,
+    E: Pairing,
     SG: Iterable,
     SG::Item: Borrow<E::G1Affine>,
 {
@@ -291,7 +326,7 @@ fn test_open_multi_points() {
     use ark_bls12_381::{Bls12_381, Fr};
     use ark_ff::Field;
     use ark_poly::univariate::DensePolynomial;
-    use ark_poly::UVPolynomial;
+    use ark_poly::DenseUVPolynomial;
     use ark_std::test_rng;
 
     let max_msm_buffer = 1 << 20;

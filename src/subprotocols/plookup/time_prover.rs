@@ -3,7 +3,7 @@ use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 
 #[inline]
-pub fn lookup<T: Copy>(v: &[T], index: &Vec<usize>) -> Vec<T> {
+pub fn lookup<T: Copy>(v: &[T], index: &[usize]) -> Vec<T> {
     index.iter().map(|&i| v[i]).collect()
 }
 
@@ -68,7 +68,7 @@ pub(crate) fn compute_frequency(set_len: usize, index: &[usize]) -> Vec<usize> {
     frequency
 }
 
-pub(crate) fn extend_frequency(frequency: &Vec<usize>) -> Vec<usize> {
+pub(crate) fn extend_frequency(frequency: &[usize]) -> Vec<usize> {
     let mut res = Vec::new();
     frequency
         .iter()
@@ -77,7 +77,7 @@ pub(crate) fn extend_frequency(frequency: &Vec<usize>) -> Vec<usize> {
     res
 }
 
-pub(crate) fn sorted<F: Field>(set: &[F], frequency: &Vec<usize>) -> Vec<F> {
+pub(crate) fn sorted<F: Field>(set: &[F], frequency: &[usize]) -> Vec<F> {
     let mut sorted = Vec::new();
     frequency
         .iter()

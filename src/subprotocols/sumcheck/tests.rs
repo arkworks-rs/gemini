@@ -2,7 +2,7 @@ use ark_bls12_381::Fr as F;
 use ark_ff::One;
 use ark_ff::UniformRand;
 use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::DenseUVPolynomial;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
 
@@ -49,8 +49,8 @@ fn test_messages_consistency() {
 
     let mut rev_f = f.to_vec();
     let mut rev_g = g.to_vec();
-    (&mut rev_f).reverse();
-    (&mut rev_g).reverse();
+    rev_f.reverse();
+    rev_g.reverse();
     let f_stream = rev_f.as_slice();
     let g_stream = rev_g.as_slice();
 
@@ -102,8 +102,8 @@ fn test_consistency_elastic() {
 
     let mut rev_f = f.clone();
     let mut rev_g = g.clone();
-    (&mut rev_f).reverse();
-    (&mut rev_g).reverse();
+    rev_f.reverse();
+    rev_g.reverse();
     let f_stream = rev_f.as_slice();
     let g_stream = rev_g.as_slice();
 
@@ -125,8 +125,8 @@ fn test_messages_consistency_with_different_lengths() {
 
     let mut rev_f = f.to_vec();
     let mut rev_g = g.to_vec();
-    (&mut rev_f).reverse();
-    (&mut rev_g).reverse();
+    rev_f.reverse();
+    rev_g.reverse();
     let f_stream = rev_f.as_slice();
     let g_stream = rev_g.as_slice();
 

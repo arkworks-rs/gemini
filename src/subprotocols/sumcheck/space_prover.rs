@@ -106,7 +106,7 @@ where
     }
 }
 
-impl<'a, F, S1, S2> Prover<F> for SpaceProver<F, S1, S2>
+impl<F, S1, S2> Prover<F> for SpaceProver<F, S1, S2>
 where
     F: Field,
     S1: Iterable,
@@ -262,7 +262,7 @@ where
         let folded_g = FoldedPolynomialStream::new(&self.witness.g, &self.challenges);
         let lhs = folded_f.iter().next()?;
         let rhs = folded_g.iter().next()?;
-        (self.round == self.tot_rounds).then(|| [lhs, rhs])
+        (self.round == self.tot_rounds).then_some([lhs, rhs])
     }
 }
 

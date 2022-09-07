@@ -1,7 +1,7 @@
 use ark_bls12_381::Bls12_381;
 use ark_bls12_381::Fr;
 use ark_poly::univariate::DensePolynomial;
-use ark_poly::UVPolynomial;
+use ark_poly::DenseUVPolynomial;
 use ark_std::test_rng;
 use ark_std::vec::Vec;
 
@@ -58,7 +58,7 @@ fn test_tensor_check() {
     tensor_check_proof
         .folded_polynomials_commitments
         .iter()
-        .for_each(|c| transcript.append_commitment(b"commitment", c));
+        .for_each(|c| transcript.append_serializable(b"commitment", c));
     let eval_chal = transcript.get_challenge::<Fr>(b"evaluation-chal");
 
     let mut direct_base_polynomials_evaluations = Vec::new();

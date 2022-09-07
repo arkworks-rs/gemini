@@ -12,8 +12,8 @@ use crate::iterable::Iterable;
 use crate::subprotocols::sumcheck::{time_prover::Witness, ElasticProver, SpaceProver, TimeProver};
 use crate::transcript::GeminiTranscript;
 
-use super::prover::{ProverMsgs, RoundMsg};
-use super::Prover;
+use crate::subprotocols::sumcheck::prover::{ProverMsgs, RoundMsg};
+use crate::subprotocols::sumcheck::Prover;
 
 /// A scalar product proof, containing non-oracle messages, and oracle messages together with their queries and evaluations.
 #[derive(Debug, PartialEq, Eq)]
@@ -40,7 +40,7 @@ impl<F: Field> Sumcheck<F> {
 
         while let Some(message) = prover.next_message() {
             // add the message sent to the transcript
-            transcript.append_prover_message(b"evaluations", &message);
+            transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
             let challenge = transcript.get_challenge::<F>(b"challenge");
             // Extract current randomness and fold the polynomials.
@@ -54,8 +54,8 @@ impl<F: Field> Sumcheck<F> {
         let rounds = prover.rounds();
         let final_foldings = vec![prover.final_foldings().unwrap()];
         // Add the final foldings to the transcript
-        transcript.append_scalar(b"final-folding", &final_foldings[0][0]);
-        transcript.append_scalar(b"final-folding", &final_foldings[0][1]);
+        transcript.append_serializable(b"final-folding", &final_foldings[0][0]);
+        transcript.append_serializable(b"final-folding", &final_foldings[0][1]);
 
         Sumcheck {
             messages,
@@ -94,7 +94,7 @@ impl<F: Field> Sumcheck<F> {
                 .map(|(m, c)| m.mul(c)) // multiply them if there's an actual message
                 .sum(); // finally, add them up.
             messages.push(message); // add the message sent to the transcript
-            transcript.append_prover_message(b"evaluations", &message);
+            transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
             let challenge: F = transcript.get_challenge(b"challenge");
             challenges.push(challenge);
@@ -105,8 +105,8 @@ impl<F: Field> Sumcheck<F> {
             .iter()
             .map(|p| {
                 let final_folding = p.final_foldings().unwrap();
-                transcript.append_scalar(b"final-folding-lhs", &final_folding[0]);
-                transcript.append_scalar(b"final-folding-rhs", &final_folding[1]);
+                transcript.append_serializable(b"final-folding-lhs", &final_folding[0]);
+                transcript.append_serializable(b"final-folding-rhs", &final_folding[1]);
                 final_folding
             })
             .collect::<Vec<_>>();

@@ -4,7 +4,7 @@ use ark_std::marker::PhantomData;
 
 use crate::iterable::Iterable;
 
-const LEN_MISMATCH_ERRMSG: &'static str = "Iterable::len mismatch with actual stream length.";
+const LEN_MISMATCH_ERRMSG: &str = "Iterable::len mismatch with actual stream length.";
 
 #[derive(Clone, Copy)]
 pub struct HadamardStreamer<'a, F, S0, S1>(&'a S0, &'a S1, PhantomData<F>);
