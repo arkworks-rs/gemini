@@ -13,7 +13,6 @@ use ark_bls12_381::G1Projective as G1;
 use ark_ec::ProjectiveCurve;
 use ark_ff::fields::PrimeField;
 
-
 fn bench_add(c: &mut Criterion) {
     let rng = &mut test_rng();
     let mut group = c.benchmark_group("add");

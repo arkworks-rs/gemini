@@ -154,8 +154,7 @@ impl<E: Pairing> CommitterKey<E> {
     ) -> EvaluationProof<E> {
         assert!(eval_points.len() < self.powers_of_g2.len());
         let etas = powers(*eval_chal, polynomials.len());
-        let batched_polynomial =
-            linear_combination(polynomials, &etas).unwrap_or_else(|| vec![E::ScalarField::zero()]);
+        let batched_polynomial = linear_combination(polynomials, &etas);
         self.open_multi_points(&batched_polynomial, eval_points)
     }
 }

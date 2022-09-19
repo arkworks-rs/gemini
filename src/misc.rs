@@ -34,7 +34,7 @@ pub fn ceil_div(x: usize, y: usize) -> usize {
 }
 
 /// Compute a linear combination of the polynomials `polynomials` with the given challenges.
-pub fn linear_combination<F: Field, PP>(polynomials: &[PP], challenges: &[F]) -> Option<Vec<F>>
+pub fn linear_combination<F: Field, PP>(polynomials: &[PP], challenges: &[F]) -> Vec<F>
 where
     PP: Borrow<Vec<F>>,
 {
@@ -42,9 +42,9 @@ where
         .iter()
         .zip(challenges.iter())
         .map(|(p, &c)| &DensePolynomial::from_coefficients_vec(p.borrow().to_vec()) * c)
-        .reduce(|x, y| x + y)?
-        .coeffs
-        .into()
+        .reduce(|x, y| x + y)
+        .map(|x| x.coeffs.into())
+        .unwrap_or_else(|| Vec::new())
 }
 
 /// Helper function for folding single polynomial.
@@ -394,8 +394,8 @@ fn test_linear_combination() {
         Fr::from(1102),
         Fr::from(1103),
     ];
-    assert!(got.is_some());
-    assert_eq!(got.unwrap(), expected);
+    assert_eq!(got, expected);
+    assert_eq!(linear_combination(&Vec::<Vec<Fr>>::new(), &Vec::<Fr>::new()), Vec::<Fr>::new());
 }
 
 #[test]

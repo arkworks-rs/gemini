@@ -65,8 +65,6 @@ pub mod streams;
 #[cfg(test)]
 pub mod tests;
 
-const EMPTY_CHALLENGES_ERR_MSG: &str = "Empty challenges list";
-
 /// Evaluate a folded polynomial tree at the point `x`.
 ///
 /// Make a single pass over the [`FoldedPolynomialTree`](crate::subprotocols::sumcheck::streams::FoldedPolynomialTree)
@@ -202,10 +200,12 @@ impl<E: Pairing> TensorcheckProof<E> {
 
         let batch_challenge = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
+        assert_ne!(batch_challenges.len(), 0);
+        assert!(body_polynomials.iter().all(|polynomials| polynomials.0.len() != 0));
 
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
             (
-                linear_combination(polynomials, &batch_challenges).expect(EMPTY_CHALLENGES_ERR_MSG),
+                linear_combination(polynomials, &batch_challenges),
                 challenges,
             )
         });
