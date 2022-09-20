@@ -191,7 +191,7 @@ impl Zero for G1Wrapper {
 use ark_serialize::*;
 
 #[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-struct Bls12GT(pub ark_bls12_381::Fq12);
+struct Bls12GT(pub ark_bls12_381::<Bls12<ark_bls12_381::Parameters> as Pairing>::PairingOutput);
 
 impl From<ark_bls12_381::Fq12> for Bls12GT {
     fn from(e: ark_bls12_381::Fq12) -> Self {
@@ -432,19 +432,19 @@ impl From<Crs> for Vrs {
         for i in 0..log2(crs.g1s.len()) {
             let size = 1 << i;
 
-            let even2: Bls12GT = ip_unsafe::<Bls12Module, _, _>(
+            let even2 = ip_unsafe::<Bls12Module, _, _>(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().step_by(2),
             );
-            let odd2: Bls12GT = ip_unsafe::<Bls12Module, _, _>(
+            let odd2 = ip_unsafe::<Bls12Module, _, _>(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().skip(1).step_by(2),
             );
-            let even1: Bls12GT = ip_unsafe::<Bls12Module, _, _>(
+            let even1 = ip_unsafe::<Bls12Module, _, _>(
                 crs.g1s.iter().step_by(2),
                 crs.g2s.iter().take(size),
             );
-            let odd1: Bls12GT = ip_unsafe::<Bls12Module, _, _>(
+            let odd1 = ip_unsafe::<Bls12Module, _, _>(
                 crs.g1s.iter().skip(1).step_by(2),
                 crs.g2s.iter().take(size),
             );
