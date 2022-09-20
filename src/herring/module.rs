@@ -4,7 +4,7 @@ use ark_bls12_381::{Bls12_381, Fr};
 use ark_ec::Group;
 use ark_ec::pairing::Pairing;
 use ark_ff::{Field, UniformRand};
-use ark_ff::{PrimeField, Zero};
+use ark_ff::Zero;
 use ark_std::borrow::Borrow;
 use ark_std::iter::Sum;
 use ark_std::ops::{Add, AddAssign, BitXor, Mul, Sub};
@@ -189,12 +189,13 @@ impl Zero for G1Wrapper {
 }
 
 use ark_serialize::*;
+use ark_ec::pairing::PairingOutput;
 
 #[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-struct Bls12GT(pub ark_bls12_381::<Bls12<ark_bls12_381::Parameters> as Pairing>::PairingOutput);
+struct Bls12GT(pub PairingOutput<ark_bls12_381::Bls12_381>);
 
-impl From<ark_bls12_381::Fq12> for Bls12GT {
-    fn from(e: ark_bls12_381::Fq12) -> Self {
+impl From<PairingOutput<ark_bls12_381::Bls12_381>> for Bls12GT {
+    fn from(e: PairingOutput<ark_bls12_381::Bls12_381>) -> Self {
         Self(e)
     }
 }
@@ -203,13 +204,13 @@ impl<FF: Borrow<Fr>> Mul<FF> for Bls12GT {
     type Output = Self;
 
     fn mul(self, rhs: FF) -> Self::Output {
-        self.0.pow(rhs.borrow().into_bigint()).into()
+        (self.0 * rhs.borrow()).into()
     }
 }
 
 impl Zero for Bls12GT {
     fn zero() -> Self {
-        ark_bls12_381::Fq12::zero().into()
+        PairingOutput::zero().into()
     }
 
     fn is_zero(&self) -> bool {
@@ -219,7 +220,7 @@ impl Zero for Bls12GT {
 
 impl AddAssign for Bls12GT {
     fn add_assign(&mut self, rhs: Self) {
-        self.0 *= rhs.0
+        self.0 += rhs.0
     }
 }
 
@@ -227,7 +228,7 @@ impl Add for Bls12GT {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        (self.0 * rhs.0).into()
+        (self.0 + rhs.0).into()
     }
 }
 
@@ -298,7 +299,7 @@ impl Mul<G2Wrapper> for G1Wrapper {
 
     #[inline]
     fn mul(self, rhs: G2Wrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, rhs.0).0.into()
+        Bls12_381::pairing(self.0, rhs.0).into()
     }
 }
 
@@ -307,7 +308,7 @@ impl BitXor<G2Wrapper> for G1Wrapper {
 
     #[inline]
     fn bitxor(self, rhs: G2Wrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, rhs.0).0.into()
+        Bls12_381::pairing(self.0, rhs.0).into()
     }
 }
 
@@ -316,7 +317,7 @@ impl BitXor<FrWrapper> for G1Wrapper {
 
     #[inline]
     fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, G2Projective::generator() * rhs.0).0.into()
+        Bls12_381::pairing(self.0, G2Projective::generator() * rhs.0).into()
     }
 }
 
@@ -324,7 +325,7 @@ impl BitXor<FrWrapper> for G2Wrapper {
     type Output = Bls12GT;
 
     fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        Bls12_381::pairing(G1Projective::generator() * rhs.0, self.0).0.into()
+        Bls12_381::pairing(G1Projective::generator() * rhs.0, self.0).into()
     }
 }
 
@@ -332,12 +333,7 @@ impl BitXor<FrWrapper> for FrWrapper {
     type Output = Bls12GT;
 
     fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        Bls12_381::pairing(
-            G1Projective::generator(),
-            G2Projective::generator(),
-        )
-        .0.pow((self.0 * rhs.0).into_bigint())
-        .into()
+        (PairingOutput::generator() * (self.0 * rhs.0)).into()
     }
 }
 
