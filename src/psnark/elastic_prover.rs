@@ -1,5 +1,5 @@
 //! Space-efficient preprocessing SNARK for R1CS.
-use ark_ec::{pairing::Pairing};
+use ark_ec::pairing::Pairing;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::boxed::Box;

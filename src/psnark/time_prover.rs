@@ -118,8 +118,7 @@ impl<E: Pairing> Proof<E> {
                 hadamard(&alpha_star, &val_c),
             ],
             &challenges,
-        )
-        .unwrap();
+        );
 
         let second_sumcheck_time = start_timer!(|| "Second sumcheck");
         let second_proof = Sumcheck::new_time(

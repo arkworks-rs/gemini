@@ -94,7 +94,7 @@ pub use time::CommitterKey;
 #[cfg(test)]
 pub mod tests;
 
-use ark_ec::{pairing::Pairing, AffineRepr, VariableBaseMSM};
+use ark_ec::{pairing::Pairing, VariableBaseMSM};
 use ark_ff::{Field, One, Zero};
 use ark_poly::{univariate::DensePolynomial, DenseUVPolynomial};
 use ark_serialize::*;
@@ -224,7 +224,7 @@ impl<E: Pairing> VerifierKey<E> {
             .iter()
             .map(|e| interpolate_poly::<E>(eval_points, e, &sca_inverse, &lang).coeffs)
             .collect::<Vec<_>>();
-        let i_poly = linear_combination(&interpolated_polynomials[..], &etas).unwrap();
+        let i_poly = linear_combination(&interpolated_polynomials[..], &etas);
 
         let i_comm = E::G1::msm(&self.powers_of_g, &i_poly);
 

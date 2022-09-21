@@ -2,7 +2,6 @@
 use ark_ec::pairing::Pairing;
 use ark_ec::scalar_mul::variable_base::{ChunkedPippenger, HashMapPippenger};
 use ark_ec::CurveGroup;
-use ark_ec::VariableBaseMSM;
 use ark_ff::{PrimeField, Zero};
 use ark_poly::Polynomial;
 use ark_std::borrow::Borrow;
