@@ -15,6 +15,8 @@ use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
 
 /// Given oracle access to a polynomial $f \in \FF[x]$ and a field element $\psi \in \FF$, returns $(f - \psi)(x)$.
+/// XXX. use for real
+#[allow(unused)]
 #[inline]
 fn eval_entryprod<F: Field>(oracle: impl FnOnce(F) -> F, psi: F, n: usize) -> impl FnOnce(F) -> F {
     move |x| oracle(x) - psi * evaluate_geometric_poly(x, n)

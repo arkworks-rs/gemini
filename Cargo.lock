@@ -1196,8 +1196,3 @@ dependencies = [
  "syn",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "ark-test-curves"
-version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
