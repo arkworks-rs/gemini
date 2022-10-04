@@ -461,6 +461,7 @@ impl InnerProductProof {
         vrs: &Vrs,
         comm_a: G1Projective,
         comm_b: G2Projective,
+        y: Bls12GT,
     ) -> VerificationResult {
         let g1s = vrs
             .vk1
@@ -474,6 +475,12 @@ impl InnerProductProof {
             .map(|((even, odd), challenge)| *even + *odd * challenge);
 
 
+        let mut reduced_claim = y;
+        for (message, &challenge) in self.sumcheck.messages.iter().zip(self.sumcheck.challenges.iter()) {
+            let SumcheckMsg(a, b) = *message;
+            let c = reduced_claim - a;
+            reduced_claim = a + b * challenge  + c* challenge.square();
+        }
         todo!()
     }
 
