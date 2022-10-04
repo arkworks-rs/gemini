@@ -1,8 +1,8 @@
 //! Common data structures for the prover algorith in the scalar-product sub-argument.
 use ark_serialize::*;
 use ark_std::iter::Sum;
+use ark_std::ops::{Add, Mul};
 use ark_std::vec::Vec;
-use core::ops::Mul;
 
 use super::module::{BilinearModule, Module};
 
@@ -17,6 +17,12 @@ pub struct ProverMsgs<M: BilinearModule>(
     pub(crate) Vec<(M::Lhs, M::Rhs)>,
 );
 
+impl<M: Module> Add<Self> for SumcheckMsg<M> {
+    type Output = Self;
+    fn add(self, other: Self) -> Self {
+        SumcheckMsg(self.0 + other.0, self.1 + other.1)
+    }
+}
 impl<M: Module> Sum for SumcheckMsg<M> {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.reduce(|fst, snd| SumcheckMsg(fst.0 + snd.0, fst.1 + snd.1))

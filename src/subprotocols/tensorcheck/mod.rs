@@ -201,7 +201,9 @@ impl<E: Pairing> TensorcheckProof<E> {
         let batch_challenge = transcript.get_challenge::<E::ScalarField>(b"batch_challenge");
         let batch_challenges = powers(batch_challenge, max_len);
         assert_ne!(batch_challenges.len(), 0);
-        assert!(body_polynomials.iter().all(|polynomials| polynomials.0.len() != 0));
+        assert!(body_polynomials
+            .iter()
+            .all(|polynomials| polynomials.0.len() != 0));
 
         let batched_body_polynomials = body_polynomials.iter().map(|(polynomials, challenges)| {
             (

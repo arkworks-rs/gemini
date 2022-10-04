@@ -395,7 +395,10 @@ fn test_linear_combination() {
         Fr::from(1103),
     ];
     assert_eq!(got, expected);
-    assert_eq!(linear_combination(&Vec::<Vec<Fr>>::new(), &Vec::<Fr>::new()), Vec::<Fr>::new());
+    assert_eq!(
+        linear_combination(&Vec::<Vec<Fr>>::new(), &Vec::<Fr>::new()),
+        Vec::<Fr>::new()
+    );
 }
 
 #[test]

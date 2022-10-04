@@ -6,7 +6,7 @@ use ark_ff::{One, Zero};
 use ark_std::log2;
 use ark_std::vec::Vec;
 
-use crate::herring::prover::{SumcheckMsg, Prover};
+use crate::herring::prover::{Prover, SumcheckMsg};
 
 use super::module::{BilinearModule, Module};
 
@@ -148,4 +148,3 @@ where
         (self.round == self.tot_rounds).then(|| (self.f[0], self.g[0]))
     }
 }
-

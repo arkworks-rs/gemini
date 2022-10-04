@@ -187,7 +187,7 @@ impl<E: Pairing> VerifierKey<E> {
     ) -> VerificationResult {
         // Computing the vanishing polynomial over eval_points
         let zeros = vanishing_polynomial(eval_points);
-        let zeros = E::G2::msm(&self.powers_of_g2, zeros.coeffs());
+        let zeros = E::G2::msm(&self.powers_of_g2, &zeros.coeffs());
 
         // Computing the inverse for the interpolation
         let mut sca_inverse = Vec::new();
