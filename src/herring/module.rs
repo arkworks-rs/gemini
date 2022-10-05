@@ -1,6 +1,8 @@
+use crate::errors::{VerificationResult, VerificationError};
 use crate::transcript::GeminiTranscript;
 use ark_bls12_381::G1Projective;
 use ark_bls12_381::{Bls12_381, Fr};
+use ark_ec::bls12::Bls12;
 use ark_ec::pairing::Pairing;
 use ark_ec::Group;
 use ark_ff::Zero;
@@ -9,7 +11,6 @@ use ark_std::borrow::Borrow;
 use ark_std::iter::Sum;
 use ark_std::ops::{Add, AddAssign, BitXor, Mul, Sub};
 use rand::Rng;
-use crate::errors::VerificationResult;
 
 pub trait Module:
     Send
@@ -337,6 +338,23 @@ impl BitXor<FrWrapper> for FrWrapper {
     }
 }
 
+impl BitXor<FrWrapper> for Bls12GT {
+    type Output = Bls12GT;
+
+    fn bitxor(self, rhs: FrWrapper) -> Self::Output {
+        (self.0 * rhs.0).into()
+    }
+}
+
+struct Bls12GTModule {}
+
+impl BilinearModule for Bls12GTModule {
+    type Lhs = Bls12GT;
+    type Rhs = FrWrapper;
+    type Target = Bls12GT;
+    type ScalarField = ark_bls12_381::Fr;
+}
+
 struct Bls12Module {}
 
 impl BilinearModule for Bls12Module {
@@ -386,6 +404,7 @@ use ark_std::{log2, One};
 use super::time_prover::Witness;
 pub struct InnerProductProof {
     sumcheck: Sumcheck<Bls12Module>,
+    batch_challenges: Vec<Fr>,
     foldings_ff: Vec<(FrWrapper, FrWrapper)>,
     foldings_fg1: Vec<(G1Wrapper, FrWrapper)>,
     foldings_fg2: Vec<(G2Wrapper, FrWrapper)>,
@@ -461,7 +480,7 @@ impl InnerProductProof {
         vrs: &Vrs,
         comm_a: G1Projective,
         comm_b: G2Projective,
-        y: Bls12GT,
+        y: FrWrapper,
     ) -> VerificationResult {
         let g1s = vrs
             .vk1
@@ -474,21 +493,41 @@ impl InnerProductProof {
             .zip(&self.sumcheck.challenges)
             .map(|((even, odd), challenge)| *even + *odd * challenge);
 
-
-        let mut reduced_claim = y;
-        for (message, &challenge) in self.sumcheck.messages.iter().zip(self.sumcheck.challenges.iter()) {
+        let mut reduced_claim = y ^ Fr::one().into();
+        reduced_claim += G1Wrapper(comm_a) ^ G2Wrapper(G2Projective::generator());
+        reduced_claim += G1Wrapper(G1Projective::generator()) ^ G2Wrapper(comm_b);
+        for (message, &challenge) in self
+            .sumcheck
+            .messages
+            .iter()
+            .zip(self.sumcheck.challenges.iter())
+        {
             let SumcheckMsg(a, b) = *message;
             let c = reduced_claim - a;
-            reduced_claim = a + b * challenge  + c* challenge.square();
+            reduced_claim = a + b * challenge + c * challenge.square();
         }
-        todo!()
+
+        let mut final_foldings = vec![
+            (self.foldings_ff[0].0 ^ self.foldings_ff[0].1).0,
+            (self.foldings_fg1[0].0 ^ self.foldings_fg1[0].1).0,
+            (self.foldings_fg2[0].0 ^ self.foldings_fg2[0].1).0,
+        ];
+        final_foldings.extend(self.sumcheck.final_foldings.iter().map(|&(lhs, rhs)| (lhs ^ rhs).0));
+
+        let expected: PairingOutput<_> = self.batch_challenges.iter().zip(final_foldings.iter()).map(|(x, y)| *y*x).sum();
+
+        if reduced_claim.0 == expected {
+            Ok(())
+        } else {
+            Err(VerificationError)
+        }
     }
 
     fn new(transcript: &mut Transcript, crs: &Crs, a: &[FrWrapper], b: &[FrWrapper]) -> Self {
         // the full transcript will hold a set of messages, challenges, and batch challenges.
         let mut messages = Vec::new();
         let mut challenges = Vec::new();
-        let mut batch_challenges = Vec::new();
+        let mut batch_challenges: Vec<Fr> = Vec::new();
 
         // prover for the claim <a, b>
         let witness_ff: Witness<FFModule> =
@@ -509,8 +548,8 @@ impl InnerProductProof {
         let msg_fg1 = prover_fg1.next_message().unwrap();
         let msg_fg2 = prover_fg2.next_message().unwrap();
         messages.push(msg_ff + msg_fg1 * &batch_challenge + msg_fg2 * &batch_challenge.square());
-        batch_challenges.push(batch_challenge);
-        batch_challenges.push(batch_challenge.square());
+        batch_challenges.push(batch_challenge.into());
+        batch_challenges.push(batch_challenge.square().into());
 
         // start the recursive step: create a vector of provers, and a vector of folded crs's
         let mut last_crs1_fold = crs.g1s.to_vec();
@@ -523,10 +562,11 @@ impl InnerProductProof {
         for _ in 0..rounds {
             // step 2a; the verifier sends round and batch challenge
             let round_challenge = transcript.get_challenge(b"sumcheck-chal");
-            let batch_challenge = transcript.get_challenge(b"batch-chal");
+            let batch_challenge = transcript.get_challenge::<Fr>(b"batch-chal");
             challenges.push(round_challenge);
-            batch_challenges.push(batch_challenge);
-            batch_challenges.push(batch_challenge.square());
+            batch_challenges.push(Fr::one().into());
+            batch_challenges.push(batch_challenge.into());
+            batch_challenges.push(batch_challenge.square().into());
 
             // fold previous polynomials using hte crs given
             prover_ff.fold(round_challenge);
@@ -595,6 +635,7 @@ impl InnerProductProof {
         let foldings_fg2 = vec![prover_fg2.final_foldings().unwrap()];
         InnerProductProof {
             sumcheck,
+            batch_challenges,
             foldings_ff,
             foldings_fg1,
             foldings_fg2,
