@@ -4,7 +4,7 @@ use ark_bls12_381::G1Projective;
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_ec::bls12::Bls12;
 use ark_ec::pairing::Pairing;
-use ark_ec::Group;
+use ark_ec::{Group, VariableBaseMSM};
 use ark_ff::Zero;
 use ark_ff::{Field, UniformRand};
 use ark_std::borrow::Borrow;
@@ -290,7 +290,7 @@ use ark_bls12_381::g2::G2Projective;
 use merlin::Transcript;
 
 use super::prover::SumcheckMsg;
-use super::time_prover::{fold_polynomial_into, TimeProver};
+use super::time_prover::{split_fold_into, TimeProver};
 
 use super::proof::Sumcheck;
 use super::Prover;
@@ -421,26 +421,34 @@ where
     f.zip(g).map(|(x, y)| *x.borrow() ^ *y.borrow()).sum()
 }
 
-struct Crs {
+pub struct Crs {
     g1s: Vec<G1Wrapper>,
     g2s: Vec<G2Wrapper>,
 }
 
-struct Vrs {
+pub struct Vrs {
     vk1: Vec<(Bls12GT, Bls12GT)>,
     vk2: Vec<(Bls12GT, Bls12GT)>,
 }
 
 impl Crs {
-    fn new(rng: &mut impl Rng, d: usize) -> Self {
+    pub fn new(rng: &mut impl Rng, d: usize) -> Self {
         let g1s: Vec<G1Wrapper> = (0..d + 1).map(|_| G1Projective::rand(rng).into()).collect();
         let g2s: Vec<G2Wrapper> = (0..d + 1).map(|_| G2Projective::rand(rng).into()).collect();
         Self { g1s, g2s }
     }
+
+    pub fn commit_g1(&self, scalars: &[Fr]) -> G1Projective {
+        scalars.iter().zip(self.g1s.iter()).map(|(s, b)| b.0 * s).reduce(|x, y| x+y).unwrap_or_else(G1Projective::zero)
+    }
+
+    pub fn commit_g2(&self, scalars: &[Fr]) -> G2Projective {
+        scalars.iter().zip(self.g2s.iter()).map(|(s, b)| b.0 * s).reduce(|x, y| x+y).unwrap_or_else(G2Projective::zero)
+    }
 }
 
-impl From<Crs> for Vrs {
-    fn from(crs: Crs) -> Self {
+impl<'a> From<&'a Crs> for Vrs {
+    fn from(crs: &'a Crs) -> Self {
         let mut vk1 = Vec::new();
         let mut vk2 = Vec::new();
 
@@ -474,14 +482,16 @@ impl From<Crs> for Vrs {
 }
 
 impl InnerProductProof {
-    fn verify(
+    pub fn verify(
         &self,
         transcript: &mut Transcript,
         vrs: &Vrs,
         comm_a: G1Projective,
         comm_b: G2Projective,
-        y: FrWrapper,
+        y: Fr,
     ) -> VerificationResult {
+        let y = FrWrapper(y);
+
         let g1s = vrs
             .vk1
             .iter()
@@ -496,13 +506,13 @@ impl InnerProductProof {
         let mut reduced_claim = y ^ Fr::one().into();
         reduced_claim += G1Wrapper(comm_a) ^ G2Wrapper(G2Projective::generator());
         reduced_claim += G1Wrapper(G1Projective::generator()) ^ G2Wrapper(comm_b);
-        for (message, &challenge) in self
-            .sumcheck
-            .messages
-            .iter()
-            .zip(self.sumcheck.challenges.iter())
-        {
-            let SumcheckMsg(a, b) = *message;
+        assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
+        let rounds = self.sumcheck.messages.len();
+        for i in 0 .. rounds {
+
+            let SumcheckMsg(a, b) = self.sumcheck.messages[i];
+            let challenge = self.sumcheck.challenges[i];
+
             let c = reduced_claim - a;
             reduced_claim = a + b * challenge + c * challenge.square();
         }
@@ -523,7 +533,10 @@ impl InnerProductProof {
         }
     }
 
-    fn new(transcript: &mut Transcript, crs: &Crs, a: &[FrWrapper], b: &[FrWrapper]) -> Self {
+    pub fn new(transcript: &mut Transcript, crs: &Crs, a: &[Fr], b: &[Fr]) -> Self {
+        let a = a.into_iter().map(|&x| FrWrapper(x)).collect::<Vec<_>>();
+        let b = b.into_iter().map(|&x| FrWrapper(x)).collect::<Vec<_>>();
+
         // the full transcript will hold a set of messages, challenges, and batch challenges.
         let mut messages = Vec::new();
         let mut challenges = Vec::new();
@@ -531,15 +544,15 @@ impl InnerProductProof {
 
         // prover for the claim <a, b>
         let witness_ff: Witness<FFModule> =
-            super::time_prover::Witness::new(a, b, &Fr::one().into());
+            super::time_prover::Witness::new(&a, &b, &Fr::one().into());
         let mut prover_ff = super::time_prover::TimeProver::new(witness_ff);
         // prover for the claim <a, G1>
         let witness_fg1: Witness<G1Module> =
-            super::time_prover::Witness::new(&crs.g1s, a, &Fr::one().into());
+            super::time_prover::Witness::new(&crs.g1s, &a, &Fr::one().into());
         let mut prover_fg1 = super::time_prover::TimeProver::new(witness_fg1);
         // prover for the claim <b, G2>
         let witness_fg2: Witness<G2Module> =
-            super::time_prover::Witness::new(&crs.g2s, b, &Fr::one().into());
+            super::time_prover::Witness::new(&crs.g2s, &b, &Fr::one().into());
         let mut prover_fg2 = super::time_prover::TimeProver::new(witness_fg2);
 
         // next_message for all above provers (batched)
@@ -559,7 +572,7 @@ impl InnerProductProof {
 
         let rounds = prover_ff.rounds(); // assuming = proverg.rounds()
         let mut gg_provers: Vec<TimeProver<_>> = Vec::new();
-        for _ in 0..rounds {
+        for _ in 0..rounds+1 {
             // step 2a; the verifier sends round and batch challenge
             let round_challenge = transcript.get_challenge(b"sumcheck-chal");
             let batch_challenge = transcript.get_challenge::<Fr>(b"batch-chal");
@@ -578,10 +591,10 @@ impl InnerProductProof {
 
             // step 2b: the prover computes folding of g1's
             let crs1_chop = &last_crs1_chop[..last_crs1_chop.len() / 2]; // XXXXX: does this work for non-2powers?
-            fold_polynomial_into(&mut last_crs1_fold, last_crs1_chop, round_challenge);
+            split_fold_into(&mut last_crs1_fold, last_crs1_chop, round_challenge);
             last_crs1_chop = &crs1_chop;
             // [step 2b].. and of g2
-            fold_polynomial_into(&mut last_crs2_fold, last_crs2_chop, round_challenge);
+            split_fold_into(&mut last_crs2_fold, last_crs2_chop, round_challenge);
             let crs2_chop = &last_crs2_chop[..last_crs2_chop.len() / 2];
             last_crs2_chop = &crs2_chop;
 
@@ -644,6 +657,19 @@ impl InnerProductProof {
 }
 
 #[test]
-fn test_batching() {
-    use ark_std::vec::Vec;
+fn test_correctness() {
+    use ark_bls12_381::Fr as FF;
+    let d = 1 << 5;
+    let rng = &mut rand::thread_rng();
+    let mut transcript = Transcript::new(b"gemini-tests");
+    let crs = Crs::new(rng, d);
+    let a = (0..10).map(|x| FF::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..10).map(|x| FF::rand(rng).into()).collect::<Vec<_>>();
+    let vrs = Vrs::from(&crs);
+    let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
+    let comm_a = crs.commit_g1(&a);
+    let comm_b = crs.commit_g2(&b);
+    let y = crate::misc::ip(&a, &b);
+
+    let verification = ipa.verify(&mut transcript, &vrs, comm_a, comm_b, y);
 }

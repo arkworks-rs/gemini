@@ -70,15 +70,16 @@ impl<M: BilinearModule> TimeProver<M> {
 }
 
 #[inline]
-pub(crate) fn fold_polynomial<M: Module>(f: &[M], r: M::ScalarField) -> Vec<M> {
+pub(crate) fn split_fold<M: Module>(f: &[M], r: M::ScalarField) -> Vec<M> {
     f.chunks(2)
         .map(|pair| pair[0] + *pair.get(1).unwrap_or(&M::zero()) * r)
         .collect()
 }
 
 #[inline]
-pub(crate) fn fold_polynomial_into<M: Module>(dst: &mut [M], f: &[M], r: M::ScalarField) {
-    for i in 0..f.len() {
+pub(crate) fn split_fold_into<M: Module>(dst: &mut [M], f: &[M], r: M::ScalarField) {
+    let folded_len = f.len() / 2;
+    for i in 0.. folded_len {
         dst[i] = f[i * 2] + *f.get(i * 2 + 1).unwrap_or(&M::zero()) * r
     }
 }
@@ -90,8 +91,8 @@ where
     /// Fold the sumcheck instance (inplace).
     fn fold(&mut self, r: M::ScalarField) {
         // Fold the polynonomials f, g in the scalar product.
-        self.f = fold_polynomial(&self.f, r * self.twist);
-        self.g = fold_polynomial(&self.g, r);
+        self.f = split_fold(&self.f, r * self.twist);
+        self.g = split_fold(&self.g, r);
         self.twist.square_in_place();
     }
 
