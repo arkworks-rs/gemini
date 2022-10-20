@@ -114,13 +114,13 @@ where
     S2: Iterable,
     S2::Item: Borrow<F>,
 {
-    fn next_message(&mut self) -> Option<RoundMsg<F>> {
+    fn next_message(&mut self, verifier_message: Option<F>) -> Option<RoundMsg<F>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
-        assert_eq!(
-            self.challenges.len(),
-            self.round,
-            "At the i-th round, randomness.len() = i."
-        );
+
+        if let Some(challenge) = verifier_message {
+            self.fold(challenge);
+        }
+
         if self.round == self.tot_rounds {
             return None;
         }

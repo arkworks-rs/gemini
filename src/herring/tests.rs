@@ -59,26 +59,22 @@ fn test_messages_consistency() {
     // Run the next-message function on the space and the time prover,
     // Check the returned messages are equal.
     assert_eq!(
-        space_prover.next_message().unwrap(),
-        time_prover.next_message().unwrap()
+        space_prover.next_message(None).unwrap(),
+        time_prover.next_message(None).unwrap()
     );
 
     // Run the next-message function once again on the space and time prover, and check the result is still equal.
-    let verifier_message = F::rand(rng);
-    space_prover.fold(verifier_message);
-    time_prover.fold(verifier_message);
+    let verifier_message = Some(F::rand(rng));
     assert_eq!(
-        space_prover.next_message().unwrap(),
-        time_prover.next_message().unwrap()
+        space_prover.next_message(verifier_message).unwrap(),
+        time_prover.next_message(verifier_message).unwrap()
     );
 
     // Run the next-message function one last time on the space and time prover, and check the result is still equal.
-    let verifier_message = F::one();
-    space_prover.fold(verifier_message);
-    time_prover.fold(verifier_message);
+    let verifier_message = Some(F::one());
     assert_eq!(
-        space_prover.next_message().unwrap(),
-        time_prover.next_message().unwrap()
+        space_prover.next_message(verifier_message).unwrap(),
+        time_prover.next_message(verifier_message).unwrap()
     );
 
     // now check the aggregated data.
@@ -135,8 +131,8 @@ fn test_messages_consistency_with_different_lengths() {
     // Run the next-message function on the space and the time prover,
     // Check the returned messages are equal.
     assert_eq!(
-        space_prover.next_message().unwrap(),
-        time_prover.next_message().unwrap()
+        space_prover.next_message(None).unwrap(),
+        time_prover.next_message(None).unwrap()
     );
 }
 

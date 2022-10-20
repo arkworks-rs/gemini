@@ -34,10 +34,10 @@ where
     S1::Item: Borrow<F>,
     S2::Item: Borrow<F>,
 {
-    fn next_message(&mut self) -> Option<RoundMsg<F>> {
+    fn next_message(&mut self, verifier_message: Option<F>) -> Option<RoundMsg<F>> {
         match self {
-            Self::Space(p) => p.next_message(),
-            Self::Time(p) => p.next_message(),
+            Self::Space(p) => p.next_message(verifier_message),
+            Self::Time(p) => p.next_message(verifier_message),
         }
     }
 

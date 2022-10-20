@@ -44,7 +44,10 @@ where
     M: BilinearModule,
 {
     /// Return the next prover message (if any).
-    fn next_message(&mut self) -> Option<SumcheckMsg<M::Target>>;
+    fn next_message(
+        &mut self,
+        verifier_message: Option<M::ScalarField>,
+    ) -> Option<SumcheckMsg<M::Target>>;
     /// Peform even/odd folding of the instance using the challenge `challenge`.
     fn fold(&mut self, challenge: M::ScalarField);
     // Return the total number of rouds in the protocol.

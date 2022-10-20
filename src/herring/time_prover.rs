@@ -77,10 +77,10 @@ pub(crate) fn split_fold<M: Module>(f: &[M], r: M::ScalarField) -> Vec<M> {
 }
 
 #[inline]
-pub(crate) fn split_fold_into<M: Module>(dst: &mut [M], f: &[M], r: M::ScalarField) {
+pub(crate) fn split_fold_into<M: Module>(dst: &mut [M], f: &[M], challenge: M::ScalarField) {
     let folded_len = f.len() / 2;
-    for i in 0.. folded_len {
-        dst[i] = f[i * 2] + *f.get(i * 2 + 1).unwrap_or(&M::zero()) * r
+    for i in 0..folded_len {
+        dst[i] = f[i * 2] + *f.get(i * 2 + 1).unwrap_or(&M::zero()) * challenge
     }
 }
 
@@ -97,13 +97,21 @@ where
     }
 
     /// Time-efficient, next-message function.
-    fn next_message(&mut self) -> Option<SumcheckMsg<M::Target>> {
+    fn next_message(
+        &mut self,
+        verifier_message: Option<M::ScalarField>,
+    ) -> Option<SumcheckMsg<M::Target>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         // debug!("Round: {}", self.round);
 
         // If we already went through tot_rounds, no message must be sent.
         if self.round == self.tot_rounds {
             return None;
+        }
+
+        // If the verifier sent a message, fold according to it.
+        if let Some(challenge) = verifier_message {
+            self.fold(challenge);
         }
 
         // Compute the polynomial of the partial sum q = a + bx + c x2,

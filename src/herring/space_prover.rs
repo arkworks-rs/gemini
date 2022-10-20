@@ -115,7 +115,10 @@ where
     S2: Iterable,
     S2::Item: Borrow<M::Rhs>,
 {
-    fn next_message(&mut self) -> Option<SumcheckMsg<M::Target>> {
+    fn next_message(
+        &mut self,
+        verifier_message: Option<M::ScalarField>,
+    ) -> Option<SumcheckMsg<M::Target>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         assert_eq!(
             self.challenges.len(),

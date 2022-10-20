@@ -1,4 +1,4 @@
-use crate::errors::{VerificationResult, VerificationError};
+use crate::errors::{VerificationError, VerificationResult};
 use crate::transcript::GeminiTranscript;
 use ark_bls12_381::G1Projective;
 use ark_bls12_381::{Bls12_381, Fr};
@@ -439,11 +439,21 @@ impl Crs {
     }
 
     pub fn commit_g1(&self, scalars: &[Fr]) -> G1Projective {
-        scalars.iter().zip(self.g1s.iter()).map(|(s, b)| b.0 * s).reduce(|x, y| x+y).unwrap_or_else(G1Projective::zero)
+        scalars
+            .iter()
+            .zip(self.g1s.iter())
+            .map(|(s, b)| b.0 * s)
+            .reduce(|x, y| x + y)
+            .unwrap_or_else(G1Projective::zero)
     }
 
     pub fn commit_g2(&self, scalars: &[Fr]) -> G2Projective {
-        scalars.iter().zip(self.g2s.iter()).map(|(s, b)| b.0 * s).reduce(|x, y| x+y).unwrap_or_else(G2Projective::zero)
+        scalars
+            .iter()
+            .zip(self.g2s.iter())
+            .map(|(s, b)| b.0 * s)
+            .reduce(|x, y| x + y)
+            .unwrap_or_else(G2Projective::zero)
     }
 }
 
@@ -508,8 +518,7 @@ impl InnerProductProof {
         reduced_claim += G1Wrapper(G1Projective::generator()) ^ G2Wrapper(comm_b);
         assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
         let rounds = self.sumcheck.messages.len();
-        for i in 0 .. rounds {
-
+        for i in 0..rounds {
             let SumcheckMsg(a, b) = self.sumcheck.messages[i];
             let challenge = self.sumcheck.challenges[i];
 
@@ -522,9 +531,19 @@ impl InnerProductProof {
             (self.foldings_fg1[0].0 ^ self.foldings_fg1[0].1).0,
             (self.foldings_fg2[0].0 ^ self.foldings_fg2[0].1).0,
         ];
-        final_foldings.extend(self.sumcheck.final_foldings.iter().map(|&(lhs, rhs)| (lhs ^ rhs).0));
+        final_foldings.extend(
+            self.sumcheck
+                .final_foldings
+                .iter()
+                .map(|&(lhs, rhs)| (lhs ^ rhs).0),
+        );
 
-        let expected: PairingOutput<_> = self.batch_challenges.iter().zip(final_foldings.iter()).map(|(x, y)| *y*x).sum();
+        let expected: PairingOutput<_> = self
+            .batch_challenges
+            .iter()
+            .zip(final_foldings.iter())
+            .map(|(x, y)| *y * x)
+            .sum();
 
         if reduced_claim.0 == expected {
             Ok(())
@@ -555,11 +574,14 @@ impl InnerProductProof {
             super::time_prover::Witness::new(&crs.g2s, &b, &Fr::one().into());
         let mut prover_fg2 = super::time_prover::TimeProver::new(witness_fg2);
 
+        // the first message from the verifier is empty
+        let mut verifier_message = None;
+
         // next_message for all above provers (batched)
         let batch_challenge: Fr = transcript.get_challenge(b"batch-chal");
-        let msg_ff = prover_ff.next_message().unwrap();
-        let msg_fg1 = prover_fg1.next_message().unwrap();
-        let msg_fg2 = prover_fg2.next_message().unwrap();
+        let msg_ff = prover_ff.next_message(verifier_message).unwrap();
+        let msg_fg1 = prover_fg1.next_message(verifier_message).unwrap();
+        let msg_fg2 = prover_fg2.next_message(verifier_message).unwrap();
         messages.push(msg_ff + msg_fg1 * &batch_challenge + msg_fg2 * &batch_challenge.square());
         batch_challenges.push(batch_challenge.into());
         batch_challenges.push(batch_challenge.square().into());
@@ -572,29 +594,22 @@ impl InnerProductProof {
 
         let rounds = prover_ff.rounds(); // assuming = proverg.rounds()
         let mut gg_provers: Vec<TimeProver<_>> = Vec::new();
-        for _ in 0..rounds+1 {
+        for _ in 0..rounds + 1 {
             // step 2a; the verifier sends round and batch challenge
-            let round_challenge = transcript.get_challenge(b"sumcheck-chal");
+            let challenge = transcript.get_challenge(b"sumcheck-chal");
+            verifier_message = Some(challenge);
             let batch_challenge = transcript.get_challenge::<Fr>(b"batch-chal");
-            challenges.push(round_challenge);
+            challenges.push(challenge);
             batch_challenges.push(Fr::one().into());
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
-            // fold previous polynomials using hte crs given
-            prover_ff.fold(round_challenge);
-            prover_fg1.fold(round_challenge);
-            prover_fg2.fold(round_challenge);
-            gg_provers
-                .iter_mut()
-                .for_each(|prover| prover.fold(round_challenge));
-
             // step 2b: the prover computes folding of g1's
             let crs1_chop = &last_crs1_chop[..last_crs1_chop.len() / 2]; // XXXXX: does this work for non-2powers?
-            split_fold_into(&mut last_crs1_fold, last_crs1_chop, round_challenge);
+            split_fold_into(&mut last_crs1_fold, last_crs1_chop, challenge);
             last_crs1_chop = &crs1_chop;
             // [step 2b].. and of g2
-            split_fold_into(&mut last_crs2_fold, last_crs2_chop, round_challenge);
+            split_fold_into(&mut last_crs2_fold, last_crs2_chop, challenge);
             let crs2_chop = &last_crs2_chop[..last_crs2_chop.len() / 2];
             last_crs2_chop = &crs2_chop;
 
@@ -610,12 +625,12 @@ impl InnerProductProof {
             gg_provers.push(prover_g2fold);
 
             // batch the sumcheck messages from all provers obtained thus far
-            let ff_message = prover_ff.next_message().into_iter();
-            let fg1_message = prover_fg1.next_message().into_iter();
-            let fg2_message = prover_fg2.next_message().into_iter();
+            let ff_message = prover_ff.next_message(verifier_message).into_iter();
+            let fg1_message = prover_fg1.next_message(verifier_message).into_iter();
+            let fg2_message = prover_fg2.next_message(verifier_message).into_iter();
             let gg_messages = gg_provers
                 .iter_mut()
-                .map(|prover| prover.next_message().unwrap());
+                .map(|prover| prover.next_message(verifier_message).unwrap());
             let prover_messages = ff_message
                 .chain(fg1_message)
                 .chain(fg2_message)
@@ -629,7 +644,6 @@ impl InnerProductProof {
 
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
-            challenges.push(round_challenge);
         }
 
         let final_foldings = gg_provers
@@ -663,8 +677,8 @@ fn test_correctness() {
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
     let crs = Crs::new(rng, d);
-    let a = (0..10).map(|x| FF::rand(rng).into()).collect::<Vec<_>>();
-    let b = (0..10).map(|x| FF::rand(rng).into()).collect::<Vec<_>>();
+    let a = (0..10).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..10).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
     let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
     let comm_a = crs.commit_g1(&a);

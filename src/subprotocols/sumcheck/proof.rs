@@ -38,13 +38,13 @@ impl<F: Field> Sumcheck<F> {
         let mut messages = Vec::with_capacity(rounds);
         let mut challenges = Vec::with_capacity(rounds);
 
-        while let Some(message) = prover.next_message() {
+        let mut verifier_message = None;
+        while let Some(message) = prover.next_message(verifier_message) {
             // add the message sent to the transcript
             transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
-            let challenge = transcript.get_challenge::<F>(b"challenge");
-            // Extract current randomness and fold the polynomials.
-            prover.fold(challenge);
+            let challenge = transcript.get_challenge(b"challenge");
+            verifier_message = Some(challenge);
 
             // add the message to the final proof
             messages.push(message);
@@ -70,7 +70,8 @@ impl<F: Field> Sumcheck<F> {
         transcript: &mut Transcript,
         mut provers: Vec<Box<dyn Prover<F> + 'a>>,
     ) -> Sumcheck<F> {
-        let rounds = provers.iter().map(|p| p.rounds()).fold(0, usize::max);
+        // +1 to get the final foldings
+        let rounds = provers.iter().map(|p| p.rounds()).fold(0, usize::max) + 1;
         let mut messages = Vec::with_capacity(rounds);
         let mut challenges = Vec::with_capacity(rounds);
 
@@ -78,10 +79,11 @@ impl<F: Field> Sumcheck<F> {
             .map(|_| transcript.get_challenge::<F>(b"batch-sumcheck"))
             .collect::<Vec<_>>();
 
+        let mut verifier_message = None;
         for _ in 0..rounds {
             // obtain the next message from each prover, if possible in parallel.
             let round_messages = cfg_iter_mut!(provers).map(|p| {
-                p.next_message().unwrap_or_else(|| {
+                p.next_message(verifier_message).unwrap_or_else(|| {
                     let final_foldings = p.final_foldings().expect(
                         "If next_message is None, we expect final foldings to be available",
                     );
@@ -93,13 +95,14 @@ impl<F: Field> Sumcheck<F> {
                 .zip(&coefficients) // take the combination of messages and coefficients
                 .map(|(m, c)| m.mul(c)) // multiply them if there's an actual message
                 .sum(); // finally, add them up.
-            messages.push(message); // add the message sent to the transcript
+
             transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
-            let challenge: F = transcript.get_challenge(b"challenge");
+            let challenge = transcript.get_challenge(b"challenge");
+            verifier_message = Some(challenge);
+
+            messages.push(message);
             challenges.push(challenge);
-            // Extract current randomness and fold the polynomials.
-            provers.iter_mut().for_each(|prover| prover.fold(challenge));
         }
         let final_foldings = provers
             .iter()

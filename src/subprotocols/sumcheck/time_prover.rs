@@ -80,9 +80,13 @@ where
     }
 
     /// Time-efficient, next-message function.
-    fn next_message(&mut self) -> Option<RoundMsg<F>> {
+    fn next_message(&mut self, verifier_message: Option<F>) -> Option<RoundMsg<F>> {
         assert!(self.round <= self.tot_rounds, "More rounds than needed.");
         // debug!("Round: {}", self.round);
+
+        if let Some(challenge) = verifier_message {
+            self.fold(challenge);
+        }
 
         // If we already went through tot_rounds, no message must be sent.
         if self.round == self.tot_rounds {
@@ -172,16 +176,15 @@ fn test_trivial_prover() {
 
     // Check the next-message function is correct.
     let r = Fr::rand(rng);
-    let verifier_message = r;
-    let prover_message = prover.next_message();
+    let verifier_message = Some(r);
+    let prover_message = prover.next_message(verifier_message);
     assert!(prover_message.is_some());
 
     // Check that, after forlding the instance, the witness polynomial is a constant term, and that
     // the folding operation for degree-one polynomials is identical to evaluation.
-    prover.fold(verifier_message);
     assert_eq!(prover.f.len(), 1);
     // assert_eq!(prover.f.len()[0], prover.f[0]+ r * prover.f[1]));
 
     // an subsequent call to the next-message function should return None.
-    assert!(prover.next_message().is_none());
+    assert!(prover.next_message(None).is_none());
 }

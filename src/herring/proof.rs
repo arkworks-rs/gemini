@@ -39,13 +39,13 @@ impl<M: BilinearModule> Sumcheck<M> {
         let mut messages = Vec::with_capacity(rounds);
         let mut challenges = Vec::with_capacity(rounds);
 
-        while let Some(message) = prover.next_message() {
+        let mut verifier_message = None;
+        while let Some(message) = prover.next_message(verifier_message) {
             // add the message sent to the transcript
             transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
             let challenge = transcript.get_challenge::<M::ScalarField>(b"challenge");
-            // Extract current randomness and fold the polynomials.
-            prover.fold(challenge);
+            verifier_message = Some(challenge);
 
             // add the message to the final proof
             messages.push(message);
@@ -79,10 +79,11 @@ impl<M: BilinearModule> Sumcheck<M> {
             .map(|_| transcript.get_challenge::<M::ScalarField>(b"batch-sumcheck"))
             .collect::<Vec<_>>();
 
+        let mut verifier_message = None;
         for _ in 0..rounds {
             // obtain the next message from each prover, if possible in parallel.
             let round_messages = cfg_iter_mut!(provers).map(|p| {
-                p.next_message().unwrap_or_else(|| {
+                p.next_message(verifier_message).unwrap_or_else(|| {
                     let final_foldings = p.final_foldings().expect(
                         "If next_message is None, we expect final foldings to be available",
                     );
@@ -98,9 +99,8 @@ impl<M: BilinearModule> Sumcheck<M> {
             transcript.append_serializable(b"evaluations", &message);
             // compute the challenge for the next round
             let challenge = transcript.get_challenge(b"challenge");
+            verifier_message = Some(challenge);
             challenges.push(challenge);
-            // Extract current randomness and fold the polynomials.
-            provers.iter_mut().for_each(|prover| prover.fold(challenge));
         }
         let final_foldings = provers
             .iter()
