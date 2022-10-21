@@ -125,6 +125,12 @@ where
             self.round,
             "At the i-th round, randomness.len() = i."
         );
+
+        // If the verifier sent a message, fold according to it.
+        if let Some(challenge) = verifier_message {
+            self.fold(challenge);
+        }
+
         if self.round == self.tot_rounds {
             return None;
         }
