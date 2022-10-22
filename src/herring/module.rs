@@ -197,61 +197,7 @@ impl Zero for G1Wrapper {
 use ark_ec::pairing::PairingOutput;
 use ark_serialize::*;
 
-#[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-struct Bls12GT(pub PairingOutput<ark_bls12_381::Bls12_381>);
-
-impl From<PairingOutput<ark_bls12_381::Bls12_381>> for Bls12GT {
-    fn from(e: PairingOutput<ark_bls12_381::Bls12_381>) -> Self {
-        Self(e)
-    }
-}
-
-impl<FF: Borrow<Fr>> Mul<FF> for Bls12GT {
-    type Output = Self;
-
-    fn mul(self, rhs: FF) -> Self::Output {
-        (self.0 * rhs.borrow()).into()
-    }
-}
-
-impl Zero for Bls12GT {
-    fn zero() -> Self {
-        PairingOutput::zero().into()
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-
-impl AddAssign for Bls12GT {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
-    }
-}
-
-impl Add for Bls12GT {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        (self.0 + rhs.0).into()
-    }
-}
-
-impl Sum for Bls12GT {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|accum, item| accum + item)
-            .unwrap_or_else(Self::zero)
-    }
-}
-
-impl Sub for Bls12GT {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
+type Bls12GT = PairingOutput<ark_bls12_381::Bls12_381>;
 
 impl Sub for FrWrapper {
     type Output = Self;
@@ -275,9 +221,6 @@ impl Sub for G2Wrapper {
     }
 }
 
-impl Module for Bls12GT {
-    type ScalarField = Fr;
-}
 
 impl Module for G1Wrapper {
     type ScalarField = Fr;
@@ -346,7 +289,7 @@ impl BitXor<FrWrapper> for Bls12GT {
     type Output = Bls12GT;
 
     fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        (self.0 * rhs.0).into()
+        (self * rhs.0).into()
     }
 }
 
@@ -531,15 +474,15 @@ impl InnerProductProof {
             reduced_claim = sumcheck_polynomial_evaluation * batch_challenge[0] + g1_claim * batch_challenge[1] + g2_claim * batch_challenge[2];
         }
         let mut final_foldings = vec![
-            (self.foldings_ff[0].0 ^ self.foldings_ff[0].1).0,
-            (self.foldings_fg1[0].0 ^ self.foldings_fg1[0].1).0,
-            (self.foldings_fg2[0].0 ^ self.foldings_fg2[0].1).0,
+            (self.foldings_ff[0].0 ^ self.foldings_ff[0].1),
+            (self.foldings_fg1[0].0 ^ self.foldings_fg1[0].1),
+            (self.foldings_fg2[0].0 ^ self.foldings_fg2[0].1),
         ];
         final_foldings.extend(
             self.sumcheck
                 .final_foldings
                 .iter()
-                .map(|&(lhs, rhs)| (lhs ^ rhs).0),
+                .map(|&(lhs, rhs)| lhs ^ rhs),
         );
 
         let expected: PairingOutput<_> = self
@@ -549,7 +492,7 @@ impl InnerProductProof {
             .map(|(x, y)| *y * x)
             .sum();
 
-        if reduced_claim.0 == expected {
+        if reduced_claim == expected {
             Ok(())
         } else {
             Err(VerificationError)
