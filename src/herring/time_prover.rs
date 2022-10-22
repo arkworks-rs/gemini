@@ -144,8 +144,8 @@ where
             let g_odd = g_pair.get(1).unwrap_or(&rhs_zero);
 
             // Add to the partial sum
-            a += f_even ^ (g_even * twist_runner);
-            b += ((f_even ^ *g_odd) + ((*f_odd * self.twist) ^ g_even)) * twist_runner;
+            a += M::p(f_even, g_even * twist_runner);
+            b += (M::p(f_even, *g_odd) + M::p(*f_odd * self.twist, g_even)) * twist_runner;
             twist_runner *= twist2;
         }
         // Increment the round counter

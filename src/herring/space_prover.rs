@@ -188,8 +188,8 @@ where
         let twist2inv = self.twist.square().inverse().unwrap();
         let mut twist_runner = self.twist.pow(&[(f_pairs * 2) as u64]);
 
-        let mut a = f_even ^ g_even * twist_runner;
-        let mut b = ((f_even ^ g_odd) + (f_odd ^ g_even * self.twist)) * twist_runner;
+        let mut a = M::p(f_even, g_even) * twist_runner;
+        let mut b = (M::p(f_even, g_odd) + M::p(f_odd, g_even * self.twist)) * twist_runner;
         twist_runner *= twist2inv;
 
         // #[cfg(not(feature = "parallel"))]
@@ -201,8 +201,8 @@ where
             let g_even = g_it.next().unwrap();
 
             // Add to the partial sum
-            a += f_even ^ (g_even * twist_runner);
-            b += ((f_even ^ g_odd) + (f_odd ^ g_even * self.twist)) * twist_runner;
+            a += M::p(f_even, g_even * twist_runner);
+            b += (M::p(f_even, g_odd) + M::p(f_odd, g_even * self.twist)) * twist_runner;
             twist_runner *= twist2inv;
         }
 

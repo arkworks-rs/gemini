@@ -1,15 +1,15 @@
 use crate::errors::{VerificationError, VerificationResult};
 use crate::herring::time_prover::halve;
 use crate::transcript::GeminiTranscript;
-use ark_bls12_381::G1Projective;
+use ark_bls12_381::{G1Projective};
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_ec::pairing::Pairing;
-use ark_ec::Group;
+use ark_ec::{Group, VariableBaseMSM, CurveGroup};
 use ark_ff::Zero;
 use ark_ff::{Field, UniformRand};
 use ark_std::borrow::Borrow;
 use ark_std::iter::Sum;
-use ark_std::ops::{Add, AddAssign, BitXor, Mul, Sub};
+use ark_std::ops::{Add, AddAssign, Mul, Sub};
 use rand::Rng;
 
 pub trait Module:
@@ -31,17 +31,15 @@ pub trait Module:
 }
 
 pub trait BilinearModule: Send + Sync {
-    type Lhs: Module<ScalarField = Self::ScalarField> + BitXor<Self::Rhs, Output = Self::Target>;
+    type Lhs: Module<ScalarField = Self::ScalarField>;
     type Rhs: Module<ScalarField = Self::ScalarField>;
     type Target: Module<ScalarField = Self::ScalarField>;
     type ScalarField: Field;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target;
 }
 
-#[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-struct G1Wrapper(pub G1Projective);
 
-#[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-struct G2Wrapper(pub G2Projective);
 
 #[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
 struct FrWrapper(pub Fr);
@@ -50,11 +48,6 @@ impl<G: Group> Module for G {
     type ScalarField = G::ScalarField;
 }
 
-impl From<G1Projective> for G1Wrapper {
-    fn from(e: G1Projective) -> Self {
-        Self(e)
-    }
-}
 
 impl From<Fr> for FrWrapper {
     fn from(e: Fr) -> Self {
@@ -62,22 +55,7 @@ impl From<Fr> for FrWrapper {
     }
 }
 
-impl From<G2Projective> for G2Wrapper {
-    fn from(e: G2Projective) -> Self {
-        Self(e)
-    }
-}
 
-impl<FF> Mul<FF> for G1Wrapper
-where
-    FF: Borrow<Fr>,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: FF) -> Self::Output {
-        (self.0 * rhs.borrow()).into()
-    }
-}
 
 impl<FF> Mul<FF> for FrWrapper
 where
@@ -90,40 +68,9 @@ where
     }
 }
 
-impl<FF> Mul<FF> for G2Wrapper
-where
-    FF: Borrow<Fr>,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: FF) -> Self::Output {
-        (self.0 * rhs.borrow()).into()
-    }
-}
-
-impl AddAssign for G2Wrapper {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
-    }
-}
-
-impl AddAssign for G1Wrapper {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
-    }
-}
-
 impl AddAssign for FrWrapper {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0
-    }
-}
-
-impl Add for G1Wrapper {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        (self.0 + rhs.0).into()
     }
 }
 
@@ -135,42 +82,11 @@ impl Add for FrWrapper {
     }
 }
 
-impl Add for G2Wrapper {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        (self.0 + rhs.0).into()
-    }
-}
-
-impl Sum for G1Wrapper {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|accum, item| accum + item)
-            .unwrap_or_else(Self::zero)
-    }
-}
 
 impl Sum for FrWrapper {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.reduce(|accum, item| accum + item)
             .unwrap_or_else(Self::zero)
-    }
-}
-
-impl Sum for G2Wrapper {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|accum, item| accum + item)
-            .unwrap_or_else(Self::zero)
-    }
-}
-
-impl Zero for G2Wrapper {
-    fn zero() -> Self {
-        G2Projective::zero().into()
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
     }
 }
 
@@ -184,20 +100,12 @@ impl Zero for FrWrapper {
     }
 }
 
-impl Zero for G1Wrapper {
-    fn zero() -> Self {
-        G1Projective::zero().into()
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-
 use ark_ec::pairing::PairingOutput;
 use ark_serialize::*;
 
-type Bls12GT = PairingOutput<ark_bls12_381::Bls12_381>;
+use ark_bls12_381::G1Projective as G1;
+use ark_bls12_381::G2Projective as G2;
+type Gt = PairingOutput<ark_bls12_381::Bls12_381>;
 
 impl Sub for FrWrapper {
     type Output = Self;
@@ -206,28 +114,6 @@ impl Sub for FrWrapper {
     }
 }
 
-impl Sub for G1Wrapper {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl Sub for G2Wrapper {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
-
-impl Module for G1Wrapper {
-    type ScalarField = Fr;
-}
-impl Module for G2Wrapper {
-    type ScalarField = Fr;
-}
 
 impl Module for FrWrapper {
     type ScalarField = Fr;
@@ -242,91 +128,59 @@ use super::time_prover::{split_fold_into, TimeProver};
 use super::proof::Sumcheck;
 use super::Prover;
 
-impl Mul<G2Wrapper> for G1Wrapper {
-    type Output = Bls12GT;
 
-    #[inline]
-    fn mul(self, rhs: G2Wrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, rhs.0).into()
-    }
-}
-
-impl BitXor<G2Wrapper> for G1Wrapper {
-    type Output = Bls12GT;
-
-    #[inline]
-    fn bitxor(self, rhs: G2Wrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, rhs.0).into()
-    }
-}
-
-impl BitXor<FrWrapper> for G1Wrapper {
-    type Output = Bls12GT;
-
-    #[inline]
-    fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        Bls12_381::pairing(self.0, G2Projective::generator() * rhs.0).into()
-    }
-}
-
-impl BitXor<FrWrapper> for G2Wrapper {
-    type Output = Bls12GT;
-
-    fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        Bls12_381::pairing(G1Projective::generator() * rhs.0, self.0).into()
-    }
-}
-
-impl BitXor<FrWrapper> for FrWrapper {
-    type Output = Bls12GT;
-
-    fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        (PairingOutput::generator() * (self.0 * rhs.0)).into()
-    }
-}
-
-impl BitXor<FrWrapper> for Bls12GT {
-    type Output = Bls12GT;
-
-    fn bitxor(self, rhs: FrWrapper) -> Self::Output {
-        (self * rhs.0).into()
-    }
-}
 
 struct Bls12GTModule {}
 
 impl BilinearModule for Bls12GTModule {
-    type Lhs = Bls12GT;
+    type Lhs = Gt;
     type Rhs = FrWrapper;
-    type Target = Bls12GT;
+    type Target = Gt;
     type ScalarField = ark_bls12_381::Fr;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        *a.borrow() * b.borrow().0
+    }
 }
+
 
 struct Bls12Module {}
 
 impl BilinearModule for Bls12Module {
-    type Lhs = G1Wrapper;
-    type Rhs = G2Wrapper;
-    type Target = Bls12GT;
+    type Lhs = G1;
+    type Rhs = G2;
+    type Target = Gt;
     type ScalarField = ark_bls12_381::Fr;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        Bls12_381::pairing(a.borrow(), b.borrow()).into()
+    }
 }
 
 struct G1Module {}
 
 impl BilinearModule for G1Module {
-    type Lhs = G1Wrapper;
+    type Lhs = G1;
     type Rhs = FrWrapper;
-    type Target = Bls12GT;
+    type Target = Gt;
     type ScalarField = Fr;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        Bls12_381::pairing(a.borrow(), G2Projective::generator() * b.borrow().0).into()
+    }
 }
 
 struct G2Module {}
 
 impl BilinearModule for G2Module {
-    type Lhs = G2Wrapper;
+    type Lhs = G2;
     type Rhs = FrWrapper;
-    type Target = Bls12GT;
+    type Target = Gt;
     type ScalarField = Fr;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        Bls12_381::pairing(G1Projective::generator() * b.borrow().0, a.borrow()).into()
+    }
 }
 
 struct FFModule {}
@@ -334,8 +188,12 @@ struct FFModule {}
 impl BilinearModule for FFModule {
     type Lhs = FrWrapper;
     type Rhs = FrWrapper;
-    type Target = Bls12GT;
+    type Target = Gt;
     type ScalarField = Fr;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        Bls12_381::pairing(G1Projective::generator() * a.borrow().0 * b.borrow().0, G2Projective::generator()).into()
+    }
 }
 
 use ark_std::vec::Vec;
@@ -346,8 +204,8 @@ pub struct InnerProductProof {
     sumcheck: Sumcheck<Bls12Module>,
     batch_challenges: Vec<Fr>,
     foldings_ff: Vec<(FrWrapper, FrWrapper)>,
-    foldings_fg1: Vec<(G1Wrapper, FrWrapper)>,
-    foldings_fg2: Vec<(G2Wrapper, FrWrapper)>,
+    foldings_fg1: Vec<(G1, FrWrapper)>,
+    foldings_fg2: Vec<(G2, FrWrapper)>,
 }
 
 fn ip_unsafe<BM, I, J>(f: I, g: J) -> BM::Target
@@ -358,42 +216,34 @@ where
     I::Item: Borrow<BM::Lhs>,
     J::Item: Borrow<BM::Rhs>,
 {
-    f.zip(g).map(|(x, y)| *x.borrow() ^ *y.borrow()).sum()
+    f.zip(g).map(|(x, y)| BM::p(x.borrow(), y.borrow())).sum()
 }
 
 pub struct Crs {
-    g1s: Vec<G1Wrapper>,
-    g2s: Vec<G2Wrapper>,
+    g1s: Vec<G1>,
+    g2s: Vec<G2>,
 }
 
 pub struct Vrs {
-    vk1: Vec<(Bls12GT, Bls12GT)>,
-    vk2: Vec<(Bls12GT, Bls12GT)>,
+    vk1: Vec<(Gt, Gt)>,
+    vk2: Vec<(Gt, Gt)>,
 }
 
 impl Crs {
     pub fn new(rng: &mut impl Rng, d: usize) -> Self {
-        let g1s: Vec<G1Wrapper> = (0..d + 1).map(|_| G1Projective::rand(rng).into()).collect();
-        let g2s: Vec<G2Wrapper> = (0..d + 1).map(|_| G2Projective::rand(rng).into()).collect();
+        let g1s: Vec<G1> = (0..d + 1).map(|_| G1::rand(rng)).collect();
+        let g2s: Vec<G2> = (0..d + 1).map(|_| G2::rand(rng)).collect();
         Self { g1s, g2s }
     }
 
-    pub fn commit_g1(&self, scalars: &[Fr]) -> G1Projective {
-        scalars
-            .iter()
-            .zip(self.g1s.iter())
-            .map(|(s, b)| b.0 * s)
-            .reduce(|x, y| x + y)
-            .unwrap_or_else(G1Projective::zero)
+    pub fn commit_g1(&self, scalars: &[Fr]) -> G1 {
+        let bases = G1::normalize_batch(&self.g1s);
+        G1::msm(&bases, &scalars)
     }
 
-    pub fn commit_g2(&self, scalars: &[Fr]) -> G2Projective {
-        scalars
-            .iter()
-            .zip(self.g2s.iter())
-            .map(|(s, b)| b.0 * s)
-            .reduce(|x, y| x + y)
-            .unwrap_or_else(G2Projective::zero)
+    pub fn commit_g2(&self, scalars: &[Fr]) -> G2 {
+        let bases = G2::normalize_batch(&self.g2s);
+        G2::msm(&bases, &scalars)
     }
 }
 
@@ -435,8 +285,8 @@ impl InnerProductProof {
     pub fn verify_transcript(
         &self,
         vrs: &Vrs,
-        comm_a: G1Projective,
-        comm_b: G2Projective,
+        comm_a: G1,
+        comm_b: G2,
         y: Fr,
     ) -> VerificationResult {
         let y = FrWrapper(y);
@@ -457,9 +307,9 @@ impl InnerProductProof {
             .map(|(&(even, odd), challenge)| even + odd * challenge)
             .collect::<Vec<_>>();
 
-        let claim_ff = y ^ Fr::one().into();
-        let claim_fg1 = G1Wrapper(comm_a) ^ G2Wrapper(G2Projective::generator());
-        let claim_fg2 = G1Wrapper(G1Projective::generator()) ^ G2Wrapper(comm_b);
+        let claim_ff = FFModule::p(y, FrWrapper(Fr::one()));
+        let claim_fg1 = Bls12Module::p(comm_a, G2Projective::generator());
+        let claim_fg2 = Bls12Module::p(G1Projective::generator(), comm_b);
         let mut reduced_claim = claim_ff * self.batch_challenges[0] + claim_fg1 * self.batch_challenges[1] + claim_fg2 * self.batch_challenges[2];
         let rounds = self.sumcheck.messages.len();
         assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
@@ -474,15 +324,15 @@ impl InnerProductProof {
             reduced_claim = sumcheck_polynomial_evaluation * batch_challenge[0] + g1_claim * batch_challenge[1] + g2_claim * batch_challenge[2];
         }
         let mut final_foldings = vec![
-            (self.foldings_ff[0].0 ^ self.foldings_ff[0].1),
-            (self.foldings_fg1[0].0 ^ self.foldings_fg1[0].1),
-            (self.foldings_fg2[0].0 ^ self.foldings_fg2[0].1),
+            FFModule::p(self.foldings_ff[0].0, self.foldings_ff[0].1),
+            G1Module::p(self.foldings_fg1[0].0, self.foldings_fg1[0].1),
+            G2Module::p(self.foldings_fg2[0].0, self.foldings_fg2[0].1),
         ];
         final_foldings.extend(
             self.sumcheck
                 .final_foldings
                 .iter()
-                .map(|&(lhs, rhs)| lhs ^ rhs),
+                .map(|&(lhs, rhs)| Bls12Module::p(lhs, rhs)),
         );
 
         let expected: PairingOutput<_> = self

@@ -87,7 +87,7 @@ impl<M: BilinearModule> Sumcheck<M> {
                     let final_foldings = p.final_foldings().expect(
                         "If next_message is None, we expect final foldings to be available",
                     );
-                    SumcheckMsg(final_foldings.0 ^ final_foldings.1, M::Target::zero())
+                    SumcheckMsg(M::p(final_foldings.0, final_foldings.1), M::Target::zero())
                 })
             });
             // compute the non-oracle messagein the sumcheck:
