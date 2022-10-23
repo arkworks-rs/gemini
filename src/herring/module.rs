@@ -313,7 +313,7 @@ impl InnerProductProof {
             + claim_fg2 * self.batch_challenges[2];
         let rounds = self.sumcheck.messages.len();
         assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
-        for i in 0..rounds {
+        for i in 0..rounds-1 {
             let SumcheckMsg(a, b) = self.sumcheck.messages[i];
             let challenge = self.sumcheck.challenges[i];
             let g1_claim = g1s[i];
@@ -325,6 +325,13 @@ impl InnerProductProof {
                 + g1_claim * batch_challenge[1]
                 + g2_claim * batch_challenge[2];
         }
+
+        let SumcheckMsg(a, b) = self.sumcheck.messages[rounds-1];
+        let challenge = self.sumcheck.challenges[rounds-1];
+        let c = reduced_claim - a;
+        let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
+        reduced_claim = sumcheck_polynomial_evaluation;
+
         let mut final_foldings = vec![
             FFModule::p(self.foldings_ff[0].0, self.foldings_ff[0].1),
             G1Module::p(self.foldings_fg1[0].0, self.foldings_fg1[0].1),
@@ -337,7 +344,7 @@ impl InnerProductProof {
                 .map(|&(lhs, rhs)| Bls12Module::p(lhs, rhs)),
         );
 
-        let expected: PairingOutput<_> = self
+        let expected = self
             .batch_challenges
             .iter()
             .zip(final_foldings.iter())
