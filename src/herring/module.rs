@@ -1,16 +1,26 @@
+use super::proof::Sumcheck;
+use super::prover::SumcheckMsg;
+use super::time_prover::{split_fold_into, TimeProver};
+use super::Prover;
 use crate::errors::{VerificationError, VerificationResult};
 use crate::herring::time_prover::halve;
 use crate::transcript::GeminiTranscript;
-use ark_bls12_381::{G1Projective};
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_ec::pairing::Pairing;
-use ark_ec::{Group, VariableBaseMSM, CurveGroup};
+use ark_ec::pairing::PairingOutput;
+use ark_ec::{CurveGroup, Group, VariableBaseMSM};
 use ark_ff::Zero;
 use ark_ff::{Field, UniformRand};
+use ark_serialize::*;
 use ark_std::borrow::Borrow;
 use ark_std::iter::Sum;
 use ark_std::ops::{Add, AddAssign, Mul, Sub};
+use merlin::Transcript;
 use rand::Rng;
+
+use ark_bls12_381::G1Projective as G1;
+use ark_bls12_381::G2Projective as G2;
+type Gt = PairingOutput<ark_bls12_381::Bls12_381>;
 
 pub trait Module:
     Send
@@ -37,9 +47,17 @@ pub trait BilinearModule: Send + Sync {
     type ScalarField: Field;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target;
+
+    fn ip<I, J>(f: I, g: J) -> Self::Target
+    where
+        I: Iterator,
+        J: Iterator,
+        I::Item: Borrow<Self::Lhs>,
+        J::Item: Borrow<Self::Rhs>,
+    {
+        f.zip(g).map(|(x, y)| Self::p(x.borrow(), y.borrow())).sum()
+    }
 }
-
-
 
 #[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
 struct FrWrapper(pub Fr);
@@ -48,14 +66,11 @@ impl<G: Group> Module for G {
     type ScalarField = G::ScalarField;
 }
 
-
 impl From<Fr> for FrWrapper {
     fn from(e: Fr) -> Self {
         Self(e)
     }
 }
-
-
 
 impl<FF> Mul<FF> for FrWrapper
 where
@@ -82,7 +97,6 @@ impl Add for FrWrapper {
     }
 }
 
-
 impl Sum for FrWrapper {
     fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
         iter.reduce(|accum, item| accum + item)
@@ -100,13 +114,6 @@ impl Zero for FrWrapper {
     }
 }
 
-use ark_ec::pairing::PairingOutput;
-use ark_serialize::*;
-
-use ark_bls12_381::G1Projective as G1;
-use ark_bls12_381::G2Projective as G2;
-type Gt = PairingOutput<ark_bls12_381::Bls12_381>;
-
 impl Sub for FrWrapper {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self::Output {
@@ -114,25 +121,13 @@ impl Sub for FrWrapper {
     }
 }
 
-
 impl Module for FrWrapper {
     type ScalarField = Fr;
 }
 
-use ark_bls12_381::g2::G2Projective;
-use merlin::Transcript;
+struct GtModule {}
 
-use super::prover::SumcheckMsg;
-use super::time_prover::{split_fold_into, TimeProver};
-
-use super::proof::Sumcheck;
-use super::Prover;
-
-
-
-struct Bls12GTModule {}
-
-impl BilinearModule for Bls12GTModule {
+impl BilinearModule for GtModule {
     type Lhs = Gt;
     type Rhs = FrWrapper;
     type Target = Gt;
@@ -143,14 +138,13 @@ impl BilinearModule for Bls12GTModule {
     }
 }
 
-
 struct Bls12Module {}
 
 impl BilinearModule for Bls12Module {
     type Lhs = G1;
     type Rhs = G2;
     type Target = Gt;
-    type ScalarField = ark_bls12_381::Fr;
+    type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
         Bls12_381::pairing(a.borrow(), b.borrow()).into()
@@ -166,7 +160,7 @@ impl BilinearModule for G1Module {
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(a.borrow(), G2Projective::generator() * b.borrow().0).into()
+        Bls12_381::pairing(a.borrow(), G2::generator() * b.borrow().0).into()
     }
 }
 
@@ -179,7 +173,7 @@ impl BilinearModule for G2Module {
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(G1Projective::generator() * b.borrow().0, a.borrow()).into()
+        Bls12_381::pairing(G1::generator() * b.borrow().0, a.borrow()).into()
     }
 }
 
@@ -192,7 +186,11 @@ impl BilinearModule for FFModule {
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(G1Projective::generator() * a.borrow().0 * b.borrow().0, G2Projective::generator()).into()
+        Bls12_381::pairing(
+            G1::generator() * a.borrow().0 * b.borrow().0,
+            G2::generator(),
+        )
+        .into()
     }
 }
 
@@ -208,16 +206,7 @@ pub struct InnerProductProof {
     foldings_fg2: Vec<(G2, FrWrapper)>,
 }
 
-fn ip_unsafe<BM, I, J>(f: I, g: J) -> BM::Target
-where
-    BM: BilinearModule,
-    I: Iterator,
-    J: Iterator,
-    I::Item: Borrow<BM::Lhs>,
-    J::Item: Borrow<BM::Rhs>,
-{
-    f.zip(g).map(|(x, y)| BM::p(x.borrow(), y.borrow())).sum()
-}
+
 
 pub struct Crs {
     g1s: Vec<G1>,
@@ -238,12 +227,12 @@ impl Crs {
 
     pub fn commit_g1(&self, scalars: &[Fr]) -> G1 {
         let bases = G1::normalize_batch(&self.g1s);
-        G1::msm(&bases, &scalars)
+        G1::msm(&bases, scalars)
     }
 
     pub fn commit_g2(&self, scalars: &[Fr]) -> G2 {
         let bases = G2::normalize_batch(&self.g2s);
-        G2::msm(&bases, &scalars)
+        G2::msm(&bases, scalars)
     }
 }
 
@@ -255,20 +244,20 @@ impl<'a> From<&'a Crs> for Vrs {
         for j in (0..log2(crs.g1s.len())).rev() {
             let size = 1 << j;
 
-            let g1es = ip_unsafe::<Bls12Module, _, _>(
+            let g1es = Bls12Module::ip(
                 crs.g1s.iter().step_by(2),
                 crs.g2s.iter().take(size),
             );
-            let g1os = ip_unsafe::<Bls12Module, _, _>(
+            let g1os = Bls12Module::ip(
                 crs.g1s.iter().skip(1).step_by(2),
                 crs.g2s.iter().take(size),
             );
 
-            let g2es = ip_unsafe::<Bls12Module, _, _>(
+            let g2es = Bls12Module::ip(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().step_by(2),
             );
-            let g2os = ip_unsafe::<Bls12Module, _, _>(
+            let g2os = Bls12Module::ip(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().skip(1).step_by(2),
             );
@@ -291,8 +280,17 @@ impl InnerProductProof {
     ) -> VerificationResult {
         let y = FrWrapper(y);
 
-        let challenges = self.sumcheck.challenges.iter().rev().cloned().collect::<Vec<_>>();
-        let inverse_challenges = challenges.iter().map(|&x| x.inverse().unwrap()).collect::<Vec<_>>();
+        let challenges = self
+            .sumcheck
+            .challenges
+            .iter()
+            .rev()
+            .cloned()
+            .collect::<Vec<_>>();
+        let inverse_challenges = challenges
+            .iter()
+            .map(|&x| x.inverse().unwrap())
+            .collect::<Vec<_>>();
 
         let g1s = vrs
             .vk1
@@ -308,9 +306,11 @@ impl InnerProductProof {
             .collect::<Vec<_>>();
 
         let claim_ff = FFModule::p(y, FrWrapper(Fr::one()));
-        let claim_fg1 = Bls12Module::p(comm_a, G2Projective::generator());
-        let claim_fg2 = Bls12Module::p(G1Projective::generator(), comm_b);
-        let mut reduced_claim = claim_ff * self.batch_challenges[0] + claim_fg1 * self.batch_challenges[1] + claim_fg2 * self.batch_challenges[2];
+        let claim_fg1 = Bls12Module::p(comm_a, G2::generator());
+        let claim_fg2 = Bls12Module::p(G1::generator(), comm_b);
+        let mut reduced_claim = claim_ff * self.batch_challenges[0]
+            + claim_fg1 * self.batch_challenges[1]
+            + claim_fg2 * self.batch_challenges[2];
         let rounds = self.sumcheck.messages.len();
         assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
         for i in 0..rounds {
@@ -318,10 +318,12 @@ impl InnerProductProof {
             let challenge = self.sumcheck.challenges[i];
             let g1_claim = g1s[i];
             let g2_claim = g2s[i];
-            let batch_challenge = &self.batch_challenges[(i+1)*3..];
+            let batch_challenge = &self.batch_challenges[(i + 1) * 3..];
             let c = reduced_claim - a;
             let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
-            reduced_claim = sumcheck_polynomial_evaluation * batch_challenge[0] + g1_claim * batch_challenge[1] + g2_claim * batch_challenge[2];
+            reduced_claim = sumcheck_polynomial_evaluation * batch_challenge[0]
+                + g1_claim * batch_challenge[1]
+                + g2_claim * batch_challenge[2];
         }
         let mut final_foldings = vec![
             FFModule::p(self.foldings_ff[0].0, self.foldings_ff[0].1),
