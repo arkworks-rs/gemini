@@ -36,3 +36,27 @@ Say we have a set of $m$ multilinear polynomials of equal degree to evaluate at 
 Then the scaling vector is computed as $(1, c, c^{2}, c^{3}...)$ and proofs are batched. \
 The statement to verify becomes $\Sigma_i (\mu^i \cdot f_i) (\alpha) = \Sigma_i \mu_i \cdot (f_i (\alpha))$. 
 
+
+# Example Multivariate Protocol Usage
+```
+use ark_bls12_381::Bls12_381;
+use ark_bls12_381::Fr;
+use ark_std::UniformRand;
+use ark_gemini_polyzygotic::errors::{VerificationError, VerificationResult};
+use ark_gemini_polyzygotic::multikzg::{Commitment, VerifierKeyMulti, CommitterKeyMulti};
+use ark_gemini_polyzygotic::misc::{evaluate_multi_poly};
+
+let dim = 3;
+let rng = &mut ark_std::test_rng();
+let ck = CommitterKeyMulti::<Bls12_381>::new(dim, rng);
+let vk = VerifierKeyMulti::from(&ck);
+
+let polynomial_flat = (0..1<<dim).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+
+let alpha = (0..dim).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
+let commitment = ck.commit(&polynomial_flat);
+let (evaluation, proof) = ck.open(&polynomial_flat, &alpha);
+assert!(vk.verify(&commitment, &alpha, &evaluation, &proof).is_ok());
+```
+See also: Package tests.
+

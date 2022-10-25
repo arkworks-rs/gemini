@@ -1,52 +1,4 @@
-//! Gemini: elastic arguments for R1CS.
-//!
-//! This library provides essentually two arguments:
-//! - [`snark::Proof`], for non-preprocessing SNARKs.
-//!     It provides a non-interactive succinct argument of knowledge for R1CS
-//!     without indexer, and where the verifier complexity is linear in the circuit size.
-//! - [`psnark::Proof`] for preprocessing SNARKs.
-//!     It provides a non-interactive succinct argument of knowledge for R1CS
-//!     where the verifier complexity is logarithmic in the circuit size.
-//!
-//! Choice of the pairing-friendly elliptic curve,
-//! is entirely up to the implementor.
-//! All arguments are internally using the [`kzg`](crate::kzg) commitment scheme.
-//! Support for generic univariate or multivariate commitments will is scheduled and will
-//! happen at some point in the future.
-//!
-//! Both arguments rely on some sub-protocols, implemented as separate modules in [`subprotocols`]
-//! and free of use for other protocols.
-//!
-//! # Building
-//!
-//! This package can be compiled with `cargo build`, and requires rust nightly at least
-//! until [`Iterator::advance_by`] hits stable. There's a bunch of feature flags that can be turned
-//! on:
-//!
-//! - `asm`, to turn on the assembly backend within [`ark-ff`](https://docs.rs/ark-ff/);
-//! - `parallel`, to turn on multi-threading. This requires the additional dependency [`rayon`](https://docs.rs/rayon/latest/rayon/);
-//! - `std`, to rely on the Rust Standard library;
-//! - `print-trace`, to print additional information concerning the execution time of the sub-protocols. **This feature must be enabled if you want to print the execution time of the examples.**
-//!
-//! # Benchmarking
-//!
-//! Micro-benchmarks aare available and can be fired with:
-//!
-//! ```bash
-//! cargo bench
-//! ```
-//!
-//! Execution of (preprocessing-)SNARK for arbitrary instance sizes can be done running
-//! the examples with:
-//!
-//! ```bash
-//! cargo run --example snark -- -i <INSTANCE_LOGSIZE>
-//! ```
-//!
-//! # License
-//!
-//! This package is licensed under MIT license.
-//!
+#![doc = include_str!("docs/lib_docs.md")]
 
 #![feature(iter_advance_by)]
 #![no_std]
@@ -74,7 +26,27 @@ const SPACE_TIME_THRESHOLD: usize = 22;
 
 pub mod errors;
 pub mod iterable;
+
+
+/// \
+///
+/// # Multi KZG Protocol Math Overview
+///
+/// ### Univariate Polynomial Commitments
+///
+#[doc = include_str!("docs/univariate_protocol.md")]
 pub mod kzg;
+
+/// \
+///
+/// # Multi KZG Protocol Math Overview
+///
+/// ### Multivariate Polynomial Commitments
+///
+#[doc = include_str!("docs/multivariate_protocol.md")]
+pub mod multikzg;
+
+
 pub mod psnark;
 pub mod snark;
 pub mod subprotocols;
@@ -84,4 +56,7 @@ pub mod subprotocols;
 #[doc(hidden)]
 pub mod circuit;
 pub mod misc;
+
+pub mod division_stream;
+
 mod transcript;
