@@ -128,7 +128,7 @@ dependencies = [
 [[package]]
 name = "ark-relations"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/snark?branch=sync-algebra#bc575ab0c967e29e049608029cf9f09c981d6654"
+source = "git+https://github.com/arkworks-rs/snark#f6df807ea8e3051980bc79e8706b8a9b03f48b1c"
 dependencies = [
  "ark-ff",
  "ark-std",
