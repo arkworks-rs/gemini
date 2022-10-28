@@ -1,7 +1,7 @@
 //! Elastic *non-preprocessing* SNARK for R1CS.
 //!
 //!
-//! # Protoocol overview
+//! # Protocol overview
 //! Consider a prover $\prover$ as input a R1CS instance $(A, B, C, \vec x, \vec w)$ of size $N$ and
 //! a verifier taking as input a R1CS instance $(A, B, C, \vec x)$.
 //! We want to prove that $\vec z \defeq (\vec x, \vec w)$ is such that the R1CS relation is satisfied, i.e.:
