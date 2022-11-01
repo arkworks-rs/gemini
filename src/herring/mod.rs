@@ -20,6 +20,8 @@ pub mod space_prover;
 /// The linear-time (linear-space) prover implementation.
 pub mod time_prover;
 
+pub mod ipa;
+
 mod subclaim;
 
 // pub use elastic_prover::ElasticProver;
