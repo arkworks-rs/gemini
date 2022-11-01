@@ -17,9 +17,8 @@ use ark_bls12_381::Fr;
 use ark_ec::CurveGroup;
 use ark_ec::Group;
 use ark_ec::VariableBaseMSM;
-use ark_ff::Field;
+use ark_ff::{Field, Zero};
 use ark_std::UniformRand;
-use ark_std::Zero;
 use rand::Rng;
 
 pub struct InnerProductProof {
@@ -65,10 +64,8 @@ impl<'a> From<&'a Crs> for Vrs {
         let mut vk1 = Vec::new();
         let mut vk2 = Vec::new();
 
-        for j in (0..log2(crs.g1s.len())).rev() {
+        for j in 1..log2(crs.g1s.len()) {
             let size = 1 << j;
-
-            println!("{}", crs.g1s.iter().step_by(2).len());
 
             let g1es = Bls12Module::ip(crs.g1s.iter().step_by(2), crs.g2s.iter().take(size));
             let g1os =
@@ -101,21 +98,25 @@ impl InnerProductProof {
             .challenges
             .iter()
             .rev()
+            .skip(1)
             .cloned()
             .collect::<Vec<_>>();
 
-        let g1s = vrs
+        let mut g1s = vrs
             .vk1
             .iter()
             .zip(&challenges)
             .map(|(&(even, odd), challenge)| even + odd * challenge)
             .collect::<Vec<_>>();
-        let g2s = vrs
+        let mut g2s = vrs
             .vk2
             .iter()
             .zip(&challenges)
             .map(|(&(even, odd), challenge)| even + odd * challenge)
             .collect::<Vec<_>>();
+
+        g1s.reverse();
+        g2s.reverse();
 
         let claim_ff = FFModule::p(y, FrWrapper(Fr::one()));
         let claim_fg1 = Bls12Module::p(comm_a, G2::generator());
@@ -126,8 +127,8 @@ impl InnerProductProof {
         for i in 0..rounds {
             let SumcheckMsg(a, b) = self.sumcheck.messages[i];
             let challenge = self.sumcheck.challenges[i];
-            let g1_claim = g1s[i];
-            let g2_claim = g2s[i];
+            let g1_claim = if i == rounds -1 { Gt::zero() } else {g1s[i]};
+            let g2_claim = if i == rounds-1 { Gt::zero() } else { g2s[i]};
             let batch_challenge = Fr::one(); //&self.batch_challenges[i * 3 + 1];
             let c = reduced_claim - a;
             let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
@@ -297,12 +298,12 @@ impl InnerProductProof {
 #[test]
 fn test_correctness() {
     use ark_bls12_381::Fr as FF;
-    let d = 1 << 3;
+    let d = 1 << 4;
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
     let crs = Crs::new(rng, d);
-    let a = (0..d / 2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
-    let b = (0..d / 2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let a = (0..d/2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..d/2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
     let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
     let comm_a = crs.commit_g1(&a);
