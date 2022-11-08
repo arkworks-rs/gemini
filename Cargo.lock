@@ -25,17 +25,18 @@ dependencies = [
 [[package]]
 name = "ark-bls12-381"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/curves#363426c1d41aa89c8e64bc4fd265b7cefe24fb03"
+source = "git+https://github.com/arkworks-rs/curves#99831650f8021cb6a16481bac674420bc6c1a5a1"
 dependencies = [
  "ark-ec",
  "ark-ff",
+ "ark-serialize",
  "ark-std",
 ]
 
 [[package]]
 name = "ark-ec"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "ark-ff",
  "ark-poly",
@@ -52,7 +53,7 @@ dependencies = [
 [[package]]
 name = "ark-ff"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "ark-ff-asm",
  "ark-ff-macros",
@@ -60,6 +61,7 @@ dependencies = [
  "ark-std",
  "derivative",
  "digest",
+ "itertools",
  "num-bigint",
  "num-traits",
  "paste",
@@ -71,7 +73,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-asm"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "quote",
  "syn",
@@ -80,10 +82,11 @@ dependencies = [
 [[package]]
 name = "ark-ff-macros"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "num-bigint",
  "num-traits",
+ "proc-macro2",
  "quote",
  "syn",
 ]
@@ -99,7 +102,7 @@ dependencies = [
  "ark-relations",
  "ark-serialize",
  "ark-std",
- "clap 3.2.22",
+ "clap 3.2.23",
  "criterion",
  "env_logger",
  "hashbrown",
@@ -115,7 +118,7 @@ dependencies = [
 [[package]]
 name = "ark-poly"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -139,7 +142,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "ark-serialize-derive",
  "ark-std",
@@ -149,7 +152,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize-derive"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#aabe76c584b97c92c07c005e2d5297ce53e9d597"
+source = "git+https://github.com/arkworks-rs/algebra#a4362f92f00986bce7e96dc4be45167fe45e6cda"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -204,9 +207,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.11.0"
+version = "3.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c1ad822118d20d2c234f427000d5acc36eabe1e29a348c89b63dd60b13f28e5d"
+checksum = "572f695136211188308f16ad2ca5c851a712c464060ae6974944458eb83880ba"
 
 [[package]]
 name = "byteorder"
@@ -239,9 +242,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.22"
+version = "3.2.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86447ad904c7fb335a790c9d7fe3d0d971dc523b8ccd1561a520de9a85302750"
+checksum = "71655c45cb9845d3270c9d6df84ebe72b4dad3c2ba3f7023ad47c144e4e473a5"
 dependencies = [
  "atty",
  "bitflags",
@@ -251,7 +254,7 @@ dependencies = [
  "once_cell",
  "strsim",
  "termcolor",
- "textwrap 0.15.1",
+ "textwrap 0.16.0",
 ]
 
 [[package]]
@@ -346,26 +349,24 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.10"
+version = "0.9.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "045ebe27666471bb549370b4b0b3e51b07f56325befa4284db65fc89c02511b1"
+checksum = "f916dfc5d356b0ed9dae65f1db9fc9770aa2851d2662b988ccf4fe3516e86348"
 dependencies = [
  "autocfg",
  "cfg-if",
  "crossbeam-utils",
  "memoffset",
- "once_cell",
  "scopeguard",
 ]
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.11"
+version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51887d4adc7b564537b15adcfb307936f8075dfcd5f00dde9a9f1d29383682bc"
+checksum = "edbafec5fa1f196ca66527c1b12c2ec4745ca14b50f1ad8f9f6f720b55d11fac"
 dependencies = [
  "cfg-if",
- "once_cell",
 ]
 
 [[package]]
@@ -451,9 +452,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
+checksum = "c05aeb6a22b8f62540c194aac980f2115af067bfe15a0734d7277a768d396b31"
 dependencies = [
  "cfg-if",
  "libc",
@@ -508,9 +509,9 @@ dependencies = [
 
 [[package]]
 name = "itertools"
-version = "0.10.4"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8bf247779e67a9082a4790b45e71ac7cfd1321331a5c856a74a9faebdab78d0"
+checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
 dependencies = [
  "either",
 ]
@@ -523,9 +524,9 @@ checksum = "b71991ff56294aa922b450139ee08b3bfc70982c6b2c7562771375cf73542dd4"
 
 [[package]]
 name = "itoa"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c8af84674fe1f223a982c933a0ee1086ac4d4052aa0fb8060c12c6ad838e754"
+checksum = "4217ad341ebadf8d8e724e264f13e593e0648f5b3e94b3896a5df283be015ecc"
 
 [[package]]
 name = "js-sys"
@@ -550,9 +551,9 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "libc"
-version = "0.2.132"
+version = "0.2.137"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8371e4e5341c3a96db127eb2465ac681ced4c433e01dd0e938adbef26ba93ba5"
+checksum = "fc7fcc620a3bff7cdd7a365be3376c97191aeaccc2a603e600951e452615bf89"
 
 [[package]]
 name = "log"
@@ -638,9 +639,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.14.0"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f7254b99e31cad77da24b08ebf628882739a608578bb1bcdfc1f9c21260d7c0"
+checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
 name = "oorandom"
@@ -650,9 +651,9 @@ checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
 
 [[package]]
 name = "os_str_bytes"
-version = "6.3.0"
+version = "6.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
+checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
 
 [[package]]
 name = "paste"
@@ -726,9 +727,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.43"
+version = "1.0.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a2ca2c61bc9f3d74d2886294ab7b9853abd9c1ad903a3ac7815c58989bb7bab"
+checksum = "5ea3d908b0e36316caf9e9e2c4625cdde190a7e6f440d794667ed17a1855e725"
 dependencies = [
  "unicode-ident",
 ]
@@ -899,9 +900,9 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"
-version = "1.0.144"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f747710de3dcd43b88c9168773254e809d8ddbdf9653b84e2554ab219f17860"
+checksum = "d193d69bae983fc11a79df82342761dfbf28a99fc8d203dca4c3c1b590948965"
 
 [[package]]
 name = "serde_cbor"
@@ -915,9 +916,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.144"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "94ed3a816fb1d101812f83e789f888322c34e291f894f19590dc310963e87a00"
+checksum = "4f1d362ca8fc9c3e3a7484440752472d68a6caa98f1ab81d99b5dfe517cec852"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -926,11 +927,11 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.85"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e55a28e3aaef9d5ce0506d0a14dbba8054ddc7e499ef522dd8b26859ec9d4a44"
+checksum = "6ce777b7b150d76b9cf60d28b55f5847135a003f7d7350c6be7a773508ce7d45"
 dependencies = [
- "itoa 1.0.3",
+ "itoa 1.0.4",
  "ryu",
  "serde",
 ]
@@ -943,9 +944,9 @@ checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
 name = "syn"
-version = "1.0.100"
+version = "1.0.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "52205623b1b0f064a4e71182c3b18ae902267282930c6d5462c91b859668426e"
+checksum = "a864042229133ada95abf3b54fdc62ef5ccabe9515b64717bcb9a1919e59445d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -984,9 +985,9 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.15.1"
+version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "949517c0cf1bf4ee812e2e07e08ab448e3ae0d23472aee8a06c985f0c8815b16"
+checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "tinytemplate"
@@ -1000,9 +1001,9 @@ dependencies = [
 
 [[package]]
 name = "tracing"
-version = "0.1.36"
+version = "0.1.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fce9567bd60a67d08a16488756721ba392f24f29006402881e43b19aac64307"
+checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
 dependencies = [
  "cfg-if",
  "pin-project-lite",
@@ -1011,9 +1012,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-core"
-version = "0.1.29"
+version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5aeea4303076558a00714b823f9ad67d58a3bbda1df83d8827d21193156e22f7"
+checksum = "24eb03ba0eab1fd845050058ce5e616558e8f8d8fca633e6b163fe25c797213a"
 dependencies = [
  "once_cell",
  "valuable",
@@ -1036,9 +1037,9 @@ checksum = "dcf81ac59edc17cc8697ff311e8f5ef2d99fcbd9817b34cec66f90b6c3dfd987"
 
 [[package]]
 name = "unicode-ident"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcc811dc4066ac62f84f11307873c4850cb653bfa9b1719cee2bd2204a4bc5dd"
+checksum = "6ceab39d59e4c9499d4e5a8ee0e2735b891bb7308ac83dfb4e80cad195c9f6f3"
 
 [[package]]
 name = "unicode-width"
