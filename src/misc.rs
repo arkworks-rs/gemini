@@ -102,21 +102,6 @@ pub fn expand_tensor<F: Field>(elements: &[F]) -> PartialTensor<F> {
     expanded_tensor
 }
 
-/// For a n-dimensional point x, multiply the components of x that correlate to the bits of idx.
-///
-pub(crate) fn mul_components<F>(x: &[F], idx: usize) -> F
-where
-    F: Field,
-{
-    let mut result = F::one();
-    for (i, x_i) in x.iter().enumerate() {
-        if (idx >> i) & 1 == 1 {
-            result = result.mul(x_i);
-        }
-    }
-    result
-}
-
 /// Generate a random vector of field elements such that they're all different
 pub(crate) fn random_unique_vector<F>(size: usize, rng: &mut impl RngCore) -> Vec<F>
 where
@@ -142,6 +127,7 @@ where
 /// to get a multilinear polynomial.
 /// Optimized for speed, not space.
 ///
+#[cfg(test)]
 pub(crate) fn evaluate_multi_poly<F>(polynomial: &[F], x: &[F]) -> F
 where
     F: Field,
@@ -220,19 +206,6 @@ pub fn multi_poly_decompose<F: Field>(polynomial: &[F], eval_point: &[F]) -> (Ve
 
     // assert_eq!(evaluate_multi_poly(&remainder, evaluation_point), remainder[0]);
     (results, evaluation)
-}
-
-/// Converts a sparse_polynomial from ark_poly into a vector of coefficients
-pub fn multi_poly_flatten<F: Field, T: Term>(sparse_polynomial: &SparsePolynomial<F, T>) -> Vec<F> {
-    let mut f = vec![F::zero(); 1 << sparse_polynomial.num_vars];
-    for term in &sparse_polynomial.terms {
-        let mut idx: usize = 0;
-        for term_idx in term.1.vars() {
-            idx += 1 << term_idx;
-        }
-        f[idx] = term.0;
-    }
-    f
 }
 
 /// Helper function for folding single polynomial.

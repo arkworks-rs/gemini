@@ -153,9 +153,25 @@ where
     }
 }
 
+/// For a n-dimensional point x, multiply the components of x that correspond to the bits of idx.
+///
+#[cfg(test)]
+fn mul_components<F>(x: &[F], idx: usize) -> F
+where
+    F: Field,
+{
+    let mut result = F::one();
+    for (i, x_i) in x.iter().enumerate() {
+        if (idx >> i) & 1 == 1 {
+            result = result.mul(x_i);
+        }
+    }
+    result
+}
+
 #[test]
 fn test_polynomial_divide_randomized() {
-    use crate::misc::{evaluate_multi_poly, mul_components, random_vector};
+    use crate::misc::{evaluate_multi_poly, random_vector};
     use ark_bls12_381::Fr as F;
     use ark_ff::Zero;
 
