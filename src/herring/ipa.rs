@@ -117,6 +117,8 @@ impl InnerProductProof {
 
         g1s.reverse();
         g2s.reverse();
+        g1s.push(Gt::zero());
+        g2s.push(Gt::zero());
 
         let claim_ff = FFModule::p(y, FrWrapper(Fr::one()));
         let claim_fg1 = Bls12Module::p(comm_a, G2::generator());
@@ -127,8 +129,8 @@ impl InnerProductProof {
         for i in 0..rounds {
             let SumcheckMsg(a, b) = self.sumcheck.messages[i];
             let challenge = self.sumcheck.challenges[i];
-            let g1_claim = if i == rounds -1 { Gt::zero() } else {g1s[i]};
-            let g2_claim = if i == rounds-1 { Gt::zero() } else { g2s[i]};
+            let g1_claim = g1s[i];
+            let g2_claim = g2s[i];
             let batch_challenge = Fr::one(); //&self.batch_challenges[i * 3 + 1];
             let c = reduced_claim - a;
             let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
@@ -177,6 +179,9 @@ impl InnerProductProof {
 
         // the first verifier message is empty
         let mut verifier_message = None;
+        batch_challenges.push(Fr::one());
+        batch_challenges.push(Fr::one());
+        batch_challenges.push(Fr::one());
 
         // next_message for all above provers (batched)
         let msg_ff = prover_ff.next_message(verifier_message).unwrap();
@@ -203,7 +208,6 @@ impl InnerProductProof {
             verifier_message = Some(challenge);
             let batch_challenge = Fr::one(); //transcript.get_challenge::<Fr>(b"batch-chal");
             challenges.push(challenge);
-            batch_challenges.push(Fr::one());
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
@@ -250,7 +254,7 @@ impl InnerProductProof {
                 .chain(gg_messages.into_iter())
                 .chain(g1fold_message)
                 .chain(g2fold_message);
-            let round_message = prover_messages.sum();
+            let round_message = SumcheckMsg::ip(prover_messages, batch_challenges.iter().cloned());
 
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
@@ -302,8 +306,8 @@ fn test_correctness() {
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
     let crs = Crs::new(rng, d);
-    let a = (0..d/2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
-    let b = (0..d/2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let a = (0..d / 2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..d / 2).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
     let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
     let comm_a = crs.commit_g1(&a);

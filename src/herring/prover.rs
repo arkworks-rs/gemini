@@ -30,6 +30,18 @@ impl<M: Module> Sum for SumcheckMsg<M> {
     }
 }
 
+impl<M: Module> SumcheckMsg<M> {
+    pub(crate) fn ip<I: Iterator<Item = Self>, J: Iterator<Item = M::ScalarField>>(
+        iter: I,
+        scalars: J,
+    ) -> Self {
+        iter.zip(scalars)
+            .fold(SumcheckMsg(M::zero(), M::zero()), |acc, (snd, scalar)| {
+                Self(acc.0 + snd.0 * scalar, acc.1 + snd.1 * scalar)
+            })
+    }
+}
+
 impl<M: Module> Mul<&M::ScalarField> for SumcheckMsg<M> {
     type Output = Self;
 
