@@ -67,13 +67,23 @@ impl<'a> From<&'a Crs> for Vrs {
         for j in 1..log2(crs.g1s.len()) {
             let size = 1 << j;
 
-            let g1es = Bls12Module::ip(crs.g1s.iter().step_by(2), crs.g2s.iter().take(size));
-            let g1os =
-                Bls12Module::ip(crs.g1s.iter().skip(1).step_by(2), crs.g2s.iter().take(size));
+            let g1es = Bls12Module::ip(
+                crs.g1s.iter().step_by(2).take(size),
+                crs.g2s.iter().take(size),
+            );
+            let g1os = Bls12Module::ip(
+                crs.g1s.iter().skip(1).step_by(2).take(size),
+                crs.g2s.iter().take(size),
+            );
 
-            let g2es = Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().step_by(2));
-            let g2os =
-                Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().skip(1).step_by(2));
+            let g2es = Bls12Module::ip(
+                crs.g1s.iter().take(size),
+                crs.g2s.iter().step_by(2).take(size),
+            );
+            let g2os = Bls12Module::ip(
+                crs.g1s.iter().take(size),
+                crs.g2s.iter().skip(1).step_by(2).take(size),
+            );
 
             vk1.push((g1es, g1os));
             vk2.push((g2es, g2os));
@@ -123,20 +133,29 @@ impl InnerProductProof {
         let claim_ff = FFModule::p(y, FrWrapper(Fr::one()));
         let claim_fg1 = Bls12Module::p(comm_a, G2::generator());
         let claim_fg2 = Bls12Module::p(G1::generator(), comm_b);
-        let mut reduced_claim = claim_ff + claim_fg1 + claim_fg2;
+        let mut reduced_claim = GtModule::ip((&[claim_ff, claim_fg1, claim_fg2]).iter(), (&self.batch_challenges[..3]).iter().map(|x| FrWrapper(*x)));
         let rounds = self.sumcheck.messages.len();
         assert_eq!(self.sumcheck.messages.len(), self.sumcheck.challenges.len());
-        for i in 0..rounds {
+        for i in 0..rounds - 1 {
             let SumcheckMsg(a, b) = self.sumcheck.messages[i];
             let challenge = self.sumcheck.challenges[i];
             let g1_claim = g1s[i];
             let g2_claim = g2s[i];
-            let batch_challenge_g1 = &self.batch_challenges[3 + i * 2];
-            let batch_challenge_g2 = &self.batch_challenges[3 + i * 2 + 1];
+            let (batch_challenge_g1, batch_challenge_g2) = (
+                &self.batch_challenges[3 + i * 2],
+                &self.batch_challenges[3 + i * 2 + 1],
+            );
             let c = reduced_claim - a;
             let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
-            reduced_claim = sumcheck_polynomial_evaluation + g1_claim * batch_challenge_g1 + g2_claim * batch_challenge_g2;
+            reduced_claim = sumcheck_polynomial_evaluation
+                + g1_claim * batch_challenge_g1
+                + g2_claim * batch_challenge_g2;
         }
+
+        let SumcheckMsg(a, b) = self.sumcheck.messages[rounds - 1];
+        let challenge = self.sumcheck.challenges[rounds - 1];
+        let c = reduced_claim - a;
+        reduced_claim = a + b * challenge + c * challenge.square();
 
         let mut final_foldings = vec![
             FFModule::p(self.foldings_ff[0].0, self.foldings_ff[0].1),
@@ -150,7 +169,11 @@ impl InnerProductProof {
                 .map(|&(lhs, rhs)| Bls12Module::p(lhs, rhs)),
         );
 
-        let expected = GtModule::ip(final_foldings.iter(), self.batch_challenges.iter().map(|x| FrWrapper(*x)));
+        assert_eq!(self.batch_challenges.len(), final_foldings.len());
+        let expected = GtModule::ip(
+            final_foldings.iter(),
+            self.batch_challenges.iter().map(|x| FrWrapper(*x)),
+        );
 
         if reduced_claim == expected {
             Ok(())
@@ -182,13 +205,14 @@ impl InnerProductProof {
         let mut verifier_message = None;
 
         // next_message for all above provers (batched)
+        let batch_challenge = transcript.get_challenge(b"batch-chal");
         batch_challenges.push(Fr::one());
-        batch_challenges.push(Fr::one());
-        batch_challenges.push(Fr::one());
+        batch_challenges.push(batch_challenge);
+        batch_challenges.push(batch_challenge.square());
         let msg_ff = prover_ff.next_message(verifier_message).unwrap();
         let msg_fg1 = prover_fg1.next_message(verifier_message).unwrap();
         let msg_fg2 = prover_fg2.next_message(verifier_message).unwrap();
-        let prover_message = msg_ff + msg_fg1 + msg_fg2;
+        let prover_message = msg_ff + msg_fg1 * &batch_challenge + msg_fg2 * &batch_challenge.square();
         transcript.append_serializable(b"prover_message", &prover_message);
         messages.push(prover_message);
 
@@ -215,7 +239,7 @@ impl InnerProductProof {
             // step 2b: the prover computes folding of g1's
             split_fold_into(&mut crs1_fold, &crs1_chop, &challenge);
             halve(&mut crs1_chop); // XXXXX: does this work for non-2powers?
-            // [step 2b].. and of g2
+                                   // [step 2b].. and of g2
             split_fold_into(&mut crs2_fold, &crs2_chop, &challenge);
             halve(&mut crs2_chop);
 
@@ -261,8 +285,6 @@ impl InnerProductProof {
             messages.push(round_message);
         }
 
-        batch_challenges.push(Fr::one());
-        batch_challenges.push(Fr::one());
         let challenge = transcript.get_challenge(b"sumcheck-chal");
         challenges.push(challenge);
 

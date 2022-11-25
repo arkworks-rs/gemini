@@ -91,7 +91,7 @@ pub(crate) fn split_fold_into<'a, M: Module>(
 
 #[inline]
 pub(crate) fn halve<'a, M: Module>(dst: &mut Vec<M>) {
-    let folded_len = dst.len() / 2;
+    let folded_len = dst.len() / 2 + dst.len() % 2;
     dst.truncate(folded_len);
 }
 
