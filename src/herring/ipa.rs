@@ -1,3 +1,4 @@
+use ark_ec::pairing::{PairingOutput, Pairing};
 use ark_std::vec::Vec;
 use ark_std::{log2, One};
 use merlin::Transcript;
@@ -67,13 +68,13 @@ impl<'a> From<&'a Crs> for Vrs {
         for j in 1..log2(crs.g1s.len()) {
             let size = 1 << j;
 
-            let g1es = Bls12Module::ip(crs.g1s.iter().step_by(2), crs.g2s.iter().take(size));
+            let g1es = Bls12Module::ip(crs.g1s.iter().step_by(2).take(size), crs.g2s.iter().take(size));
             let g1os =
-                Bls12Module::ip(crs.g1s.iter().skip(1).step_by(2), crs.g2s.iter().take(size));
+                Bls12Module::ip(crs.g1s.iter().skip(1).step_by(2).take(size), crs.g2s.iter().take(size));
 
-            let g2es = Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().step_by(2));
+            let g2es = Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().step_by(2).take(size));
             let g2os =
-                Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().skip(1).step_by(2));
+                Bls12Module::ip(crs.g1s.iter().take(size), crs.g2s.iter().skip(1).step_by(2).take(size));
 
             vk1.push((g1es, g1os));
             vk2.push((g2es, g2os));
@@ -131,8 +132,11 @@ impl InnerProductProof {
             let challenge = self.sumcheck.challenges[i];
             let g1_claim = g1s[i];
             let g2_claim = g2s[i];
-            let batch_challenge_g1 = &self.batch_challenges[3 + i * 2];
-            let batch_challenge_g2 = &self.batch_challenges[3 + i * 2 + 1];
+            let one = Fr::one();
+            let (batch_challenge_g1, batch_challenge_g2) =
+            if i == rounds -1 {
+                (&one, &one)
+            } else { (&self.batch_challenges[3 + i * 2],  &self.batch_challenges[3 + i * 2 + 1]) } ;
             let c = reduced_claim - a;
             let sumcheck_polynomial_evaluation = a + b * challenge + c * challenge.square();
             reduced_claim = sumcheck_polynomial_evaluation + g1_claim * batch_challenge_g1 + g2_claim * batch_challenge_g2;
@@ -150,6 +154,7 @@ impl InnerProductProof {
                 .map(|&(lhs, rhs)| Bls12Module::p(lhs, rhs)),
         );
 
+        assert_eq!(self.batch_challenges.len(), final_foldings.len());
         let expected = GtModule::ip(final_foldings.iter(), self.batch_challenges.iter().map(|x| FrWrapper(*x)));
 
         if reduced_claim == expected {
@@ -261,8 +266,8 @@ impl InnerProductProof {
             messages.push(round_message);
         }
 
-        batch_challenges.push(Fr::one());
-        batch_challenges.push(Fr::one());
+        // batch_challenges.push(Fr::one());
+        // batch_challenges.push(Fr::one());
         let challenge = transcript.get_challenge(b"sumcheck-chal");
         challenges.push(challenge);
 
@@ -319,4 +324,18 @@ fn test_correctness() {
 
     let verification = ipa.verify_transcript(&vrs, comm_a, comm_b, y);
     assert!(verification.is_ok())
+}
+
+
+
+#[test]
+fn test_pairing() {
+    let rng = &mut rand::thread_rng();
+    let xs = (0..10).map(|_| G1::rand(rng)).collect::<Vec<_>>();
+    let ys = (0..10).map(|_| G2::rand(rng)).collect::<Vec<_>>();
+
+    let got = ark_bls12_381::Bls12_381::multi_pairing(&xs, &ys);
+    let expected =
+    xs.iter().zip(&ys).map(|(x, y)| ark_bls12_381::Bls12_381::pairing(x, y)).sum();
+    assert_eq!(got, expected);
 }

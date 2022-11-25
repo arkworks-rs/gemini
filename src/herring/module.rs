@@ -138,21 +138,21 @@ impl BilinearModule for Bls12Module {
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(a.borrow(), b.borrow()).into()
+        Bls12_381::pairing(a.borrow(), b.borrow())
     }
 
-    // fn ip<I, J>(f: I, g: J) -> Self::Target
-    // where
-    //     I: Iterator,
-    //     J: Iterator,
-    //     I::Item: Borrow<Self::Lhs>,
-    //     J::Item: Borrow<Self::Rhs>,
-    // {
-    //     Bls12_381::multi_pairing(
-    //         f.map(|x| *x.borrow()),
-    //         g.map(|x| *x.borrow())
-    //     )
-    // }
+    fn ip<I, J>(f: I, g: J) -> Self::Target
+    where
+        I: Iterator,
+        J: Iterator,
+        I::Item: Borrow<Self::Lhs>,
+        J::Item: Borrow<Self::Rhs>,
+    {
+        Bls12_381::multi_pairing(
+            f.map(|x| *x.borrow()),
+            g.map(|x| *x.borrow())
+        )
+    }
 }
 
 pub(crate) struct G1Module {}
