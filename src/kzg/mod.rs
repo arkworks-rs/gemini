@@ -105,7 +105,7 @@ use crate::misc::{linear_combination, powers};
 
 /// A Kate polynomial commitment over a bilinear group, represented as a single \\(\GG_1\\) element.
 #[derive(CanonicalSerialize, Copy, Clone, Debug, PartialEq, Eq)]
-pub struct Commitment<E: Pairing>(pub(crate) E::G1);
+pub struct Commitment<E: Pairing>(pub E::G1);
 
 /// Polynomial evaluation proof, represented as a single $\GG_1$ element.
 #[derive(CanonicalSerialize, Clone, Debug, PartialEq, Eq)]
@@ -145,7 +145,7 @@ pub struct VerifierKey<E: Pairing> {
     /// The generator of $\GG_1$
     powers_of_g: Vec<E::G1Affine>,
     /// The generator of $\GG_2$, together with its multiplication by the trapdoor.
-    powers_of_g2: Vec<E::G2Affine>,
+    pub powers_of_g2: Vec<E::G2Affine>,
 }
 
 impl<E: Pairing> VerifierKey<E> {

@@ -6,13 +6,15 @@ use ark_std::{One, Zero};
 
 use crate::circuit::R1cs;
 use crate::errors::{VerificationError, VerificationResult};
-use crate::kzg::{Commitment, VerifierKey};
+use crate::kzg::VerifierKey;
 use crate::misc::{evaluate_geometric_poly, evaluate_le, evaluate_tensor_poly};
 use crate::misc::{evaluate_index_poly, hadamard, powers, powers2};
 use crate::psnark::Proof;
 use crate::subprotocols::sumcheck::Subclaim;
 use crate::transcript::GeminiTranscript;
 use crate::PROTOCOL_NAME;
+
+use super::Index;
 
 /// Given oracle access to a polynomial $f \in \FF[x]$ and a field element $\psi \in \FF$, returns $(f - \psi)(x)$.
 /// XXX. use for real
@@ -87,13 +89,15 @@ impl<E: Pairing> Proof<E> {
         &self,
         r1cs: &R1cs<E::ScalarField>,
         vk: &VerifierKey<E>,
-        index_comms: &Vec<Commitment<E>>,
+        index: &Index<E>,
         num_non_zero: usize,
     ) -> VerificationResult {
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
         let witness_commitment = self.witness_commitment;
 
         transcript.append_serializable(b"witness", &witness_commitment);
+        transcript.append_serializable(b"ck", &vk.powers_of_g2);
+        transcript.append_serializable(b"instance", &index.as_slice());
         let alpha = transcript.get_challenge::<E::ScalarField>(b"alpha");
         transcript.append_serializable(b"zc(alpha)", &self.zc_alpha);
 
@@ -245,7 +249,7 @@ impl<E: Pairing> Proof<E> {
         let mut base_polynomials_commitments = vec![self.witness_commitment];
         base_polynomials_commitments.extend(self.r_star_commitments);
         base_polynomials_commitments.extend(vec![self.z_star_commitment]);
-        base_polynomials_commitments.extend(index_comms);
+        base_polynomials_commitments.extend(index);
         base_polynomials_commitments.extend(vec![
             self.sorted_r_commitment,
             self.sorted_alpha_commitment,
@@ -518,11 +522,11 @@ impl<E: Pairing> Proof<E> {
             self.r_star_commitments[1],
             self.r_star_commitments[2],
             self.z_star_commitment,
-            index_comms[0],
-            index_comms[1],
-            index_comms[2],
-            index_comms[3],
-            index_comms[4],
+            index[0],
+            index[1],
+            index[2],
+            index[3],
+            index[4],
             self.sorted_r_commitment,
             self.sorted_alpha_commitment,
             self.sorted_z_commitment,

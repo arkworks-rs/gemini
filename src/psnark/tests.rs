@@ -6,7 +6,7 @@ use crate::iterable::dummy::Mat;
 use crate::iterable::Reverse;
 
 use crate::kzg::{CommitterKey, CommitterKeyStream};
-use crate::misc::{joint_matrices, product_matrix_vector, sum_matrices};
+use crate::misc::product_matrix_vector;
 use ark_bls12_381::{Bls12_381, Fr};
 use ark_std::test_rng;
 
@@ -49,9 +49,10 @@ fn test_consistency() {
 
     let ck = CommitterKey::<Bls12_381>::new(num_constraints * 100 + num_variables, 3, rng);
     let ck_stream = CommitterKeyStream::from(&ck);
+    let index = Proof::index(&ck, &r1cs);
 
-    let time_proof = Proof::new_time(&r1cs, &ck);
-    let elastic_proof = Proof::new_elastic(&r1cs_stream, &ck_stream, max_msm_buffer);
+    let time_proof = Proof::new_time(&ck, &r1cs, &index);
+    let elastic_proof = Proof::new_elastic(&ck_stream, &r1cs_stream, &index, max_msm_buffer);
 
     assert_eq!(
         elastic_proof.witness_commitment,
@@ -131,27 +132,16 @@ fn test_psnark_correctness() {
 
     let circuit = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
-
-    let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c, num_variables);
-    let (row, col, _row_index, _col_index, val_a, val_b, val_c) = joint_matrices(
-        &joint_matrix,
-        num_constraints,
-        num_variables,
-        &r1cs.a,
-        &r1cs.b,
-        &r1cs.c,
-    );
-
-    let num_non_zero = row.len();
+    let num_non_zero = 3*num_constraints;
 
     let ck = CommitterKey::<Bls12_381>::new(num_non_zero + num_variables + num_constraints, 5, rng);
     let vk = (&ck).into();
 
-    let index_comms = ck.batch_commit(&vec![row, col, val_a, val_b, val_c]);
+    let index = Proof::index(&ck, &r1cs);
 
-    let time_proof = Proof::new_time(&r1cs, &ck);
+    let time_proof = Proof::new_time(&ck, &r1cs, &index);
 
     assert!(time_proof
-        .verify(&r1cs, &vk, &index_comms, num_non_zero)
+        .verify(&r1cs, &vk, &index, num_non_zero)
         .is_ok())
 }

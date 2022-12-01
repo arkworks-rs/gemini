@@ -16,7 +16,7 @@ use crate::psnark::streams::{
     AlgebraicHash, HadamardStreamer, IntoField, JointColStream, JointRowStream, JointValStream,
     LookupStreamer, LookupTensorStreamer, Tensor,
 };
-use crate::psnark::Proof;
+use crate::psnark::{Index, Proof};
 use crate::subprotocols::entryproduct::streams::entry_product_streams;
 use crate::subprotocols::entryproduct::EntryProduct;
 use crate::subprotocols::plookup::streams::{plookup_streams, SortedStreamer};
@@ -58,8 +58,9 @@ impl<E: Pairing> Proof<E> {
     /// and the _streaming_ committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
     pub fn new_elastic<SM, SG, SZ, SW>(
-        r1cs: &R1csStream<SM, SZ, SW>,
         ck: &CommitterKeyStream<E, SG>,
+        r1cs: &R1csStream<SM, SZ, SW>,
+        index: &Index<E>,
         max_msm_buffer: usize,
     ) -> Proof<E>
     where
@@ -82,6 +83,8 @@ impl<E: Pairing> Proof<E> {
 
         // send witness, receive challenge.
         transcript.append_serializable(b"witness", &witness_commitment);
+        transcript.append_serializable(b"ck", &ck.powers_of_g2);
+        transcript.append_serializable(b"instance", &index.as_slice());
         let alpha = transcript.get_challenge(b"alpha");
 
         // send evaluation of zc(alpha)

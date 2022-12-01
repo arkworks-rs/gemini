@@ -22,6 +22,11 @@ use crate::subprotocols::entryproduct;
 use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::subprotocols::tensorcheck::TensorcheckProof;
 
+
+
+pub type Index<E> = Vec<Commitment<E>>;
+
+
 /// The preprocessing SNARK proof, containing all prover messages.
 #[derive(CanonicalSerialize, PartialEq, Eq)]
 pub struct Proof<E: Pairing> {

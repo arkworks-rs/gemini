@@ -26,7 +26,7 @@ use crate::transcript::GeminiTranscript;
 
 use crate::PROTOCOL_NAME;
 
-use super::Proof;
+use super::{Index, Proof};
 
 fn product3<F: Field>(v: &[Vec<F>; 3]) -> Vec<F> {
     vec![
@@ -46,20 +46,39 @@ fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
 }
 
 impl<E: Pairing> Proof<E> {
+
+    pub fn index(ck: &CommitterKey<E>, r1cs: &R1cs<E::ScalarField>) -> Index<E> {
+        let num_constraints = r1cs.a.len();
+        let num_variables = r1cs.z.len();
+
+        let joint_matrix = sum_matrices(&r1cs.a, &r1cs.b, &r1cs.c, num_variables);
+        let (row, col, _row_index, _col_index, val_a, val_b, val_c) = joint_matrices(
+            &joint_matrix,
+            num_constraints,
+            num_variables,
+            &r1cs.a,
+            &r1cs.b,
+            &r1cs.c,
+        );
+
+        ck.batch_commit(&vec![row, col, val_a, val_b, val_c])
+    }
+
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
-    pub fn new_time(r1cs: &R1cs<E::ScalarField>, ck: &CommitterKey<E>) -> Proof<E> {
+    pub fn new_time(ck: &CommitterKey<E>, r1cs: &R1cs<E::ScalarField>, index: &Index<E>) -> Proof<E> {
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
         let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
         let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
-
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
         let witness_commitment_time = start_timer!(|| "Commitment to w");
         let witness_commitment = ck.commit(&r1cs.w);
         end_timer!(witness_commitment_time);
 
         transcript.append_serializable(b"witness", &witness_commitment);
+        transcript.append_serializable(b"ck", &ck.powers_of_g2);
+        transcript.append_serializable(b"instance", &index.as_slice());
         let alpha = transcript.get_challenge(b"alpha");
 
         let zc_alpha = evaluate_le(&z_c, &alpha);

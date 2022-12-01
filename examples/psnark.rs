@@ -1,7 +1,7 @@
 use ark_ec::bls12::Bls12;
 use ark_ec::{pairing::Pairing, AffineRepr};
 use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
-use ark_gemini::kzg::CommitterKeyStream;
+use ark_gemini::kzg::{CommitterKeyStream, Commitment};
 use ark_serialize::CanonicalSerialize;
 use ark_std::rand::Rng;
 use ark_std::test_rng;
@@ -63,7 +63,8 @@ fn elastic_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
         powers_of_g2: vec![g2; 4],
     };
 
-    Proof::new_elastic(&r1cs_stream, &ck, max_msm_buffer)
+    let index = vec![Commitment(g1.into_group()); 5];
+    Proof::new_elastic(&ck, &r1cs_stream, &index, max_msm_buffer)
 }
 
 fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
@@ -74,8 +75,9 @@ fn time_snark_main(rng: &mut impl Rng, instance_logsize: usize) -> Proof {
     // let r1cs = ark_gemini::circuit::generate_relation(circuit);
     let r1cs = ark_gemini::circuit::dummy_r1cs(rng, num_constraints);
     let ck = ark_gemini::kzg::CommitterKey::new(num_constraints + num_variables, 5, rng);
+    let index = Proof::index(&ck, &r1cs);
 
-    Proof::new_time(&r1cs, &ck)
+    Proof::new_time(&ck, &r1cs, &index)
 }
 
 fn main() {
