@@ -63,6 +63,13 @@ pub(crate) struct PMod<P: Pairing> {
     _pairing: PhantomData<P>,
 }
 
+// enum BilinearPairingModule<P: Pairing> {
+//     G1(G1Mod<P>),
+//     G2(G2Mod<P>),
+//     Gt(GtMod<P>),
+//     FF(FMod<P>),
+//     TT(PMod<P>),
+// }
 
 impl<P: Pairing> BilinearModule for GtMod<P> {
     type Lhs = PairingOutput<P>;
