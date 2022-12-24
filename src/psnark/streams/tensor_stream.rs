@@ -76,8 +76,8 @@ impl<F: Field> Iterator for TensorIter<F> {
 #[test]
 fn test_tensoriter() {
     use crate::misc::tensor;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_std::{test_rng, UniformRand};
+    use ark_test_curves::bls12_381::Fr as F;
 
     let rng = &mut test_rng();
     let challenges = (0..10).map(|_| F::rand(rng)).collect::<Vec<_>>();
@@ -190,11 +190,11 @@ where
 #[test]
 fn test_tensor() {
     use crate::misc::powers;
-    use ark_test_curves::bls12_381::Fr;
     use ark_ff::One;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::UniformRand;
+    use ark_test_curves::bls12_381::Fr;
 
     let rng = &mut test_rng();
     let a = Fr::rand(rng);

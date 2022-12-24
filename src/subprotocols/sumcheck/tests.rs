@@ -1,10 +1,10 @@
-use ark_test_curves::bls12_381::Fr as F;
 use ark_ff::One;
 use ark_ff::UniformRand;
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::DenseUVPolynomial;
 use ark_std::boxed::Box;
 use ark_std::vec::Vec;
+use ark_test_curves::bls12_381::Fr as F;
 
 use merlin::Transcript;
 

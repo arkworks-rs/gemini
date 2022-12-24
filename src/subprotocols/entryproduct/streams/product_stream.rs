@@ -70,11 +70,11 @@ where
 #[test]
 fn test_product_stream() {
     use crate::iterable::dummy::DummyStreamer;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::One;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let rng = &mut test_rng();
     let n = 1200usize;

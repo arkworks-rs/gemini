@@ -1,7 +1,7 @@
-use ark_test_curves::bls12_381::{Bls12_381, Fr as F};
 use ark_ff::Field;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
+use ark_test_curves::bls12_381::{Bls12_381, Fr as F};
 use merlin::Transcript;
 
 use super::time_prover::{accumulated_product, monic, right_rotation};
@@ -57,11 +57,11 @@ fn test_sumcheck_inputs_consistency() {
     use super::streams::{ProductStream, RightRotationStreamer};
     use crate::iterable::Iterable;
     use crate::iterable::Reverse;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::One;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let rng = &mut test_rng();
     let e = F::rand(rng);

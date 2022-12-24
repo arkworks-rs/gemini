@@ -1,9 +1,9 @@
-use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::DenseUVPolynomial;
 use ark_std::test_rng;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
 use crate::iterable::{Iterable, Reverse};
 use crate::kzg::space::CommitterKeyStream;

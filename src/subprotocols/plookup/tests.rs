@@ -1,5 +1,5 @@
-use ark_test_curves::bls12_381::Fr as F;
 use ark_std::Zero;
+use ark_test_curves::bls12_381::Fr as F;
 
 use crate::iterable::Iterable;
 use crate::subprotocols::plookup::{

@@ -270,8 +270,8 @@ fn vanishing_polynomial<F: Field>(points: &[F]) -> DensePolynomial<F> {
 #[test]
 fn test_vanishing_polynomial() {
     use crate::misc::evaluate_le;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::Zero;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let points = [F::from(10), F::from(5), F::from(13)];
     let zeros = vanishing_polynomial(&points);

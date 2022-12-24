@@ -2,9 +2,9 @@ use ark_ec::bls12::Bls12;
 use ark_ec::{pairing::Pairing, AffineRepr};
 use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
 use ark_gemini::kzg::CommitterKeyStream;
+use ark_serialize::CanonicalSerialize;
 use ark_std::rand::Rng;
 use ark_std::test_rng;
-use ark_serialize::CanonicalSerialize;
 
 use clap::Parser;
 

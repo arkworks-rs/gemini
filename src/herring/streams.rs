@@ -5,7 +5,6 @@ use ark_std::vec::Vec;
 use crate::iterable::Iterable;
 use crate::misc::ceil_div;
 
-
 /// A `Streamer` folding a vector of coefficients
 /// with the given challenges, and producing a stream of items
 /// `(i, v)` where `i` indicates the depth, and `v` is the next coefficient.

@@ -20,9 +20,7 @@ fn bench_msm(c: &mut Criterion) {
     let mut group = c.benchmark_group("msm");
     for d in 12..17 {
         let size = 1 << d;
-        let scalars = (0..size)
-            .map(|_| Fr::rand(rng))
-            .collect::<Vec<_>>();
+        let scalars = (0..size).map(|_| Fr::rand(rng)).collect::<Vec<_>>();
         let bases = (0..size)
             .map(|_| G1Projective::rand(rng).into_affine())
             .collect::<Vec<_>>();

@@ -84,10 +84,10 @@ where
 
 #[test]
 fn test_hadamard_stream() {
-    use ark_test_curves::bls12_381::Fr;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::UniformRand;
+    use ark_test_curves::bls12_381::Fr;
 
     let rng = &mut test_rng();
     let lhs = &(0..100).map(|_| Fr::rand(rng)).collect::<Vec<_>>();

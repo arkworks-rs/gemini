@@ -497,8 +497,8 @@ fn test_joint_val() {
 
 #[test]
 fn test_matrix() {
-    use ark_test_curves::bls12_381::Fr;
     use ark_std::test_rng;
+    use ark_test_curves::bls12_381::Fr;
 
     use crate::circuit::{
         generate_relation, matrix_into_colmaj, matrix_into_rowmaj, random_circuit, Circuit,

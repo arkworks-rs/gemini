@@ -322,11 +322,11 @@ where
 fn test_open_multi_points() {
     use crate::ark_std::UniformRand;
     use crate::misc::evaluate_be;
-    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_ff::Field;
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
     use ark_std::test_rng;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
     let max_msm_buffer = 1 << 20;
     let rng = &mut test_rng();

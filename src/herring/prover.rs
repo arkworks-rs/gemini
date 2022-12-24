@@ -1,9 +1,9 @@
 //! Common data structures for the prover algorith in the scalar-product sub-argument.
 use ark_ff::AdditiveGroup;
+use ark_serialize::*;
 use ark_std::iter::Sum;
 use ark_std::ops::{Add, Mul};
 use ark_std::vec::Vec;
-use ark_serialize::*;
 
 use super::module::BilinearModule;
 

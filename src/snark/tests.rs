@@ -1,5 +1,5 @@
-use ark_test_curves::bls12_381::Bls12_381;
 use ark_std::test_rng;
+use ark_test_curves::bls12_381::Bls12_381;
 
 use crate::circuit::matrix_into_colmaj;
 use crate::circuit::matrix_into_rowmaj;

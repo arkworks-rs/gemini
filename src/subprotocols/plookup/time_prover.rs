@@ -36,10 +36,10 @@ pub(crate) fn plookup_set<F: Field>(v: &[F], y: &F, &z: &F) -> Vec<F> {
 #[test]
 fn test_plookup_set_correct() {
     use crate::misc::evaluate_le;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
     use ark_std::UniformRand;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let rng = &mut test_rng();
     let set = (0..3).map(|_| F::rand(rng)).collect::<Vec<_>>();
@@ -113,9 +113,9 @@ pub fn plookup<F: Field>(
 
 #[test]
 fn test_plookup_relation() {
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::Zero;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let set = [
         F::from(10u64),

@@ -48,10 +48,10 @@ where
 
 #[test]
 fn test_consistency() {
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::UniformRand;
+    use ark_test_curves::bls12_381::Fr as F;
 
     use super::time_prover::plookup_set;
     use crate::iterable::Reverse;
@@ -74,9 +74,9 @@ fn test_consistency() {
 #[test]
 fn test_plookup_relation() {
     use crate::ark_std::UniformRand;
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let set = [
         F::from(10u64),

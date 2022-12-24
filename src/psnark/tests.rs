@@ -7,8 +7,8 @@ use crate::iterable::Reverse;
 
 use crate::kzg::{CommitterKey, CommitterKeyStream};
 use crate::misc::product_matrix_vector;
-use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_std::test_rng;
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
 #[test]
 fn test_consistency() {

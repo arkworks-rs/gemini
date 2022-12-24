@@ -247,9 +247,9 @@ impl_lincomb_iter!(
 
 #[test]
 fn test_lincomb() {
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::Zero;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let a0 = ark_std::iter::repeat(F::one()).take(100);
     let a1 = ark_std::iter::repeat(F::one()).take(100);

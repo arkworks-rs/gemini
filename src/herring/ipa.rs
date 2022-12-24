@@ -2,9 +2,9 @@ use core::borrow::Borrow;
 use core::iter::Take;
 
 use ark_ec::scalar_mul::variable_base::ChunkedPippenger;
+use ark_ff::PrimeField;
 use ark_std::iterable::Iterable;
 use ark_std::vec::Vec;
-use ark_ff::PrimeField;
 use ark_std::{log2, One};
 use merlin::Transcript;
 
@@ -17,12 +17,12 @@ use crate::herring::prover::SumcheckMsg;
 use crate::herring::time_prover::Witness;
 use crate::herring::TimeProver;
 use crate::transcript::GeminiTranscript;
-use ark_test_curves::bls12_381::Fr;
 use ark_ec::CurveGroup;
 use ark_ec::PrimeGroup;
 use ark_ec::VariableBaseMSM;
 use ark_ff::{Field, Zero};
 use ark_std::UniformRand;
+use ark_test_curves::bls12_381::Fr;
 use rand::Rng;
 
 pub struct InnerProductProof {
@@ -94,7 +94,7 @@ where
         CrsStream { g1s, g2s }
     }
 
-    pub fn halve(&mut self) ->  CrsStream<TruncateStream<S1>, TruncateStream<S2>> {
+    pub fn halve(&mut self) -> CrsStream<TruncateStream<S1>, TruncateStream<S2>> {
         let g1s = TruncateStream::new(self.g1s, self.g1s.len().div_ceil(2));
         let g2s = TruncateStream::new(self.g2s, self.g2s.len().div_ceil(2));
         CrsStream { g1s, g2s }
@@ -286,10 +286,7 @@ impl InnerProductProof {
         );
 
         assert_eq!(self.batch_challenges.len(), final_foldings.len());
-        let expected = GtModule::ip(
-            final_foldings.iter(),
-            self.batch_challenges.iter(),
-        );
+        let expected = GtModule::ip(final_foldings.iter(), self.batch_challenges.iter());
 
         if reduced_claim == expected {
             Ok(())
@@ -391,8 +388,9 @@ impl InnerProductProof {
             provers_gg.push(prover_g1fold);
             provers_gg.push(prover_g2fold);
 
-            let prover_messages = gg_messages.into_iter()
-            // ff_message
+            let prover_messages = gg_messages
+                .into_iter()
+                // ff_message
                 // .into_iter().map(|x| Gt::generator() * x)
                 // .chain(fg1_message.into_iter())
                 // .chain(fg2_message.into_iter())
@@ -450,7 +448,7 @@ fn test_correctness() {
     let d = 1 << 10 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
-    let crs = Crs::new(rng, d*2);
+    let crs = Crs::new(rng, d * 2);
     let a = (0..d).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
     let b = (0..d).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);

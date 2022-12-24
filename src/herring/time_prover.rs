@@ -1,7 +1,7 @@
 //!
 //!
 
-use ark_ff::{Field, AdditiveGroup};
+use ark_ff::{AdditiveGroup, Field};
 use ark_ff::{One, Zero};
 use ark_std::log2;
 use ark_std::vec::Vec;

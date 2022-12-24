@@ -1,7 +1,7 @@
-use ark_std::vec::Vec;
 use super::module::BilinearModule;
 use super::prover::SumcheckMsg;
 use ark_serialize::*;
+use ark_std::vec::Vec;
 
 /// The subclaim of the sumcheck.
 pub struct Subclaim<M: BilinearModule> {

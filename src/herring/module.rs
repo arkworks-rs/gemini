@@ -1,17 +1,16 @@
 use core::marker::PhantomData;
 
-use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_ec::pairing::Pairing;
 use ark_ec::pairing::PairingOutput;
 use ark_ec::PrimeGroup;
-use ark_ff::Field;
 use ark_ff::AdditiveGroup;
+use ark_ff::Field;
 use ark_std::borrow::Borrow;
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
 pub(crate) use ark_test_curves::bls12_381::G1Projective as G1;
 pub(crate) use ark_test_curves::bls12_381::G2Projective as G2;
 pub(crate) type Gt = PairingOutput<ark_test_curves::bls12_381::Bls12_381>;
-
 
 pub trait BilinearModule: Send + Sync {
     type Lhs: AdditiveGroup<ScalarField = Self::ScalarField>;
@@ -32,7 +31,6 @@ pub trait BilinearModule: Send + Sync {
     }
 }
 
-
 pub(crate) struct GtModule {}
 
 impl BilinearModule for GtModule {
@@ -46,7 +44,25 @@ impl BilinearModule for GtModule {
     }
 }
 
-pub(crate) struct GtMod<P: Pairing> {_pairing: PhantomData<P>}
+pub(crate) struct GtMod<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+pub(crate) struct G1Mod<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+
+pub(crate) struct G2Mod<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+
+pub(crate) struct FMod<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+
+pub(crate) struct PMod<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+
 
 impl<P: Pairing> BilinearModule for GtMod<P> {
     type Lhs = PairingOutput<P>;
@@ -56,6 +72,60 @@ impl<P: Pairing> BilinearModule for GtMod<P> {
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
         *a.borrow() * b.borrow()
+    }
+}
+
+impl<P: Pairing> BilinearModule for PMod<P> {
+    type Lhs = P::G1;
+    type Rhs = P::G2;
+    type Target = PairingOutput<P>;
+    type ScalarField = P::ScalarField;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        P::pairing(a.borrow(), b.borrow())
+    }
+
+    fn ip<I, J>(f: I, g: J) -> Self::Target
+    where
+        I: Iterator,
+        J: Iterator,
+        I::Item: Borrow<Self::Lhs>,
+        J::Item: Borrow<Self::Rhs>,
+    {
+        P::multi_pairing(f.map(|x| *x.borrow()), g.map(|x| *x.borrow()))
+    }
+}
+
+impl<P: Pairing> BilinearModule for G1Mod<P> {
+    type Lhs = P::G1;
+    type Rhs = P::ScalarField;
+    type Target = P::G1;
+    type ScalarField = P::ScalarField;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        *a.borrow() * b.borrow()
+    }
+}
+
+impl<P: Pairing> BilinearModule for G2Mod<P> {
+    type Lhs = P::ScalarField;
+    type Rhs = P::G2;
+    type Target = P::G2;
+    type ScalarField = P::ScalarField;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        *b.borrow() * a.borrow()
+    }
+}
+
+impl<P: Pairing> BilinearModule for FMod<P> {
+    type Lhs = P::ScalarField;
+    type Rhs = P::ScalarField;
+    type Target = P::ScalarField;
+    type ScalarField = P::ScalarField;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        *b.borrow() * a.borrow()
     }
 }
 

@@ -403,8 +403,8 @@ fn test_linear_combination() {
 
 #[test]
 fn test_evaluate_index_poly() {
-    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::UniformRand;
+    use ark_test_curves::bls12_381::Fr as F;
 
     let rng = &mut ark_std::test_rng();
     let x = F::rand(rng);

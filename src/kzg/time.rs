@@ -173,10 +173,10 @@ fn test_srs() {
 
 #[test]
 fn test_trivial_commitment() {
-    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
     use ark_std::One;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
     let rng = &mut ark_std::test_rng();
     let ck = CommitterKey::<Bls12_381>::new(10, 3, rng);
@@ -192,10 +192,10 @@ fn test_trivial_commitment() {
 
 #[test]
 fn test_commitment() {
-    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
     use ark_poly::Polynomial;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
 
     let rng = &mut ark_std::test_rng();
     let ck = CommitterKey::<Bls12_381>::new(100, 3, rng);
