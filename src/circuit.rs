@@ -303,7 +303,7 @@ pub fn random_circuit<F: Field>(
 
 #[test]
 fn test_repeated_r1cs() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
 
     use crate::misc::evaluate_be;
     use crate::misc::ip;

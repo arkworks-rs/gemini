@@ -138,7 +138,7 @@ where
 
 #[test]
 fn test_rounds() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_ff::One;
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
@@ -159,7 +159,7 @@ fn test_rounds() {
 
 #[test]
 fn test_trivial_prover() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_ff::One;
     use ark_ff::UniformRand;
     use ark_poly::univariate::DensePolynomial;

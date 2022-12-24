@@ -1,4 +1,4 @@
-use ark_bls12_381::{Bls12_381, Fr as F};
+use ark_test_curves::bls12_381::{Bls12_381, Fr as F};
 use ark_ff::Field;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
@@ -57,7 +57,7 @@ fn test_sumcheck_inputs_consistency() {
     use super::streams::{ProductStream, RightRotationStreamer};
     use crate::iterable::Iterable;
     use crate::iterable::Reverse;
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::UniformRand;
     use ark_std::test_rng;
     use ark_std::vec::Vec;

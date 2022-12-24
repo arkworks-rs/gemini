@@ -1,15 +1,15 @@
 use ark_ec::bls12::Bls12;
 use ark_ec::{pairing::Pairing, AffineRepr};
 use ark_gemini::iterable::dummy::{dummy_r1cs_stream, DummyStreamer};
-use ark_gemini::kzg::{CommitterKeyStream, Commitment};
+use ark_gemini::kzg::{Commitment, CommitterKeyStream};
 use ark_serialize::CanonicalSerialize;
 use ark_std::rand::Rng;
 use ark_std::test_rng;
 use clap::Parser;
 
-type G1 = <Bls12<ark_bls12_381::Parameters> as Pairing>::G1Affine;
-type G2 = <Bls12<ark_bls12_381::Parameters> as Pairing>::G2Affine;
-type Proof = ark_gemini::psnark::Proof<ark_bls12_381::Bls12_381>;
+type G1 = <Bls12<ark_test_curves::bls12_381::Config> as Pairing>::G1Affine;
+type G2 = <Bls12<ark_test_curves::bls12_381::Config> as Pairing>::G2Affine;
+type Proof = ark_gemini::psnark::Proof<ark_test_curves::bls12_381::Bls12_381>;
 
 /// Start a watcher thread that will print the memory (stack+heap) currently allocated at regular intervals.
 /// Informations are going to be printed only with feature "print-trace" enabled, and within a linux system.

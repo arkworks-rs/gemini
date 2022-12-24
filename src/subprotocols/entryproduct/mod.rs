@@ -23,8 +23,8 @@
 //! $$
 //!
 use ark_ec::pairing::Pairing;
-use ark_serialize::*;
 use ark_std::vec::Vec;
+use ark_serialize::*;
 
 use crate::kzg::Commitment;
 use crate::subprotocols::sumcheck::Prover;

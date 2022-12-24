@@ -1,12 +1,12 @@
 //! Common data structures for the prover algorith in the scalar-product sub-argument.
 use ark_ff::Field;
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_serialize::CanonicalSerialize;
 use ark_std::boxed::Box;
 use ark_std::iter::Sum;
 use ark_std::vec::Vec;
 
 /// Each message from the prover in a sumcheck protocol is a pair of FF-elements.
-#[derive(CanonicalSerialize, CanonicalDeserialize, Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(CanonicalSerialize, Copy, Clone, Debug, PartialEq, Eq)]
 pub struct RoundMsg<F: Field>(pub(crate) F, pub(crate) F);
 
 /// Messages sent by the prover throughout the protocol.

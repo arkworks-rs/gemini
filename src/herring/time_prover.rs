@@ -1,14 +1,14 @@
 //!
 //!
 
-use ark_ff::Field;
+use ark_ff::{Field, AdditiveGroup};
 use ark_ff::{One, Zero};
 use ark_std::log2;
 use ark_std::vec::Vec;
 
 use crate::herring::prover::{Prover, SumcheckMsg};
 
-use super::module::{BilinearModule, Module};
+use super::module::BilinearModule;
 
 /// The witness for the Twisted Scalar product relation.
 #[derive(Clone)]
@@ -70,29 +70,10 @@ impl<M: BilinearModule> TimeProver<M> {
 }
 
 #[inline]
-pub(crate) fn split_fold<M: Module>(f: &[M], r: M::ScalarField) -> Vec<M> {
+pub(crate) fn split_fold<M: AdditiveGroup>(f: &[M], r: M::ScalarField) -> Vec<M> {
     f.chunks(2)
         .map(|pair| pair[0] + *pair.get(1).unwrap_or(&M::zero()) * r)
         .collect()
-}
-
-#[inline]
-pub(crate) fn split_fold_into<'a, M: Module>(
-    dst: &mut Vec<M>,
-    f: &[M],
-    challenge: &M::ScalarField,
-) {
-    let folded_len = f.len() / 2;
-    for i in 0..folded_len {
-        dst[i] = f[i * 2] + *f.get(i * 2 + 1).unwrap_or(&M::zero()) * challenge
-    }
-    dst.truncate(folded_len)
-}
-
-#[inline]
-pub(crate) fn halve<'a, M: Module>(dst: &mut Vec<M>) {
-    let folded_len = dst.len() / 2 + dst.len() % 2;
-    dst.truncate(folded_len);
 }
 
 impl<M> Prover<M> for TimeProver<M>

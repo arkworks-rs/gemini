@@ -231,7 +231,7 @@ where
 
 #[test]
 fn test_folded_polynomial() {
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
 
     let two = F::one() + F::one();
@@ -258,7 +258,7 @@ fn test_folded_polynomial() {
 
 #[test]
 fn test_folded_polynomial_tree() {
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
 
     let two = F::one() + F::one();

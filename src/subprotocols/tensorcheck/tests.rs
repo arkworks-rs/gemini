@@ -1,5 +1,4 @@
-use ark_bls12_381::Bls12_381;
-use ark_bls12_381::Fr;
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::DenseUVPolynomial;
 use ark_std::test_rng;

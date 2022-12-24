@@ -7,7 +7,7 @@ use crate::iterable::Reverse;
 
 use crate::kzg::{CommitterKey, CommitterKeyStream};
 use crate::misc::product_matrix_vector;
-use ark_bls12_381::{Bls12_381, Fr};
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_std::test_rng;
 
 #[test]
@@ -132,7 +132,7 @@ fn test_psnark_correctness() {
 
     let circuit = random_circuit(rng, num_constraints, num_variables);
     let r1cs = generate_relation(circuit);
-    let num_non_zero = 3*num_constraints;
+    let num_non_zero = 3 * num_constraints;
 
     let ck = CommitterKey::<Bls12_381>::new(num_non_zero + num_variables + num_constraints, 5, rng);
     let vk = (&ck).into();
@@ -141,7 +141,5 @@ fn test_psnark_correctness() {
 
     let time_proof = Proof::new_time(&ck, &r1cs, &index);
 
-    assert!(time_proof
-        .verify(&r1cs, &vk, &index, num_non_zero)
-        .is_ok())
+    assert!(time_proof.verify(&r1cs, &vk, &index, num_non_zero).is_ok())
 }

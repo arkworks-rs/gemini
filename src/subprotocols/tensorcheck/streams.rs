@@ -247,7 +247,7 @@ impl_lincomb_iter!(
 
 #[test]
 fn test_lincomb() {
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::Zero;
 

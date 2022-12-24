@@ -40,10 +40,10 @@
 //!
 use ark_ec::pairing::Pairing;
 use ark_ff::Field;
-use ark_serialize::*;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 use ark_std::One;
+use ark_serialize::*;
 
 use merlin::Transcript;
 
@@ -386,7 +386,7 @@ impl<E: Pairing> TensorcheckProof<E> {
 }
 #[test]
 fn test_foldings_polynomial() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_ff::One;
     let polynomial = [Fr::from(100), Fr::from(101), Fr::from(102), Fr::from(103)];
     let challenges = [Fr::one(), Fr::one()];

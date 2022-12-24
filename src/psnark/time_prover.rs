@@ -46,7 +46,6 @@ fn accproduct3<F: Field>(v: &[Vec<F>; 3]) -> Vec<Vec<F>> {
 }
 
 impl<E: Pairing> Proof<E> {
-
     pub fn index(ck: &CommitterKey<E>, r1cs: &R1cs<E::ScalarField>) -> Index<E> {
         let num_constraints = r1cs.a.len();
         let num_variables = r1cs.z.len();
@@ -67,7 +66,11 @@ impl<E: Pairing> Proof<E> {
     /// Given as input the R1CS instance `r1cs`
     /// and the committer key `ck`,
     /// return a new _preprocessing_ SNARK using the elastic prover.
-    pub fn new_time(ck: &CommitterKey<E>, r1cs: &R1cs<E::ScalarField>, index: &Index<E>) -> Proof<E> {
+    pub fn new_time(
+        ck: &CommitterKey<E>,
+        r1cs: &R1cs<E::ScalarField>,
+        index: &Index<E>,
+    ) -> Proof<E> {
         let z_a = product_matrix_vector(&r1cs.a, &r1cs.z);
         let z_b = product_matrix_vector(&r1cs.b, &r1cs.z);
         let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);

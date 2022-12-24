@@ -249,7 +249,7 @@ fn test_dummy_streamer() {
 
 #[test]
 fn test_dummy_matrix_streamer() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_ff::One;
     type F = Fr;
 

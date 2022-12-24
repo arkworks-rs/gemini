@@ -1,10 +1,10 @@
+use ark_ff::AdditiveGroup;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 
 use crate::iterable::Iterable;
 use crate::misc::ceil_div;
 
-use super::module::Module;
 
 /// A `Streamer` folding a vector of coefficients
 /// with the given challenges, and producing a stream of items
@@ -14,7 +14,7 @@ use super::module::Module;
 pub struct FoldedPolynomialTree<'a, F, S>
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
     challenges: &'a [F::ScalarField],
@@ -24,7 +24,7 @@ where
 impl<'a, F, S> FoldedPolynomialTree<'a, F, S>
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
     /// Initialize a new polynomial tree.
@@ -45,7 +45,7 @@ where
 impl<'a, F, S> Iterable for FoldedPolynomialTree<'a, F, S>
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
     type Item = (usize, F);
@@ -69,7 +69,7 @@ where
 pub struct FoldedPolynomialTreeIter<'a, F, I>
 where
     I: Iterator,
-    F: Module,
+    F: AdditiveGroup,
     I::Item: Borrow<F>,
 {
     challenges: &'a [F::ScalarField],
@@ -77,7 +77,7 @@ where
     stack: Vec<(usize, F)>,
 }
 
-fn init_stack<F: Module>(n: usize, challenges_len: usize) -> Vec<(usize, F)> {
+fn init_stack<F: AdditiveGroup>(n: usize, challenges_len: usize) -> Vec<(usize, F)> {
     let mut stack = Vec::with_capacity(challenges_len);
 
     // generally we expect the size to be a power of two.
@@ -97,7 +97,7 @@ fn init_stack<F: Module>(n: usize, challenges_len: usize) -> Vec<(usize, F)> {
 
 impl<'a, F, I> FoldedPolynomialTreeIter<'a, F, I>
 where
-    F: Module,
+    F: AdditiveGroup,
     I: Iterator,
     I::Item: Borrow<F>,
 {
@@ -114,7 +114,7 @@ where
 
 impl<'a, F, I> Iterator for FoldedPolynomialTreeIter<'a, F, I>
 where
-    F: Module,
+    F: AdditiveGroup,
     I: Iterator,
     I::Item: Borrow<F>,
 {
@@ -154,13 +154,13 @@ where
 pub struct FoldedPolynomialStream<'a, F, S>(FoldedPolynomialTree<'a, F, S>, usize)
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>;
 /// Iterator implementation of foleded polynomial.
 pub struct FoldedPolynomialStreamIter<'a, F, I>
 where
     I: Iterator,
-    F: Module,
+    F: AdditiveGroup,
     I::Item: Borrow<F>,
 {
     challenges: &'a [F::ScalarField],
@@ -171,7 +171,7 @@ where
 impl<'a, F, S> FoldedPolynomialStream<'a, F, S>
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
     /// Initialize a new folded polynomial stream.
@@ -185,7 +185,7 @@ where
 impl<'a, F, S> Iterable for FoldedPolynomialStream<'a, F, S>
 where
     S: Iterable,
-    F: Module,
+    F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
     type Item = F;
@@ -209,7 +209,7 @@ where
 
 impl<'a, F, I> Iterator for FoldedPolynomialStreamIter<'a, F, I>
 where
-    F: Module,
+    F: AdditiveGroup,
     I: Iterator,
     I::Item: Borrow<F>,
 {

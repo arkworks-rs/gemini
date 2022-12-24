@@ -37,21 +37,22 @@ name = "verifier_bench"
 
 [patch.crates-io]
 ark-std = {git = "https://github.com/arkworks-rs/utils"}
-ark-ec = {git = "https://github.com/arkworks-rs/algebra"}
-ark-ff = {git = "https://github.com/arkworks-rs/algebra"}
-ark-serialize = {git = "https://github.com/arkworks-rs/algebra"}
-ark-serialize-derive = {git = "https://github.com/arkworks-rs/algebra"}
-ark-poly = {git = "https://github.com/arkworks-rs/algebra"}
+ark-ec = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
+ark-ff = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
+ark-test-curves = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
+ark-serialize = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
+ark-serialize-derive = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
+ark-poly = {git = "https://github.com/mmaker/algebra", branch = "feature/additive-groups"}
 ark-bls12-381 = {git = "https://github.com/arkworks-rs/curves"}
 ark-relations = {git = "https://github.com/arkworks-rs/snark"}
 
 [dependencies]
-ark-bls12-381 = "0.3.0"
+#ark-bls12-381 = "0.3.0"
 ark-ec = "0.3.0"
 ark-ff = "0.3.0"
 ark-poly = "0.3.0"
 ark-relations = "0.3.0"
-ark-serialize = "0.3.0"
+ark-serialize = {version = "^0.3.0", features = ["derive"]}
 ark-std ="0.3.0"
 hashbrown = "0.12.0"
 log = "0.4.16"
@@ -59,13 +60,15 @@ log = "0.4.16"
 merlin = "3.0.0"
 rand = "0.8.5"
 rayon = {version = "1.5", optional = true}
+ark-test-curves = {version = "^0.3.0", features = ["bls12_381_curve"]}
+
 
 [target.x86_64-unknown-linux-gnu.dependencies]
 procinfo = "0.4.2"
 libc = "0.2.117"
 
 [dev-dependencies]
-ark-bls12-381 = {version = "^0.3.0", default-features = false, features = ["curve"]}
+#ark-bls12-381 = {version = "^0.3.0", default-features = false, features = ["curve"]}
 clap = {version = "3.1.6", features = ["derive"]}
 criterion = {version = "0.3.4", features = ["html_reports"]}
 env_logger = "0.8.3"

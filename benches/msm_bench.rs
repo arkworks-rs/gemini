@@ -12,7 +12,7 @@ use criterion::{BenchmarkId, Criterion};
 // use curve25519_dalek::scalar::Scalar;
 // use curve25519_dalek::traits::MultiscalarMul;
 
-use ark_bls12_381::G1Projective;
+use ark_test_curves::bls12_381::{Fr, G1Projective};
 
 fn bench_msm(c: &mut Criterion) {
     let rng = &mut test_rng();
@@ -21,10 +21,10 @@ fn bench_msm(c: &mut Criterion) {
     for d in 12..17 {
         let size = 1 << d;
         let scalars = (0..size)
-            .map(|_| ark_bls12_381::Fr::rand(rng))
+            .map(|_| Fr::rand(rng))
             .collect::<Vec<_>>();
         let bases = (0..size)
-            .map(|_| ark_bls12_381::G1Projective::rand(rng).into_affine())
+            .map(|_| G1Projective::rand(rng).into_affine())
             .collect::<Vec<_>>();
 
         group

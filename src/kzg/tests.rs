@@ -1,4 +1,4 @@
-use ark_bls12_381::{Bls12_381, Fr};
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_poly::univariate::DensePolynomial;
 use ark_poly::DenseUVPolynomial;
 use ark_std::test_rng;
@@ -29,7 +29,7 @@ fn test_commitment_consistency() {
 
 #[test]
 fn test_srs() {
-    use ark_bls12_381::Bls12_381;
+    use ark_test_curves::bls12_381::Bls12_381;
 
     let rng = &mut ark_std::test_rng();
     let time_ck = CommitterKey::<Bls12_381>::new(10, 3, rng);

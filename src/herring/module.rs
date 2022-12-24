@@ -1,40 +1,22 @@
-use ark_bls12_381::{Bls12_381, Fr};
+use core::marker::PhantomData;
+
+use ark_test_curves::bls12_381::{Bls12_381, Fr};
 use ark_ec::pairing::Pairing;
 use ark_ec::pairing::PairingOutput;
-use ark_ec::Group;
+use ark_ec::PrimeGroup;
 use ark_ff::Field;
-use ark_ff::Zero;
-use ark_serialize::*;
+use ark_ff::AdditiveGroup;
 use ark_std::borrow::Borrow;
-use ark_std::iter::Sum;
-use ark_std::ops::{Add, AddAssign, Mul, Sub};
 
-pub(crate) use ark_bls12_381::G1Projective as G1;
-pub(crate) use ark_bls12_381::G2Projective as G2;
-pub(crate) type Gt = PairingOutput<ark_bls12_381::Bls12_381>;
+pub(crate) use ark_test_curves::bls12_381::G1Projective as G1;
+pub(crate) use ark_test_curves::bls12_381::G2Projective as G2;
+pub(crate) type Gt = PairingOutput<ark_test_curves::bls12_381::Bls12_381>;
 
-pub trait Module:
-    Send
-    + Sync
-    + CanonicalSerialize
-    + Clone
-    + Eq
-    + Copy
-    + Zero
-    + Add<Self, Output = Self>
-    + Sub<Self, Output = Self>
-    + Mul<Self::ScalarField, Output = Self>
-    + for<'a> Mul<&'a Self::ScalarField, Output = Self>
-    + AddAssign<Self>
-    + Sum<Self>
-{
-    type ScalarField: Field;
-}
 
 pub trait BilinearModule: Send + Sync {
-    type Lhs: Module<ScalarField = Self::ScalarField>;
-    type Rhs: Module<ScalarField = Self::ScalarField>;
-    type Target: Module<ScalarField = Self::ScalarField>;
+    type Lhs: AdditiveGroup<ScalarField = Self::ScalarField>;
+    type Rhs: AdditiveGroup<ScalarField = Self::ScalarField>;
+    type Target: AdditiveGroup<ScalarField = Self::ScalarField>;
     type ScalarField: Field;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target;
@@ -50,82 +32,30 @@ pub trait BilinearModule: Send + Sync {
     }
 }
 
-#[derive(CanonicalSerialize, PartialEq, Eq, Clone, Copy)]
-pub(crate) struct FrWrapper(pub Fr);
-
-impl<G: Group> Module for G {
-    type ScalarField = G::ScalarField;
-}
-
-impl From<Fr> for FrWrapper {
-    fn from(e: Fr) -> Self {
-        Self(e)
-    }
-}
-
-impl<FF> Mul<FF> for FrWrapper
-where
-    FF: Borrow<Fr>,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: FF) -> Self::Output {
-        (self.0 * rhs.borrow()).into()
-    }
-}
-
-impl AddAssign for FrWrapper {
-    fn add_assign(&mut self, rhs: Self) {
-        self.0 += rhs.0
-    }
-}
-
-impl Add for FrWrapper {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        (self.0 + rhs.0).into()
-    }
-}
-
-impl Sum for FrWrapper {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        iter.reduce(|accum, item| accum + item)
-            .unwrap_or_else(Self::zero)
-    }
-}
-
-impl Zero for FrWrapper {
-    fn zero() -> Self {
-        Fr::zero().into()
-    }
-
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-
-impl Sub for FrWrapper {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        Self(self.0 - rhs.0)
-    }
-}
-
-impl Module for FrWrapper {
-    type ScalarField = Fr;
-}
 
 pub(crate) struct GtModule {}
 
 impl BilinearModule for GtModule {
     type Lhs = Gt;
-    type Rhs = FrWrapper;
+    type Rhs = Fr;
     type Target = Gt;
-    type ScalarField = ark_bls12_381::Fr;
+    type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        *a.borrow() * b.borrow().0
+        *a.borrow() * b.borrow()
+    }
+}
+
+pub(crate) struct GtMod<P: Pairing> {_pairing: PhantomData<P>}
+
+impl<P: Pairing> BilinearModule for GtMod<P> {
+    type Lhs = PairingOutput<P>;
+    type Rhs = P::ScalarField;
+    type Target = PairingOutput<P>;
+    type ScalarField = P::ScalarField;
+
+    fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
+        *a.borrow() * b.borrow()
     }
 }
 
@@ -156,12 +86,12 @@ pub(crate) struct G1Module {}
 
 impl BilinearModule for G1Module {
     type Lhs = G1;
-    type Rhs = FrWrapper;
+    type Rhs = Fr;
     type Target = Gt;
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(a.borrow(), G2::generator() * b.borrow().0).into()
+        Bls12_381::pairing(a.borrow(), G2::generator() * b.borrow()).into()
     }
 }
 
@@ -169,28 +99,24 @@ pub(crate) struct G2Module {}
 
 impl BilinearModule for G2Module {
     type Lhs = G2;
-    type Rhs = FrWrapper;
+    type Rhs = Fr;
     type Target = Gt;
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(G1::generator() * b.borrow().0, a.borrow()).into()
+        Bls12_381::pairing(G1::generator() * b.borrow(), a.borrow()).into()
     }
 }
 
 pub(crate) struct FFModule {}
 
 impl BilinearModule for FFModule {
-    type Lhs = FrWrapper;
-    type Rhs = FrWrapper;
+    type Lhs = Fr;
+    type Rhs = Fr;
     type Target = Gt;
     type ScalarField = Fr;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
-        Bls12_381::pairing(
-            G1::generator() * a.borrow().0 * b.borrow().0,
-            G2::generator(),
-        )
-        .into()
+        Gt::generator() * (a.borrow() * b.borrow())
     }
 }

@@ -462,7 +462,7 @@ where
 #[test]
 fn test_joint_val() {
     use crate::iterable::dummy::Mat;
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
 
     let a = [
         MatrixElement::EOL,
@@ -497,7 +497,7 @@ fn test_joint_val() {
 
 #[test]
 fn test_matrix() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_std::test_rng;
 
     use crate::circuit::{

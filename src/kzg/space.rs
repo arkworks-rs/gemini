@@ -49,7 +49,7 @@ where
             .take(step)
             .map(|s| *s.borrow())
             .collect::<Vec<_>>();
-        result += G::msm(bases_step.as_slice(), scalars_step.as_slice());
+        result += G::msm(bases_step.as_slice(), scalars_step.as_slice()).unwrap();
     }
     result
 }
@@ -322,7 +322,7 @@ where
 fn test_open_multi_points() {
     use crate::ark_std::UniformRand;
     use crate::misc::evaluate_be;
-    use ark_bls12_381::{Bls12_381, Fr};
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_ff::Field;
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;

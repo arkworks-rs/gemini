@@ -380,7 +380,7 @@ pub fn evaluate_index_poly<F: Field>(x: F, n: usize) -> F {
 
 #[test]
 fn test_linear_combination() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
 
     let polynomials = [
         vec![Fr::from(100), Fr::from(101), Fr::from(102), Fr::from(103)],
@@ -403,7 +403,7 @@ fn test_linear_combination() {
 
 #[test]
 fn test_evaluate_index_poly() {
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::UniformRand;
 
     let rng = &mut ark_std::test_rng();

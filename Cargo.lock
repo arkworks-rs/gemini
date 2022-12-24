@@ -34,20 +34,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "ark-bls12-381"
-version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/curves#99831650f8021cb6a16481bac674420bc6c1a5a1"
-dependencies = [
- "ark-ec",
- "ark-ff",
- "ark-serialize",
- "ark-std",
-]
-
-[[package]]
 name = "ark-ec"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "ark-ff",
  "ark-poly",
@@ -64,7 +53,7 @@ dependencies = [
 [[package]]
 name = "ark-ff"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "ark-ff-asm",
  "ark-ff-macros",
@@ -84,7 +73,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-asm"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "quote",
  "syn",
@@ -93,7 +82,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-macros"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "num-bigint",
  "num-traits",
@@ -106,13 +95,13 @@ dependencies = [
 name = "ark-gemini"
 version = "0.0.1"
 dependencies = [
- "ark-bls12-381",
  "ark-ec",
  "ark-ff",
  "ark-poly",
  "ark-relations",
  "ark-serialize",
  "ark-std",
+ "ark-test-curves",
  "clap 3.2.23",
  "criterion",
  "env_logger",
@@ -129,7 +118,7 @@ dependencies = [
 [[package]]
 name = "ark-poly"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -154,17 +143,18 @@ dependencies = [
 [[package]]
 name = "ark-serialize"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "ark-serialize-derive",
  "ark-std",
  "digest",
+ "num-bigint",
 ]
 
 [[package]]
 name = "ark-serialize-derive"
 version = "0.3.0"
-source = "git+https://github.com/arkworks-rs/algebra#e062140351e7775d30c8b0167fbef048fcd4535e"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -180,6 +170,16 @@ dependencies = [
  "num-traits",
  "rand",
  "rayon",
+]
+
+[[package]]
+name = "ark-test-curves"
+version = "0.3.0"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#aad4e22796ed015dd9f230a85b9932cda3d946af"
+dependencies = [
+ "ark-ec",
+ "ark-ff",
+ "ark-std",
 ]
 
 [[package]]
@@ -1229,6 +1229,11 @@ dependencies = [
  "syn",
  "synstructure",
 ]
+
+[[patch.unused]]
+name = "ark-bls12-381"
+version = "0.3.0"
+source = "git+https://github.com/arkworks-rs/curves#99831650f8021cb6a16481bac674420bc6c1a5a1"
 
 [[patch.unused]]
 name = "ark-relations"

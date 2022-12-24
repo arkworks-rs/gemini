@@ -48,9 +48,9 @@
 //! This package is licensed under MIT license.
 //!
 
-#![feature(iter_advance_by)]
+#![feature(iter_advance_by, int_roundings)]
 #![no_std]
-#![deny(unused_comparisons, bare_trait_objects, unused_must_use, const_err)]
+#![deny(unused_comparisons, bare_trait_objects, unused_must_use)]
 // #![forbid(unsafe_code)]
 #![deny(trivial_numeric_casts)]
 #![deny(private_in_public)]

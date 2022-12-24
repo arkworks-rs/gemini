@@ -84,7 +84,7 @@ where
 
 #[test]
 fn test_hadamard_stream() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_std::test_rng;
     use ark_std::vec::Vec;
     use ark_std::UniformRand;

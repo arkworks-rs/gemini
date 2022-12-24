@@ -14,18 +14,15 @@ mod streams;
 mod tests;
 
 use ark_ec::pairing::Pairing;
-use ark_serialize::*;
 use ark_std::vec::Vec;
 
 use crate::kzg::{Commitment, EvaluationProof};
 use crate::subprotocols::entryproduct;
 use crate::subprotocols::sumcheck::prover::ProverMsgs;
 use crate::subprotocols::tensorcheck::TensorcheckProof;
-
-
+use ark_serialize::*;
 
 pub type Index<E> = Vec<Commitment<E>>;
-
 
 /// The preprocessing SNARK proof, containing all prover messages.
 #[derive(CanonicalSerialize, PartialEq, Eq)]

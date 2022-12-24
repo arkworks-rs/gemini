@@ -79,7 +79,7 @@ impl<E: Pairing> CommitterKey<E> {
 
     /// Given a polynomial `polynomial` of degree less than `max_degree`, return a commitment to `polynomial`.
     pub fn commit(&self, polynomial: &[E::ScalarField]) -> Commitment<E> {
-        Commitment(E::G1::msm(&self.powers_of_g, polynomial))
+        Commitment(E::G1::msm_unchecked(&self.powers_of_g, polynomial))
     }
 
     /// Obtain a new preprocessed committer key defined by the indices `indices`.
@@ -126,7 +126,7 @@ impl<E: Pairing> CommitterKey<E> {
         let (&evaluation, quotient) = quotient
             .split_first()
             .unwrap_or((&E::ScalarField::zero(), &[]));
-        let evaluation_proof = E::G1::msm(&self.powers_of_g, quotient);
+        let evaluation_proof = E::G1::msm_unchecked(&self.powers_of_g, quotient);
         (evaluation, EvaluationProof(evaluation_proof))
     }
 
@@ -161,7 +161,7 @@ impl<E: Pairing> CommitterKey<E> {
 
 #[test]
 fn test_srs() {
-    use ark_bls12_381::Bls12_381;
+    use ark_test_curves::bls12_381::Bls12_381;
 
     let rng = &mut ark_std::test_rng();
     let ck = CommitterKey::<Bls12_381>::new(10, 3, rng);
@@ -173,8 +173,7 @@ fn test_srs() {
 
 #[test]
 fn test_trivial_commitment() {
-    use ark_bls12_381::Bls12_381;
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
     use ark_std::One;
@@ -193,8 +192,7 @@ fn test_trivial_commitment() {
 
 #[test]
 fn test_commitment() {
-    use ark_bls12_381::Bls12_381;
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
     use ark_poly::univariate::DensePolynomial;
     use ark_poly::DenseUVPolynomial;
     use ark_poly::Polynomial;

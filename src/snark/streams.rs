@@ -105,7 +105,7 @@ where
 #[test]
 fn test_matrix_tensor_stream() {
     use crate::iterable::dummy::DiagonalMatrixStreamer;
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
     use ark_std::UniformRand;
@@ -136,7 +136,7 @@ fn test_matrix_tensor_stream() {
 #[test]
 fn test_matrix_tensor_len() {
     use crate::iterable::dummy::DiagonalMatrixStreamer;
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::One;
     use ark_std::test_rng;
     use ark_std::UniformRand;
@@ -175,7 +175,7 @@ fn test_matrix_tensor_len() {
 
 #[test]
 fn test_matrix_tensor() {
-    use ark_bls12_381::Fr;
+    use ark_test_curves::bls12_381::Fr;
     use ark_ff::{One, Zero};
     use ark_std::test_rng;
     use ark_std::vec::Vec;

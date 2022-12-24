@@ -160,7 +160,7 @@ impl<E: Pairing> VerifierKey<E> {
         proof: &EvaluationProof<E>,
     ) -> VerificationResult {
         let scalars = [-alpha, E::ScalarField::one()];
-        let ep = E::G2::msm(&self.powers_of_g2, &scalars);
+        let ep = E::G2::msm_unchecked(&self.powers_of_g2, &scalars);
         let lhs = commitment.0 - self.powers_of_g[0] * evaluation;
         let g2 = self.powers_of_g2[0];
 
@@ -187,7 +187,7 @@ impl<E: Pairing> VerifierKey<E> {
     ) -> VerificationResult {
         // Computing the vanishing polynomial over eval_points
         let zeros = vanishing_polynomial(eval_points);
-        let zeros = E::G2::msm(&self.powers_of_g2, &zeros.coeffs());
+        let zeros = E::G2::msm_unchecked(&self.powers_of_g2, &zeros.coeffs());
 
         // Computing the inverse for the interpolation
         let mut sca_inverse = Vec::new();
@@ -226,14 +226,14 @@ impl<E: Pairing> VerifierKey<E> {
             .collect::<Vec<_>>();
         let i_poly = linear_combination(&interpolated_polynomials[..], &etas);
 
-        let i_comm = E::G1::msm(&self.powers_of_g, &i_poly);
+        let i_comm = E::G1::msm_unchecked(&self.powers_of_g, &i_poly);
 
         // Gathering commitments
         let comm_vec = commitments
             .iter()
             .map(|x| x.0.into_affine())
             .collect::<Vec<_>>();
-        let f_comm = E::G1::msm(&comm_vec, &etas);
+        let f_comm = E::G1::msm(&comm_vec, &etas).unwrap();
         let g2 = self.powers_of_g2[0];
 
         if E::pairing(f_comm - i_comm, g2) == E::pairing(proof.0, zeros) {
@@ -270,7 +270,7 @@ fn vanishing_polynomial<F: Field>(points: &[F]) -> DensePolynomial<F> {
 #[test]
 fn test_vanishing_polynomial() {
     use crate::misc::evaluate_le;
-    use ark_bls12_381::Fr as F;
+    use ark_test_curves::bls12_381::Fr as F;
     use ark_ff::Zero;
 
     let points = [F::from(10), F::from(5), F::from(13)];
