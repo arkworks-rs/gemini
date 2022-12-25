@@ -18,6 +18,10 @@ impl<E: Pairing> Proof<E> {
     /// of polynomial commitment.
     pub fn verify(&self, r1cs: &R1cs<E::ScalarField>, vk: &VerifierKey<E>) -> VerificationResult {
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
+        // transcript.append_serializable(b"r1cs-a", &r1cs.a);
+        // transcript.append_serializable(b"r1cs-b", &r1cs.b);
+        // transcript.append_serializable(b"r1cs-c", &r1cs.c);
+
         let witness_commitment = self.witness_commitment;
 
         transcript.append_serializable(b"witness", &witness_commitment);

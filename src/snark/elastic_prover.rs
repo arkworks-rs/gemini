@@ -200,6 +200,10 @@ impl<E: Pairing> Proof<E> {
         );
 
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
+        // transcript.append_serializable(b"r1cs-a", &r1cs.id);
+        // transcript.append_serializable(b"r1cs-b", &r1cs.id);
+        // transcript.append_serializable(b"r1cs-c", &r1cs.id);
+
         // send the vector w
         let witness_commitment_time = start_timer!(|| "Commitment to w");
         let witness_commitment = ck.commit(&r1cs.witness);

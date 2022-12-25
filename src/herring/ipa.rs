@@ -1,5 +1,6 @@
 use core::borrow::Borrow;
 use core::iter::Take;
+use core::marker::PhantomData;
 
 use ark_ec::pairing::PairingOutput;
 use ark_ec::scalar_mul::variable_base::ChunkedPippenger;
@@ -22,7 +23,6 @@ use ark_ec::CurveGroup;
 use ark_ec::{pairing::Pairing, PrimeGroup, VariableBaseMSM};
 use ark_ff::{Field, Zero};
 use ark_std::UniformRand;
-use ark_test_curves::bls12_381::Fr;
 use rand::Rng;
 
 fn po_from_g1<P: Pairing>(p: &P::G1) -> PairingOutput<P> {
@@ -69,30 +69,33 @@ pub struct Vrs<P: Pairing> {
     vk2: Vec<(PairingOutput<P>, PairingOutput<P>)>,
 }
 
-pub struct CrsStream<S1, S2>
+pub struct CrsStream<P, S1, S2>
 where
+P: Pairing,
     S1: Iterable,
-    S1::Item: Borrow<G1>,
+    S1::Item: Borrow<P::G1>,
     S2: Iterable,
-    S2::Item: Borrow<G2>,
+    S2::Item: Borrow<P::G2>,
 {
     g1s: S1,
     g2s: S2,
+    _pairing: PhantomData<P>,
 }
 
-impl<'a, S1, S2> CrsStream<S1, S2>
+impl<'a, P, S1, S2> CrsStream<P, S1, S2>
 where
+    P: Pairing,
     S1: Iterable + Copy,
-    S1::Item: Borrow<G1>,
+    S1::Item: Borrow<P::G1>,
     S2: Iterable + Copy,
-    S2::Item: Borrow<G2>,
+    S2::Item: Borrow<P::G2>,
 {
-    pub fn commit_g1<SF>(&self, scalars: SF) -> G1
+    pub fn commit_g1<SF>(&self, scalars: SF) -> P::G1
     where
         SF: Iterable,
-        SF::Item: Borrow<Fr>,
+        SF::Item: Borrow<P::ScalarField>,
     {
-        let mut pippenger = ChunkedPippenger::<G1>::new(1 << 22);
+        let mut pippenger = ChunkedPippenger::<P::G1>::new(1 << 22);
         self.g1s
             .iter()
             .zip(scalars.iter())
@@ -100,12 +103,12 @@ where
         pippenger.finalize()
     }
 
-    pub fn commit_g2<SF>(&self, scalars: SF) -> G2
+    pub fn commit_g2<SF>(&self, scalars: SF) -> P::G2
     where
         SF: Iterable,
-        SF::Item: Borrow<Fr>,
+        SF::Item: Borrow<P::ScalarField>,
     {
-        let mut pippenger = ChunkedPippenger::<G2>::new(1 << 22);
+        let mut pippenger = ChunkedPippenger::<P::G2>::new(1 << 22);
         self.g2s
             .iter()
             .zip(scalars.iter())
@@ -113,16 +116,16 @@ where
         pippenger.finalize()
     }
 
-    pub fn truncate(&mut self, rounds: usize) -> CrsStream<TruncateStream<S1>, TruncateStream<S2>> {
+    pub fn truncate(&mut self, rounds: usize) -> CrsStream<P, TruncateStream<S1>, TruncateStream<S2>> {
         let g1s = TruncateStream::new(self.g1s, 1 << rounds);
         let g2s = TruncateStream::new(self.g2s, 1 << rounds);
-        CrsStream { g1s, g2s }
+        CrsStream { g1s, g2s, _pairing: PhantomData }
     }
 
-    pub fn halve(&mut self) -> CrsStream<TruncateStream<S1>, TruncateStream<S2>> {
+    pub fn halve(&mut self) -> CrsStream<P, TruncateStream<S1>, TruncateStream<S2>> {
         let g1s = TruncateStream::new(self.g1s, self.g1s.len().div_ceil(2));
         let g2s = TruncateStream::new(self.g2s, self.g2s.len().div_ceil(2));
-        CrsStream { g1s, g2s }
+        CrsStream { g1s, g2s, _pairing: PhantomData }
     }
 
     // pub fn fold(&mut self, challenge: &Fr) -> CrsStream<FoldedPolynomialStream<Fr, S1>, FoldedPolynomialStream<Fr, S2>> {
@@ -365,9 +368,10 @@ impl<P: Pairing> InnerProductProof<P> {
         let msg_fg1 = prover_fg1.next_message(verifier_message).unwrap();
         println!("g2 fold");
         let msg_fg2 = prover_fg2.next_message(verifier_message).unwrap();
+        println!("batching");
         let prover_message = scalarfieldsm_to_posm(msg_ff)
-            + g1sm_to_posm(msg_fg1) * &batch_challenge
-            + g2sm_to_posm(msg_fg2) * &batch_challenge.square();
+            + g1sm_to_posm(msg_fg1 * &batch_challenge)
+            + g2sm_to_posm(msg_fg2 * &batch_challenge.square());
         transcript.append_serializable(b"prover_message", &prover_message);
         messages.push(prover_message);
 
@@ -480,14 +484,13 @@ impl<P: Pairing> InnerProductProof<P> {
 
 #[test]
 fn test_correctness() {
-    use ark_test_curves::bls12_381::Fr as FF;
-    use ark_test_curves::bls12_381::Bls12_381;
-    let d = 1 << 10 + 2;
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
+    let d = 1 << 9 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
     let crs = Crs::<Bls12_381>::new(rng, d * 2);
-    let a = (0..d).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
-    let b = (0..d).map(|_| FF::rand(rng).into()).collect::<Vec<_>>();
+    let a = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
     let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
     let comm_a = crs.commit_g1(&a);

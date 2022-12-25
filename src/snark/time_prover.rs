@@ -34,6 +34,10 @@ impl<E: Pairing> Proof<E> {
         let z_c = product_matrix_vector(&r1cs.c, &r1cs.z);
 
         let mut transcript = merlin::Transcript::new(PROTOCOL_NAME);
+        // transcript.append_serializable(b"r1cs-a", &r1cs.a);
+        // transcript.append_serializable(b"r1cs-b", &r1cs.b);
+        // transcript.append_serializable(b"r1cs-c", &r1cs.c);
+
         let witness_commitment_time = start_timer!(|| "Commitment to w");
         let witness_commitment = ck.commit(&r1cs.w);
         end_timer!(witness_commitment_time);

@@ -60,8 +60,6 @@ log = "0.4.16"
 merlin = "3.0.0"
 rand = "0.8.5"
 rayon = {version = "1.5", optional = true}
-ark-test-curves = {version = "^0.3.0", features = ["bls12_381_curve"]}
-
 
 [target.x86_64-unknown-linux-gnu.dependencies]
 procinfo = "0.4.2"
@@ -73,12 +71,8 @@ clap = {version = "3.1.6", features = ["derive"]}
 criterion = {version = "0.3.4", features = ["html_reports"]}
 env_logger = "0.8.3"
 rand_core = "0.5"
+ark-test-curves = {version = "^0.3.0", features = ["bls12_381_curve", "ed_on_bls12_381"]}
 
-# de-comment when this library does not depend on a specific EC.
-# [dev-dependencies.ark-test-curves]
-# default-features = false
-# features = ["bls12_381_scalar_field", "bls12_381_curve"]
-# version = "^0.3.0"
 
 [features]
 default = ["asm", "parallel", "std"]
