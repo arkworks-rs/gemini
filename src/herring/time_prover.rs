@@ -12,7 +12,7 @@ use super::module::BilinearModule;
 
 /// The witness for the Twisted Scalar product relation.
 #[derive(Clone)]
-pub(crate) struct Witness<M: BilinearModule> {
+pub struct Witness<M: BilinearModule> {
     /// The left hand side
     f: Vec<M::Lhs>,
     /// The right-hand side

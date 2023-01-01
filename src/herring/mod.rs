@@ -31,5 +31,7 @@ pub use subclaim::Subclaim;
 pub use time_prover::TimeProver;
 pub mod module;
 
+pub mod snark;
+
 #[cfg(test)]
 mod tests;

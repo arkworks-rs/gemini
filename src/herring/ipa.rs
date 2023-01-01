@@ -18,6 +18,7 @@ use crate::herring::prover::Prover;
 use crate::herring::prover::SumcheckMsg;
 use crate::herring::time_prover::Witness;
 use crate::herring::TimeProver;
+use crate::misc::powers;
 use crate::transcript::GeminiTranscript;
 use ark_ec::CurveGroup;
 use ark_ec::{pairing::Pairing, PrimeGroup, VariableBaseMSM};
@@ -51,7 +52,7 @@ fn g2sm_to_posm<P: Pairing>(sm: SumcheckMsg<P::G2>) -> SumcheckMsg<PairingOutput
 }
 
 pub struct InnerProductProof<P: Pairing> {
-    sumcheck: Sumcheck<PMod<P>>,
+    sumcheck: Sumcheck<PModule<P>>,
     batch_challenges: Vec<P::ScalarField>,
     foldings_ff: Vec<(P::ScalarField, P::ScalarField)>,
     foldings_fg1: Vec<(P::G1, P::ScalarField)>,
@@ -71,7 +72,7 @@ pub struct Vrs<P: Pairing> {
 
 pub struct CrsStream<P, S1, S2>
 where
-P: Pairing,
+    P: Pairing,
     S1: Iterable,
     S1::Item: Borrow<P::G1>,
     S2: Iterable,
@@ -116,16 +117,27 @@ where
         pippenger.finalize()
     }
 
-    pub fn truncate(&mut self, rounds: usize) -> CrsStream<P, TruncateStream<S1>, TruncateStream<S2>> {
+    pub fn truncate(
+        &mut self,
+        rounds: usize,
+    ) -> CrsStream<P, TruncateStream<S1>, TruncateStream<S2>> {
         let g1s = TruncateStream::new(self.g1s, 1 << rounds);
         let g2s = TruncateStream::new(self.g2s, 1 << rounds);
-        CrsStream { g1s, g2s, _pairing: PhantomData }
+        CrsStream {
+            g1s,
+            g2s,
+            _pairing: PhantomData,
+        }
     }
 
     pub fn halve(&mut self) -> CrsStream<P, TruncateStream<S1>, TruncateStream<S2>> {
         let g1s = TruncateStream::new(self.g1s, self.g1s.len().div_ceil(2));
         let g2s = TruncateStream::new(self.g2s, self.g2s.len().div_ceil(2));
-        CrsStream { g1s, g2s, _pairing: PhantomData }
+        CrsStream {
+            g1s,
+            g2s,
+            _pairing: PhantomData,
+        }
     }
 
     // pub fn fold(&mut self, challenge: &Fr) -> CrsStream<FoldedPolynomialStream<Fr, S1>, FoldedPolynomialStream<Fr, S2>> {
@@ -210,20 +222,20 @@ impl<'a, P: Pairing> From<&'a Crs<P>> for Vrs<P> {
         for j in 1..log2(crs.g1s.len()) {
             let size = 1 << j;
 
-            let g1es = PMod::<P>::ip(
+            let g1es = PModule::<P>::ip(
                 crs.g1s.iter().step_by(2).take(size),
                 crs.g2s.iter().take(size),
             );
-            let g1os = PMod::<P>::ip(
+            let g1os = PModule::<P>::ip(
                 crs.g1s.iter().skip(1).step_by(2).take(size),
                 crs.g2s.iter().take(size),
             );
 
-            let g2es = PMod::<P>::ip(
+            let g2es = PModule::<P>::ip(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().step_by(2).take(size),
             );
-            let g2os = PMod::<P>::ip(
+            let g2os = PModule::<P>::ip(
                 crs.g1s.iter().take(size),
                 crs.g2s.iter().skip(1).step_by(2).take(size),
             );
@@ -271,10 +283,10 @@ impl<P: Pairing> InnerProductProof<P> {
         g1s.push(PairingOutput::<P>::zero());
         g2s.push(PairingOutput::<P>::zero());
 
-        let claim_ff = po_from_scalarfield(&FMod::<P>::p(y, P::ScalarField::one()));
-        let claim_fg1 = PMod::<P>::p(comm_a, P::G2::generator());
-        let claim_fg2 = PMod::<P>::p(P::G1::generator(), comm_b);
-        let mut reduced_claim = GtMod::<P>::ip(
+        let claim_ff = po_from_scalarfield(&FModule::<P>::p(y, P::ScalarField::one()));
+        let claim_fg1 = PModule::<P>::p(comm_a, P::G2::generator());
+        let claim_fg2 = PModule::<P>::p(P::G1::generator(), comm_b);
+        let mut reduced_claim = GtModule::<P>::ip(
             (&[claim_ff, claim_fg1, claim_fg2]).iter(),
             (&self.batch_challenges[..3]).iter(),
         );
@@ -302,12 +314,15 @@ impl<P: Pairing> InnerProductProof<P> {
         reduced_claim = a + b * challenge + c * challenge.square();
 
         let mut final_foldings = vec![
-            po_from_scalarfield(&FMod::<P>::p(self.foldings_ff[0].0, self.foldings_ff[0].1)),
-            po_from_g1(&G1Mod::<P>::p(
+            po_from_scalarfield(&FModule::<P>::p(
+                self.foldings_ff[0].0,
+                self.foldings_ff[0].1,
+            )),
+            po_from_g1(&G1Module::<P>::p(
                 self.foldings_fg1[0].0,
                 self.foldings_fg1[0].1,
             )),
-            po_from_g2(&G2Mod::<P>::p(
+            po_from_g2(&G2Module::<P>::p(
                 self.foldings_fg2[0].0,
                 self.foldings_fg2[0].1,
             )),
@@ -316,11 +331,11 @@ impl<P: Pairing> InnerProductProof<P> {
             self.sumcheck
                 .final_foldings
                 .iter()
-                .map(|&(lhs, rhs)| PMod::<P>::p(lhs, rhs)),
+                .map(|&(lhs, rhs)| PModule::<P>::p(lhs, rhs)),
         );
 
         assert_eq!(self.batch_challenges.len(), final_foldings.len());
-        let expected = GtMod::<P>::ip(final_foldings.iter(), self.batch_challenges.iter());
+        let expected = GtModule::<P>::ip(final_foldings.iter(), self.batch_challenges.iter());
 
         if reduced_claim == expected {
             Ok(())
@@ -329,15 +344,199 @@ impl<P: Pairing> InnerProductProof<P> {
         }
     }
 
+
+    pub(crate) fn generic(
+        transcript: &mut Transcript,
+        crs: &Crs<P>,
+        f_ip: Vec<Witness<FModule<P>>>,
+        g1_ip: Vec<Witness<G1Module<P>>>,
+        g2_ip: Vec<Witness<G2Module<P>>>,
+    ) -> Self {
+        println!("starting");
+        // the full transcript will hold a set of messages, challenges, and batch challenges.
+        let mut messages = Vec::new();
+        let mut challenges = Vec::new();
+        // prover for the claim <a, b>
+        let mut provers_ff = f_ip
+            .into_iter()
+            .map(|witness| TimeProver::new(witness))
+            .collect::<Vec<TimeProver<FModule<P>>>>();
+        // prover for the claim <a, G1>
+        let mut provers_fg1 = g1_ip
+            .into_iter()
+            .map(|witness| TimeProver::new(witness))
+            .collect::<Vec<TimeProver<G1Module<P>>>>();
+        // prover for the claim <b, G2>
+        let mut provers_fg2 = g2_ip
+            .into_iter()
+            .map(|witness| TimeProver::new(witness))
+            .collect::<Vec<TimeProver<G2Module<P>>>>();
+
+        // the first verifier message is empty
+        let mut verifier_message = None;
+
+        // next_message for all above provers (batched)
+        let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
+        let batch_challenges = powers(batch_challenge, provers_ff.len() + provers_fg1.len() + provers_fg2.len());
+        let mut i = 0;
+
+        let mut prover_messages_ff = Vec::new();
+        for prover_ff in &mut provers_ff {
+            let message = prover_ff.next_message(verifier_message).unwrap();
+            prover_messages_ff.push(message * &batch_challenges[i]);
+            i += 1;
+        }
+        let mut prover_message = scalarfieldsm_to_posm(prover_messages_ff.into_iter().sum());
+        let mut prover_messages_g1 = Vec::new();
+        for prover_g1 in &mut provers_fg1 {
+            let message = prover_g1.next_message(verifier_message).unwrap();
+            prover_messages_g1.push(message * &batch_challenges[i]);
+            i += 1;
+        }
+        prover_message = prover_message + g1sm_to_posm(prover_messages_g1.into_iter().sum());
+        let mut prover_messages_g2 = Vec::new();
+        for prover_g2 in &mut provers_fg2 {
+            let message = prover_g2.next_message(verifier_message).unwrap();
+            prover_messages_g2.push(message * &batch_challenges[i]);
+            i += 1;
+        }
+        prover_message = prover_message + g2sm_to_posm(prover_messages_g2.into_iter().sum());
+        transcript.append_serializable(b"prover_message", &prover_message);
+        messages.push(prover_message);
+
+        let ff_rounds = provers_ff.iter().map(|x| x.rounds());
+        let g1_rounds = provers_fg1.iter().map(|x| x.rounds());
+        let g2_rounds = provers_fg2.iter().map(|x| x.rounds());
+        let rounds = ff_rounds
+            .chain(g1_rounds)
+            .chain(g2_rounds)
+            .reduce(usize::max)
+            .unwrap_or(0);
+
+        // start the recursive step: create a vector of provers, and a vector of folded crs's
+        let mut crs_chop = crs.clone().truncate(rounds);
+
+        let mut provers_gg: Vec<TimeProver<_>> = Vec::new();
+        for _ in 0..rounds - 1 {
+            println!("round");
+
+            // step 2a; the verifier sends round and batch challenge
+            let challenge = transcript.get_challenge(b"sumcheck-chal");
+            verifier_message = Some(challenge);
+            let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
+            challenges.push(challenge);
+            println!("{}", batch_challenge);
+            let mut batch_challenges = vec![P::ScalarField::one()];
+            batch_challenges.push(batch_challenge.into());
+            batch_challenges.push(batch_challenge.square().into());
+
+            // step 2b: the prover computes folding of g1's and of g2
+            let crs_fold = crs_chop.clone().fold(&challenge);
+            crs_chop = crs_chop.halve();
+
+            // create a prover for the new folded claims in g1
+            let witness_g1: Witness<PModule<P>> =
+                Witness::new(&crs_fold.g1s, &crs_chop.g2s, &P::ScalarField::one());
+            let mut prover_g1fold = TimeProver::new(witness_g1);
+            // .. and in g2
+            let witness_g2: Witness<PModule<P>> =
+                Witness::new(&crs_chop.g1s, &crs_fold.g2s, &P::ScalarField::one());
+            let mut prover_g2fold = TimeProver::new(witness_g2);
+
+            // batch the sumcheck messages from all provers obtained thus far
+            let ff_messages = provers_ff
+                .iter_mut()
+                .map(|prover| prover.next_message(verifier_message).unwrap())
+                .collect::<Vec<_>>();
+            let fg1_messages = provers_fg1
+                .iter_mut()
+                .map(|prover| prover.next_message(verifier_message).unwrap())
+                .collect::<Vec<_>>();
+            let fg2_messages = provers_fg2
+                .iter_mut()
+                .map(|prover| prover.next_message(verifier_message).unwrap())
+                .collect::<Vec<_>>();
+
+            let g1fold_message = prover_g1fold.next_message(None);
+            let g2fold_message = prover_g2fold.next_message(None);
+
+            let gg_messages = provers_gg
+                .iter_mut()
+                .map(|prover| prover.next_message(verifier_message).unwrap())
+                .collect::<Vec<_>>();
+
+            provers_gg.push(prover_g1fold);
+            provers_gg.push(prover_g2fold);
+
+            let prover_messages = ff_messages
+                .into_iter()
+                .map(|x| scalarfieldsm_to_posm(x))
+                .chain(fg1_messages.into_iter().map(|x| g1sm_to_posm(x)))
+                .chain(fg2_messages.into_iter().map(|x| g2sm_to_posm(x)))
+                .chain(gg_messages.into_iter());
+            let round_message = prover_messages.sum::<SumcheckMsg<PairingOutput<P>>>()
+                + g1fold_message.unwrap() * &batch_challenges[1]
+                + g2fold_message.unwrap() * &batch_challenges[2];
+
+            transcript.append_serializable(b"sumcheck-round", &round_message);
+            messages.push(round_message);
+        }
+
+        let challenge = transcript.get_challenge(b"sumcheck-chal");
+        challenges.push(challenge);
+
+        let final_foldings = provers_gg
+            .iter_mut()
+            .map(|p| {
+                p.fold(challenge);
+                p.final_foldings().unwrap()
+            })
+            .collect();
+        let sumcheck = Sumcheck {
+            messages,
+            challenges,
+            rounds,
+            final_foldings,
+        };
+
+        // add messages from the initial provers
+        let foldings_ff = provers_ff
+            .iter_mut()
+            .map(|prover| {
+                prover.fold(challenge);
+                prover.final_foldings().unwrap()
+            })
+            .collect();
+        let foldings_fg1 = provers_fg1
+            .iter_mut()
+            .map(|prover| {
+                prover.fold(challenge);
+                prover.final_foldings().unwrap()
+            })
+            .collect();
+        let foldings_fg2 = provers_fg2
+            .iter_mut()
+            .map(|prover| {
+                prover.fold(challenge);
+                prover.final_foldings().unwrap()
+            })
+            .collect();
+        InnerProductProof {
+            sumcheck,
+            batch_challenges,
+            foldings_ff,
+            foldings_fg1,
+            foldings_fg2,
+        }
+    }
+
     pub fn new(
         transcript: &mut Transcript,
         crs: &Crs<P>,
-        a: &[P::ScalarField],
-        b: &[P::ScalarField],
+        scalar_ip: (&[P::ScalarField], &[P::ScalarField]),
     ) -> Self {
         println!("starting");
-        // let a = a.into_iter().map(|&x| FrWrapper(x)).collect::<Vec<_>>();
-        // let b = b.into_iter().map(|&x| FrWrapper(x)).collect::<Vec<_>>();
+        let (a, b) = scalar_ip;
 
         // the full transcript will hold a set of messages, challenges, and batch challenges.
         let mut messages = Vec::new();
@@ -345,13 +544,13 @@ impl<P: Pairing> InnerProductProof<P> {
         let mut batch_challenges = Vec::new();
 
         // prover for the claim <a, b>
-        let witness_ff: Witness<FMod<P>> = Witness::new(&a, &b, &P::ScalarField::one());
+        let witness_ff: Witness<FModule<P>> = Witness::new(&a, &b, &P::ScalarField::one());
         let mut prover_ff = TimeProver::new(witness_ff);
         // prover for the claim <a, G1>
-        let witness_fg1: Witness<G1Mod<P>> = Witness::new(&crs.g1s, &a, &P::ScalarField::one());
+        let witness_fg1: Witness<G1Module<P>> = Witness::new(&crs.g1s, &a, &P::ScalarField::one());
         let mut prover_fg1 = TimeProver::new(witness_fg1);
         // prover for the claim <b, G2>
-        let witness_fg2: Witness<G2Mod<P>> = Witness::new(&b, &crs.g2s, &P::ScalarField::one());
+        let witness_fg2: Witness<G2Module<P>> = Witness::new(&b, &crs.g2s, &P::ScalarField::one());
         let mut prover_fg2 = TimeProver::new(witness_fg2);
 
         // the first verifier message is empty
@@ -385,12 +584,12 @@ impl<P: Pairing> InnerProductProof<P> {
         let mut provers_gg: Vec<TimeProver<_>> = Vec::new();
         for _ in 0..rounds - 1 {
             println!("round");
-
             // step 2a; the verifier sends round and batch challenge
             let challenge = transcript.get_challenge(b"sumcheck-chal");
             verifier_message = Some(challenge);
             let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
             challenges.push(challenge);
+            println!("{}", batch_challenge);
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
@@ -399,11 +598,11 @@ impl<P: Pairing> InnerProductProof<P> {
             crs_chop = crs_chop.halve();
 
             // create a prover for the new folded claims in g1
-            let witness_g1: Witness<PMod<P>> =
+            let witness_g1: Witness<PModule<P>> =
                 Witness::new(&crs_fold.g1s, &crs_chop.g2s, &P::ScalarField::one());
             let mut prover_g1fold = TimeProver::new(witness_g1);
             // .. and in g2
-            let witness_g2: Witness<PMod<P>> =
+            let witness_g2: Witness<PModule<P>> =
                 Witness::new(&crs_chop.g1s, &crs_fold.g2s, &P::ScalarField::one());
             let mut prover_g2fold = TimeProver::new(witness_g2);
 
@@ -459,19 +658,14 @@ impl<P: Pairing> InnerProductProof<P> {
             rounds,
             final_foldings,
         };
+        prover_ff.fold(challenge);
+        prover_fg1.fold(challenge);
+        prover_fg2.fold(challenge);
+
         // add messages from the initial provers
-        let foldings_ff = vec![{
-            prover_ff.fold(challenge);
-            prover_ff.final_foldings().unwrap()
-        }];
-        let foldings_fg1 = vec![{
-            prover_fg1.fold(challenge);
-            prover_fg1.final_foldings().unwrap()
-        }];
-        let foldings_fg2 = vec![{
-            prover_fg2.fold(challenge);
-            prover_fg2.final_foldings().unwrap()
-        }];
+        let foldings_ff = vec![prover_ff.final_foldings().unwrap()];
+        let foldings_fg1 = vec![prover_fg1.final_foldings().unwrap()];
+        let foldings_fg2 = vec![prover_fg2.final_foldings().unwrap()];
         InnerProductProof {
             sumcheck,
             batch_challenges,
@@ -492,11 +686,31 @@ fn test_correctness() {
     let a = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let b = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
-    let ipa = InnerProductProof::new(&mut transcript, &crs, &a, &b);
+    let ipa = InnerProductProof::new(&mut transcript, &crs, (&a, &b));
     let comm_a = crs.commit_g1(&a);
     let comm_b = crs.commit_g2(&b);
     let y = crate::misc::ip(&a, &b);
 
     let verification = ipa.verify_transcript(&vrs, comm_a, comm_b, y);
     assert!(verification.is_ok())
+}
+
+
+#[test]
+fn test_consistent_batch() {
+    use ark_test_curves::bls12_381::{Bls12_381, Fr};
+    let d = 1 << 9 + 2;
+    let rng = &mut rand::thread_rng();
+    let mut transcript1 = Transcript::new(b"gemini-tests");
+    let mut transcript2 = Transcript::new(b"gemini-tests");
+    let crs = Crs::<Bls12_381>::new(rng, d * 2);
+    let a = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
+    let b = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
+    let f_ip = Witness::<FModule<Bls12_381>>::new(&a, &b, &Fr::one());
+    let g1_ip = Witness::<G1Module<Bls12_381>>::new( &crs.g1s, &a, &Fr::one());
+    let g2_ip = Witness::<G2Module<Bls12_381>>::new(&b, &crs.g2s, &Fr::one());
+    let generic_ipa = InnerProductProof::generic(&mut transcript1, &crs, vec![f_ip], vec![g1_ip], vec![g2_ip]);
+    let normal_ipa = InnerProductProof::new(&mut transcript2, &crs, (&a, &b));
+
+    assert_eq!(generic_ipa.sumcheck.challenges, normal_ipa.sumcheck.challenges)
 }

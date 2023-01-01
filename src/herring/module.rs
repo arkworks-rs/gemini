@@ -2,11 +2,11 @@ use core::marker::PhantomData;
 
 use ark_ec::pairing::Pairing;
 use ark_ec::pairing::PairingOutput;
+use ark_ec::VariableBaseMSM;
 use ark_ff::AdditiveGroup;
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
-use ark_ec::VariableBaseMSM;
 
 pub trait BilinearModule: Send + Sync {
     type Lhs: AdditiveGroup<ScalarField = Self::ScalarField>;
@@ -27,27 +27,26 @@ pub trait BilinearModule: Send + Sync {
     }
 }
 
-
-pub(crate) struct GtMod<P: Pairing> {
+pub(crate) struct GtModule<P: Pairing> {
     _pairing: PhantomData<P>,
 }
-pub(crate) struct G1Mod<P: Pairing> {
-    _pairing: PhantomData<P>,
-}
-
-pub(crate) struct G2Mod<P: Pairing> {
+pub(crate) struct G1Module<P: Pairing> {
     _pairing: PhantomData<P>,
 }
 
-pub(crate) struct FMod<P: Pairing> {
+pub(crate) struct G2Module<P: Pairing> {
     _pairing: PhantomData<P>,
 }
 
-pub(crate) struct PMod<P: Pairing> {
+pub(crate) struct FModule<P: Pairing> {
     _pairing: PhantomData<P>,
 }
 
-impl<P: Pairing> BilinearModule for GtMod<P> {
+pub(crate) struct PModule<P: Pairing> {
+    _pairing: PhantomData<P>,
+}
+
+impl<P: Pairing> BilinearModule for GtModule<P> {
     type Lhs = PairingOutput<P>;
     type Rhs = P::ScalarField;
     type Target = PairingOutput<P>;
@@ -58,7 +57,7 @@ impl<P: Pairing> BilinearModule for GtMod<P> {
     }
 }
 
-impl<P: Pairing> BilinearModule for PMod<P> {
+impl<P: Pairing> BilinearModule for PModule<P> {
     type Lhs = P::G1;
     type Rhs = P::G2;
     type Target = PairingOutput<P>;
@@ -79,7 +78,7 @@ impl<P: Pairing> BilinearModule for PMod<P> {
     }
 }
 
-impl<P: Pairing> BilinearModule for G1Mod<P> {
+impl<P: Pairing> BilinearModule for G1Module<P> {
     type Lhs = P::G1;
     type Rhs = P::ScalarField;
     type Target = P::G1;
@@ -100,11 +99,9 @@ impl<P: Pairing> BilinearModule for G1Mod<P> {
         let bases = f.map(|x| (*x.borrow()).into()).collect::<Vec<_>>();
         P::G1::msm_unchecked(&bases, &scalars)
     }
-
-
 }
 
-impl<P: Pairing> BilinearModule for G2Mod<P> {
+impl<P: Pairing> BilinearModule for G2Module<P> {
     type Lhs = P::ScalarField;
     type Rhs = P::G2;
     type Target = P::G2;
@@ -127,7 +124,7 @@ impl<P: Pairing> BilinearModule for G2Mod<P> {
     }
 }
 
-impl<P: Pairing> BilinearModule for FMod<P> {
+impl<P: Pairing> BilinearModule for FModule<P> {
     type Lhs = P::ScalarField;
     type Rhs = P::ScalarField;
     type Target = P::ScalarField;
