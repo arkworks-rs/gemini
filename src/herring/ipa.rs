@@ -377,7 +377,7 @@ impl<P: Pairing> InnerProductProof<P> {
 
         // next_message for all above provers (batched)
         let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
-        let batch_challenges = powers(batch_challenge, provers_ff.len() + provers_fg1.len() + provers_fg2.len());
+        let mut batch_challenges = powers(batch_challenge, provers_ff.len() + provers_fg1.len() + provers_fg2.len());
         let mut i = 0;
 
         let mut prover_messages_ff = Vec::new();
@@ -426,7 +426,6 @@ impl<P: Pairing> InnerProductProof<P> {
             let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
             challenges.push(challenge);
             println!("{}", batch_challenge);
-            let mut batch_challenges = vec![P::ScalarField::one()];
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
@@ -473,11 +472,10 @@ impl<P: Pairing> InnerProductProof<P> {
                 .map(|x| scalarfieldsm_to_posm(x))
                 .chain(fg1_messages.into_iter().map(|x| g1sm_to_posm(x)))
                 .chain(fg2_messages.into_iter().map(|x| g2sm_to_posm(x)))
-                .chain(gg_messages.into_iter());
-            let round_message = prover_messages.sum::<SumcheckMsg<PairingOutput<P>>>()
-                + g1fold_message.unwrap() * &batch_challenges[1]
-                + g2fold_message.unwrap() * &batch_challenges[2];
-
+                .chain(gg_messages.into_iter())
+                .chain(g1fold_message)
+                .chain(g2fold_message);
+            let round_message = prover_messages.zip(batch_challenges.iter()).map(|(x, y)| x*y).sum();
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
         }
