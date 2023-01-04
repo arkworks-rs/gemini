@@ -45,7 +45,7 @@
 //!
 //! ```
 //! use ark_gemini::kzg::CommitterKey;
-//! use ark_bls12_381::{Fr, Bls12_381};
+//! use ark_test_curves::bls12_381::{Fr, Bls12_381};
 //!
 //! let rng = &mut ark_std::test_rng();
 //! let max_degree = 100;
