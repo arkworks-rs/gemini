@@ -425,7 +425,6 @@ impl<P: Pairing> InnerProductProof<P> {
             verifier_message = Some(challenge);
             let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
             challenges.push(challenge);
-            println!("{}", batch_challenge);
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
@@ -533,7 +532,6 @@ impl<P: Pairing> InnerProductProof<P> {
         crs: &Crs<P>,
         scalar_ip: (&[P::ScalarField], &[P::ScalarField]),
     ) -> Self {
-        println!("starting");
         let (a, b) = scalar_ip;
 
         // the full transcript will hold a set of messages, challenges, and batch challenges.
@@ -565,7 +563,6 @@ impl<P: Pairing> InnerProductProof<P> {
         let msg_fg1 = prover_fg1.next_message(verifier_message).unwrap();
         println!("g2 fold");
         let msg_fg2 = prover_fg2.next_message(verifier_message).unwrap();
-        println!("batching");
         let prover_message = scalarfieldsm_to_posm(msg_ff)
             + g1sm_to_posm(msg_fg1 * &batch_challenge)
             + g2sm_to_posm(msg_fg2 * &batch_challenge.square());
@@ -581,19 +578,20 @@ impl<P: Pairing> InnerProductProof<P> {
 
         let mut provers_gg: Vec<TimeProver<_>> = Vec::new();
         for _ in 0..rounds - 1 {
-            println!("round");
+            let round_timer = start_timer!(|| "round_timer");
             // step 2a; the verifier sends round and batch challenge
             let challenge = transcript.get_challenge(b"sumcheck-chal");
             verifier_message = Some(challenge);
             let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
             challenges.push(challenge);
-            println!("{}", batch_challenge);
             batch_challenges.push(batch_challenge.into());
             batch_challenges.push(batch_challenge.square().into());
 
             // step 2b: the prover computes folding of g1's and of g2
+            let fold_crs_timer = start_timer!(|| "fold_crs_timer");
             let crs_fold = crs_chop.clone().fold(&challenge);
             crs_chop = crs_chop.halve();
+            end_timer!(fold_crs_timer);
 
             // create a prover for the new folded claims in g1
             let witness_g1: Witness<PModule<P>> =
@@ -609,6 +607,7 @@ impl<P: Pairing> InnerProductProof<P> {
             let fg1_message = prover_fg1.next_message(verifier_message);
             let fg2_message = prover_fg2.next_message(verifier_message);
 
+            let ggfold_timer = start_timer!(|| "group_elements_sumcheck_timer");
             let g1fold_message = prover_g1fold.next_message(None);
             let g2fold_message = prover_g2fold.next_message(None);
 
@@ -616,6 +615,8 @@ impl<P: Pairing> InnerProductProof<P> {
                 .iter_mut()
                 .map(|prover| prover.next_message(verifier_message).unwrap())
                 .collect::<Vec<_>>();
+            end_timer!(ggfold_timer);
+
 
             assert!(ff_message.is_some());
             assert!(fg1_message.is_some());
@@ -638,6 +639,7 @@ impl<P: Pairing> InnerProductProof<P> {
 
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
+            end_timer!(round_timer);
         }
 
         let challenge = transcript.get_challenge(b"sumcheck-chal");
@@ -676,11 +678,14 @@ impl<P: Pairing> InnerProductProof<P> {
 
 #[test]
 fn test_correctness() {
+
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
     let d = 1 << 9 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
+    let crs_time = start_timer!(|| "crs_time");
     let crs = Crs::<Bls12_381>::new(rng, d * 2);
+    end_timer!(crs_time);
     let a = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let b = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let vrs = Vrs::from(&crs);
@@ -697,6 +702,7 @@ fn test_correctness() {
 #[test]
 fn test_consistent_batch() {
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
+    println!("hello");
     let d = 1 << 9 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript1 = Transcript::new(b"gemini-tests");
