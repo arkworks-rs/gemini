@@ -19,6 +19,7 @@ use crate::herring::prover::SumcheckMsg;
 use crate::herring::time_prover::Witness;
 use crate::herring::TimeProver;
 use crate::misc::powers;
+use crate::subprotocols::sumcheck;
 use crate::transcript::GeminiTranscript;
 use ark_ec::CurveGroup;
 use ark_ec::{pairing::Pairing, PrimeGroup, VariableBaseMSM};
@@ -201,16 +202,14 @@ impl<P: Pairing> Crs<P> {
     }
 
     pub fn fold(mut self, challenge: &P::ScalarField) -> Self {
-        let folded_len = self.g1s.len() / 2 + self.g1s.len() % 2;
+        let folded_len = self.g1s.len().div_ceil(2);
         for i in 0..folded_len {
             self.g1s[i] =
                 self.g1s[i * 2] + *self.g1s.get(i * 2 + 1).unwrap_or(&P::G1::zero()) * challenge;
             self.g2s[i] =
                 self.g2s[i * 2] + *self.g2s.get(i * 2 + 1).unwrap_or(&P::G2::zero()) * challenge;
         }
-        self.g1s.truncate(folded_len);
-        self.g2s.truncate(folded_len);
-        self
+        self.halve()
     }
 }
 
@@ -344,7 +343,6 @@ impl<P: Pairing> InnerProductProof<P> {
         }
     }
 
-
     pub(crate) fn generic(
         transcript: &mut Transcript,
         crs: &Crs<P>,
@@ -377,7 +375,10 @@ impl<P: Pairing> InnerProductProof<P> {
 
         // next_message for all above provers (batched)
         let batch_challenge = transcript.get_challenge::<P::ScalarField>(b"batch-chal");
-        let mut batch_challenges = powers(batch_challenge, provers_ff.len() + provers_fg1.len() + provers_fg2.len());
+        let mut batch_challenges = powers(
+            batch_challenge,
+            provers_ff.len() + provers_fg1.len() + provers_fg2.len(),
+        );
         let mut i = 0;
 
         let mut prover_messages_ff = Vec::new();
@@ -474,7 +475,10 @@ impl<P: Pairing> InnerProductProof<P> {
                 .chain(gg_messages.into_iter())
                 .chain(g1fold_message)
                 .chain(g2fold_message);
-            let round_message = prover_messages.zip(batch_challenges.iter()).map(|(x, y)| x*y).sum();
+            let round_message = prover_messages
+                .zip(batch_challenges.iter())
+                .map(|(x, y)| x * y)
+                .sum();
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
         }
@@ -532,6 +536,7 @@ impl<P: Pairing> InnerProductProof<P> {
         crs: &Crs<P>,
         scalar_ip: (&[P::ScalarField], &[P::ScalarField]),
     ) -> Self {
+        let ipa_timer = start_timer!(|| "InnerProductArg::new");
         let (a, b) = scalar_ip;
 
         // the full transcript will hold a set of messages, challenges, and batch challenges.
@@ -593,6 +598,7 @@ impl<P: Pairing> InnerProductProof<P> {
             crs_chop = crs_chop.halve();
             end_timer!(fold_crs_timer);
 
+            let sumcheck_timer = start_timer!(|| "sumcheck_timer");
             // create a prover for the new folded claims in g1
             let witness_g1: Witness<PModule<P>> =
                 Witness::new(&crs_fold.g1s, &crs_chop.g2s, &P::ScalarField::one());
@@ -616,7 +622,7 @@ impl<P: Pairing> InnerProductProof<P> {
                 .map(|prover| prover.next_message(verifier_message).unwrap())
                 .collect::<Vec<_>>();
             end_timer!(ggfold_timer);
-
+            end_timer!(sumcheck_timer);
 
             assert!(ff_message.is_some());
             assert!(fg1_message.is_some());
@@ -627,6 +633,7 @@ impl<P: Pairing> InnerProductProof<P> {
             provers_gg.push(prover_g1fold);
             provers_gg.push(prover_g2fold);
 
+            let timer_prover_message = start_timer!(|| "prover_message_timer");
             let prover_messages = ff_message
                 .into_iter()
                 .map(|x| scalarfieldsm_to_posm(x))
@@ -636,6 +643,7 @@ impl<P: Pairing> InnerProductProof<P> {
                 .chain(g1fold_message)
                 .chain(g2fold_message);
             let round_message = SumcheckMsg::ip(prover_messages, batch_challenges.iter().cloned());
+            end_timer!(timer_prover_message);
 
             transcript.append_serializable(b"sumcheck-round", &round_message);
             messages.push(round_message);
@@ -666,6 +674,8 @@ impl<P: Pairing> InnerProductProof<P> {
         let foldings_ff = vec![prover_ff.final_foldings().unwrap()];
         let foldings_fg1 = vec![prover_fg1.final_foldings().unwrap()];
         let foldings_fg2 = vec![prover_fg2.final_foldings().unwrap()];
+
+        end_timer!(ipa_timer);
         InnerProductProof {
             sumcheck,
             batch_challenges,
@@ -678,7 +688,6 @@ impl<P: Pairing> InnerProductProof<P> {
 
 #[test]
 fn test_correctness() {
-
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
     let d = 1 << 9 + 2;
     let rng = &mut rand::thread_rng();
@@ -698,12 +707,11 @@ fn test_correctness() {
     assert!(verification.is_ok())
 }
 
-
 #[test]
 fn test_consistent_batch() {
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
     println!("hello");
-    let d = 1 << 9 + 2;
+    let d = 1 << 10 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript1 = Transcript::new(b"gemini-tests");
     let mut transcript2 = Transcript::new(b"gemini-tests");
@@ -711,10 +719,14 @@ fn test_consistent_batch() {
     let a = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let b = (0..d).map(|_| Fr::rand(rng).into()).collect::<Vec<_>>();
     let f_ip = Witness::<FModule<Bls12_381>>::new(&a, &b, &Fr::one());
-    let g1_ip = Witness::<G1Module<Bls12_381>>::new( &crs.g1s, &a, &Fr::one());
+    let g1_ip = Witness::<G1Module<Bls12_381>>::new(&crs.g1s, &a, &Fr::one());
     let g2_ip = Witness::<G2Module<Bls12_381>>::new(&b, &crs.g2s, &Fr::one());
-    let generic_ipa = InnerProductProof::generic(&mut transcript1, &crs, vec![f_ip], vec![g1_ip], vec![g2_ip]);
+    let generic_ipa =
+        InnerProductProof::generic(&mut transcript1, &crs, vec![f_ip], vec![g1_ip], vec![g2_ip]);
     let normal_ipa = InnerProductProof::new(&mut transcript2, &crs, (&a, &b));
 
-    assert_eq!(generic_ipa.sumcheck.challenges, normal_ipa.sumcheck.challenges)
+    assert_eq!(
+        generic_ipa.sumcheck.challenges,
+        normal_ipa.sumcheck.challenges
+    )
 }

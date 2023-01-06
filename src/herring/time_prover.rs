@@ -107,28 +107,16 @@ where
         }
 
         // Compute the polynomial of the partial sum q = a + bx + c x2,
-        // For the evaluations, send only the coefficients a, b of the polynomial .
-        let mut a = M::Target::zero();
-        let mut b = M::Target::zero();
-        let twist2 = self.twist.square();
-        let lhs_zero = M::Lhs::zero();
-        let rhs_zero = M::Rhs::zero();
+        // For the evaluations, send only the coefficients a, b of the polynomial q.
+        let f_even = self.f.iter().step_by(2);
+        let g_even = self.g.iter().step_by(2);
 
-        let mut twist_runner = M::ScalarField::one();
-        for (f_pair, g_pair) in self.f.chunks(2).zip(self.g.chunks(2)) {
-            // The even part of the polynomial must always be unwrapped.
-            let f_even = f_pair[0];
-            let g_even = g_pair[0];
+        let a = M::ip(f_even, g_even);
 
-            // For the right part, we might obtain zero if the degree is not a multiple of 2.
-            let f_odd = f_pair.get(1).unwrap_or(&lhs_zero);
-            let g_odd = g_pair.get(1).unwrap_or(&rhs_zero);
+        let (f_even, f_odd) = (self.f.iter().step_by(2), self.f.iter().skip(1).step_by(2));
+        let (g_even, g_odd) = (self.g.iter().step_by(2), self.g.iter().skip(1).step_by(2));
+        let b = M::ip(f_even, g_odd) + M::ip(f_odd, g_even);
 
-            // Add to the partial sum
-            a += M::p(f_even, g_even * twist_runner);
-            b += (M::p(f_even, *g_odd) + M::p(*f_odd * self.twist, g_even)) * twist_runner;
-            twist_runner *= twist2;
-        }
         // Increment the round counter
         self.round += 1;
 

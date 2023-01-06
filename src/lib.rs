@@ -48,7 +48,13 @@
 //! This package is licensed under MIT license.
 //!
 
-#![feature(iter_advance_by, int_roundings, slice_as_chunks, array_chunks)]
+#![feature(
+    iter_advance_by,
+    iter_next_chunk,
+    int_roundings,
+    slice_as_chunks,
+    array_chunks
+)]
 #![no_std]
 #![deny(unused_comparisons, bare_trait_objects, unused_must_use)]
 // #![forbid(unsafe_code)]

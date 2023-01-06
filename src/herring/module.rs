@@ -133,4 +133,14 @@ impl<P: Pairing> BilinearModule for FModule<P> {
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target {
         *b.borrow() * a.borrow()
     }
+
+    fn ip<I, J>(f: I, g: J) -> Self::Target
+    where
+        I: Iterator,
+        J: Iterator,
+        I::Item: Borrow<Self::Lhs>,
+        J::Item: Borrow<Self::Rhs>,
+    {
+        crate::misc::ip_unsafe(f, g)
+    }
 }

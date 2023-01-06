@@ -2,6 +2,7 @@ use ark_ff::Field;
 use ark_poly::{univariate::DensePolynomial, DenseUVPolynomial};
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
+use ark_std::Zero;
 
 use crate::circuit::Matrix;
 use ark_std::collections::{BTreeMap, BTreeSet};
@@ -239,10 +240,30 @@ where
     I::Item: Borrow<F>,
     J::Item: Borrow<F>,
 {
-    lhs.into_iter()
-        .zip(rhs)
-        .map(|(x, y)| *x.borrow() * y.borrow())
-        .sum()
+    let mut res = P::ScalarField::zero();
+    let mut f = f.map(|x| *x.borrow());
+    let mut g = g.map(|x| *x.borrow());
+    let mut done = false;
+    while !done {
+        let f_buf = f.next_chunk::<64>();
+        let g_buf = g.next_chunk::<64>();
+        match (f_buf, g_buf) {
+            (Ok(f_buf), Ok(g_buf)) => res += P::ScalarField::sum_of_products(&f_buf, &g_buf),
+            (Ok(g), Err(f)) | (Err(f), Ok(g)) => {
+                for (f, g) in f.into_iter().zip(g) {
+                    res += f * g;
+                }
+                done = true;
+            }
+            (Err(f), Err(g)) => {
+                for (f, g) in f.into_iter().zip(g) {
+                    res += f * g;
+                }
+                done = true
+            }
+        }
+    }
+    res
 }
 
 #[inline]
