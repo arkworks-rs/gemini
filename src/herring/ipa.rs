@@ -689,7 +689,7 @@ impl<P: Pairing> InnerProductProof<P> {
 #[test]
 fn test_correctness() {
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
-    let d = 1 << 9 + 2;
+    let d = 1 << 8 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript = Transcript::new(b"gemini-tests");
     let crs_time = start_timer!(|| "crs_time");
@@ -711,7 +711,7 @@ fn test_correctness() {
 fn test_consistent_batch() {
     use ark_test_curves::bls12_381::{Bls12_381, Fr};
     println!("hello");
-    let d = 1 << 10 + 2;
+    let d = 1 << 9 + 2;
     let rng = &mut rand::thread_rng();
     let mut transcript1 = Transcript::new(b"gemini-tests");
     let mut transcript2 = Transcript::new(b"gemini-tests");

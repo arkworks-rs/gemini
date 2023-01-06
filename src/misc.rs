@@ -233,22 +233,22 @@ where
 
 /// Return the inner product of two iterators `lhs` and `rhs`,
 /// assuming that the elements have the same length.
-pub(crate) fn ip_unsafe<F: Field, I, J>(lhs: I, rhs: J) -> F
+pub(crate) fn ip_unsafe<F: Field, I, J>(f: I, g: J) -> F
 where
     I: IntoIterator,
     J: IntoIterator,
     I::Item: Borrow<F>,
     J::Item: Borrow<F>,
 {
-    let mut res = P::ScalarField::zero();
-    let mut f = f.map(|x| *x.borrow());
-    let mut g = g.map(|x| *x.borrow());
+    let mut res = F::zero();
+    let mut f = f.into_iter().map(|x| *x.borrow());
+    let mut g = g.into_iter().map(|x| *x.borrow());
     let mut done = false;
     while !done {
         let f_buf = f.next_chunk::<64>();
         let g_buf = g.next_chunk::<64>();
         match (f_buf, g_buf) {
-            (Ok(f_buf), Ok(g_buf)) => res += P::ScalarField::sum_of_products(&f_buf, &g_buf),
+            (Ok(f_buf), Ok(g_buf)) => res += F::sum_of_products(&f_buf, &g_buf),
             (Ok(g), Err(f)) | (Err(f), Ok(g)) => {
                 for (f, g) in f.into_iter().zip(g) {
                     res += f * g;

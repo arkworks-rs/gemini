@@ -100,6 +100,8 @@ where
         let zero = F::zero();
         let twist2 = self.twist.square();
 
+        let mut twist_runner = F::one();
+
         for (f_pair, g_pair) in self.f.chunks(2).zip(self.g.chunks(2)) {
             // The even part of the polynomial must always be unwrapped.
             let f_even = f_pair[0];
