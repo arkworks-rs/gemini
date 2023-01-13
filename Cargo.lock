@@ -15,9 +15,9 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf6ccdb167abbf410dcb915cabd428929d7f6a04980b54a11f26a39f1c7f7107"
+checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
 dependencies = [
  "cfg-if",
  "once_cell",
@@ -36,7 +36,7 @@ dependencies = [
 [[package]]
 name = "ark-ec"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "ark-ff",
  "ark-poly",
@@ -53,7 +53,7 @@ dependencies = [
 [[package]]
 name = "ark-ff"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "ark-ff-asm",
  "ark-ff-macros",
@@ -73,7 +73,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-asm"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "quote",
  "syn",
@@ -82,7 +82,7 @@ dependencies = [
 [[package]]
 name = "ark-ff-macros"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "num-bigint",
  "num-traits",
@@ -118,7 +118,7 @@ dependencies = [
 [[package]]
 name = "ark-poly"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "ark-ff",
  "ark-serialize",
@@ -142,7 +142,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "ark-serialize-derive",
  "ark-std",
@@ -153,7 +153,7 @@ dependencies = [
 [[package]]
 name = "ark-serialize-derive"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -174,7 +174,7 @@ dependencies = [
 [[package]]
 name = "ark-test-curves"
 version = "0.4.0"
-source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#f22cd4abfe15595bededbfd524c89357f02b4dd4"
+source = "git+https://github.com/mmaker/algebra?branch=feature/additive-groups#1419b95af60ffc5353a18d4673cf217126457903"
 dependencies = [
  "ark-ec",
  "ark-ff",
@@ -443,9 +443,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.8.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90e5c1c8368803113bf0c9584fc495a58b86dc8a29edbf8fe877d21d9507e797"
+checksum = "7fcaabb2fef8c910e7f4c7ce9f67a1283a1715879a7c230ca9d6d1ae31f16d91"
 
 [[package]]
 name = "env_logger"
@@ -502,7 +502,7 @@ version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
 dependencies = [
- "ahash 0.8.2",
+ "ahash 0.8.3",
 ]
 
 [[package]]
@@ -844,9 +844,9 @@ dependencies = [
 
 [[package]]
 name = "rayon-core"
-version = "1.10.1"
+version = "1.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cac410af5d00ab6884528b4ab69d1e8e146e8d471201800fa1b4524126de6ad3"
+checksum = "356a0625f1954f730c0201cdab48611198dc6ce21f4acff55089b5a78e6e835b"
 dependencies = [
  "crossbeam-channel",
  "crossbeam-deque",
