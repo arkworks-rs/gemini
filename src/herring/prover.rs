@@ -32,7 +32,7 @@ impl<M: AdditiveGroup> Sum for SumcheckMsg<M> {
 }
 
 impl<M: AdditiveGroup> SumcheckMsg<M> {
-    pub(crate) fn ip<I: Iterator<Item = Self>, J: Iterator<Item = M::ScalarField>>(
+    pub(crate) fn ip<I: Iterator<Item = Self>, J: Iterator<Item = M::Scalar>>(
         iter: I,
         scalars: J,
     ) -> Self {
@@ -43,10 +43,10 @@ impl<M: AdditiveGroup> SumcheckMsg<M> {
     }
 }
 
-impl<M: AdditiveGroup> Mul<&M::ScalarField> for SumcheckMsg<M> {
+impl<M: AdditiveGroup> Mul<&M::Scalar> for SumcheckMsg<M> {
     type Output = Self;
 
-    fn mul(self, rhs: &M::ScalarField) -> Self {
+    fn mul(self, rhs: &M::Scalar) -> Self {
         SumcheckMsg(self.0 * rhs, self.1 * rhs)
     }
 }

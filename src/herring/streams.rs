@@ -16,7 +16,7 @@ where
     F: AdditiveGroup,
     S::Item: Borrow<F>,
 {
-    challenges: &'a [F::ScalarField],
+    challenges: &'a [F::Scalar],
     coefficients: &'a S,
 }
 
@@ -27,7 +27,7 @@ where
     S::Item: Borrow<F>,
 {
     /// Initialize a new polynomial tree.
-    pub fn new(coefficients: &'a S, challenges: &'a [F::ScalarField]) -> Self {
+    pub fn new(coefficients: &'a S, challenges: &'a [F::Scalar]) -> Self {
         Self {
             coefficients,
             challenges,
@@ -71,7 +71,7 @@ where
     F: AdditiveGroup,
     I::Item: Borrow<F>,
 {
-    challenges: &'a [F::ScalarField],
+    challenges: &'a [F::Scalar],
     iterator: I,
     stack: Vec<(usize, F)>,
 }
@@ -100,7 +100,7 @@ where
     I: Iterator,
     I::Item: Borrow<F>,
 {
-    fn new(iterator: I, n: usize, challenges: &'a [F::ScalarField]) -> Self {
+    fn new(iterator: I, n: usize, challenges: &'a [F::Scalar]) -> Self {
         let stack = init_stack(n, challenges.len());
 
         Self {
@@ -162,7 +162,7 @@ where
     F: AdditiveGroup,
     I::Item: Borrow<F>,
 {
-    challenges: &'a [F::ScalarField],
+    challenges: &'a [F::Scalar],
     iterator: I,
     stack: Vec<(usize, F)>,
 }
@@ -174,7 +174,7 @@ where
     S::Item: Borrow<F>,
 {
     /// Initialize a new folded polynomial stream.
-    pub fn new(coefficients: &'a S, challenges: &'a [F::ScalarField]) -> Self {
+    pub fn new(coefficients: &'a S, challenges: &'a [F::Scalar]) -> Self {
         let tree = FoldedPolynomialTree::new(coefficients, challenges);
         let len = challenges.len();
         Self(tree, len)

@@ -161,7 +161,7 @@ impl<E: Pairing> CommitterKey<E> {
 
 #[test]
 fn test_srs() {
-    use ark_test_curves::bls12_381::Bls12_381;
+    use ark_test_curves::bls12_381::{Bls12_381};
 
     let rng = &mut ark_std::test_rng();
     let ck = CommitterKey::<Bls12_381>::new(10, 3, rng);

@@ -3,7 +3,8 @@ use ark_poly::DenseUVPolynomial;
 use ark_std::test_rng;
 use ark_std::vec::Vec;
 use ark_std::UniformRand;
-use ark_test_curves::bls12_381::{Bls12_381, Fr};
+use ark_test_curves::bls12_381::{Fr};
+use ark_test_curves::bls12_381::{Bls12_381};
 
 use crate::iterable::{Iterable, Reverse};
 use crate::kzg::space::CommitterKeyStream;
@@ -29,7 +30,7 @@ fn test_commitment_consistency() {
 
 #[test]
 fn test_srs() {
-    use ark_test_curves::bls12_381::Bls12_381;
+    use ark_test_curves::bls12_381::{Bls12_381};
 
     let rng = &mut ark_std::test_rng();
     let time_ck = CommitterKey::<Bls12_381>::new(10, 3, rng);
