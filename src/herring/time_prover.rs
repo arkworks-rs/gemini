@@ -2,7 +2,7 @@
 //!
 
 use ark_ff::{AdditiveGroup, Field};
-use ark_ff::{One, Zero};
+use ark_ff::{Zero};
 use ark_std::log2;
 use ark_std::vec::Vec;
 
@@ -70,7 +70,7 @@ impl<M: BilinearModule> TimeProver<M> {
 }
 
 #[inline]
-pub(crate) fn split_fold<M: AdditiveGroup>(f: &[M], r: M::ScalarField) -> Vec<M> {
+pub(crate) fn split_fold<M: AdditiveGroup>(f: &[M], r: M::Scalar) -> Vec<M> {
     f.chunks(2)
         .map(|pair| pair[0] + *pair.get(1).unwrap_or(&M::zero()) * r)
         .collect()

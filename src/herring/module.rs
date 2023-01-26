@@ -9,9 +9,9 @@ use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
 
 pub trait BilinearModule: Send + Sync {
-    type Lhs: AdditiveGroup<ScalarField = Self::ScalarField>;
-    type Rhs: AdditiveGroup<ScalarField = Self::ScalarField>;
-    type Target: AdditiveGroup<ScalarField = Self::ScalarField>;
+    type Lhs: AdditiveGroup<Scalar = Self::ScalarField>;
+    type Rhs: AdditiveGroup<Scalar = Self::ScalarField>;
+    type Target: AdditiveGroup<Scalar = Self::ScalarField>;
     type ScalarField: Field;
 
     fn p(a: impl Borrow<Self::Lhs>, b: impl Borrow<Self::Rhs>) -> Self::Target;

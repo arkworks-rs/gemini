@@ -39,7 +39,7 @@
 //! reducing a multivariate evaluation proof to an univariate tensorcheck.
 //!
 use ark_ec::pairing::Pairing;
-use ark_ff::Field;
+use ark_ff::{Field, AdditiveGroup};
 use ark_serialize::*;
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;

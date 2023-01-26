@@ -2,7 +2,6 @@ use ark_ff::Field;
 use ark_poly::{univariate::DensePolynomial, DenseUVPolynomial};
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
-use ark_std::Zero;
 
 use crate::circuit::Matrix;
 use ark_std::collections::{BTreeMap, BTreeSet};
