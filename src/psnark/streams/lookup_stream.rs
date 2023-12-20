@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use ark_std::borrow::Borrow;
 
 use crate::iterable::Iterable;
@@ -87,7 +89,7 @@ where
         }
     }
 
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZeroUsize> {
         self.index_stream.advance_by(n)
     }
 }

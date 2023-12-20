@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use ark_ff::Field;
 use ark_std::borrow::Borrow;
 use ark_std::marker::PhantomData;
@@ -40,7 +42,7 @@ where
         Some(*first.borrow() * second.borrow())
     }
 
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZeroUsize> {
         self.0.advance_by(n).and_then(|()| self.1.advance_by(n))
     }
 }

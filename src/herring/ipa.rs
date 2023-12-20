@@ -19,7 +19,6 @@ use crate::herring::prover::SumcheckMsg;
 use crate::herring::time_prover::Witness;
 use crate::herring::TimeProver;
 use crate::misc::powers;
-use crate::subprotocols::sumcheck;
 use crate::transcript::GeminiTranscript;
 use ark_ec::CurveGroup;
 use ark_ec::{pairing::Pairing, PrimeGroup, VariableBaseMSM};

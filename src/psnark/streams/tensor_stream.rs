@@ -1,3 +1,5 @@
+use core::num::NonZeroUsize;
+
 use ark_ff::{BitIteratorLE, Field};
 use ark_std::borrow::Borrow;
 use ark_std::vec::Vec;
@@ -62,7 +64,7 @@ impl<F: Field> Iterator for TensorIter<F> {
             })
     }
 
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZeroUsize> {
         // XXX:throw the error appropriatedly
         self.current_index -= n as u64;
         self.current = BitIteratorLE::new(&[self.current_index])
@@ -182,7 +184,7 @@ where
         Some(value)
     }
 
-    fn advance_by(&mut self, n: usize) -> Result<(), usize> {
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZeroUsize> {
         self.index.advance_by(n)
     }
 }

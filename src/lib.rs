@@ -59,7 +59,6 @@
 #![deny(unused_comparisons, bare_trait_objects, unused_must_use)]
 // #![forbid(unsafe_code)]
 #![deny(trivial_numeric_casts)]
-#![deny(private_in_public)]
 #![deny(unused_allocation)]
 
 // Lints disable from other arkworks packages:
