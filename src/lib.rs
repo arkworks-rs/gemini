@@ -51,7 +51,6 @@
 #![feature(
     iter_advance_by,
     iter_next_chunk,
-    int_roundings,
     slice_as_chunks,
     array_chunks
 )]
